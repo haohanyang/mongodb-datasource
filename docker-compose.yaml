@@ -28,3 +28,11 @@ services:
       GF_LOG_LEVEL: debug
       GF_DATAPROXY_LOGGING: 1
       GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: haohanyang-mongodb-datasource
+    
+    links:
+      - mongo
+
+  mongo:
+    image: mongo
+    ports:
+      - 27017:27017
