@@ -1,5 +1,5 @@
 import React, { ChangeEvent } from 'react';
-import { InlineField, Input, Stack } from '@grafana/ui';
+import { Field, InlineField, Input, Stack, TextArea } from '@grafana/ui';
 import { QueryEditorProps } from '@grafana/data';
 import { DataSource } from '../datasource';
 import { MyDataSourceOptions, MyQuery } from '../types';
@@ -7,39 +7,32 @@ import { MyDataSourceOptions, MyQuery } from '../types';
 type Props = QueryEditorProps<DataSource, MyQuery, MyDataSourceOptions>;
 
 export function QueryEditor({ query, onChange, onRunQuery }: Props) {
-  const onQueryTextChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const onQueryTextChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
     onChange({ ...query, queryText: event.target.value });
   };
 
   const onConstantChange = (event: ChangeEvent<HTMLInputElement>) => {
-    onChange({ ...query, constant: parseFloat(event.target.value) });
+    onChange({ ...query, collection: event.target.value });
     // executes the query
     onRunQuery();
   };
 
-  const { queryText, constant } = query;
+  const { queryText, collection } = query;
 
   return (
-    <Stack gap={0}>
-      <InlineField label="Constant">
+    <Stack>
+      <InlineField label="Collection">
         <Input
-          id="query-editor-constant"
+          id="query-editor-collection"
           onChange={onConstantChange}
-          value={constant}
+          value={collection}
           width={8}
-          type="number"
-          step="0.1"
-        />
-      </InlineField>
-      <InlineField label="Query Text" labelWidth={16} tooltip="Not used yet">
-        <Input
-          id="query-editor-query-text"
-          onChange={onQueryTextChange}
-          value={queryText || ''}
           required
-          placeholder="Enter a query"
         />
       </InlineField>
+      <Field label="Query" description="Mongo aggregate query. Json format.">
+        <TextArea width={40} id="query-editor-query-text" onChange={onQueryTextChange} value={queryText || ''} required></TextArea>
+      </Field>
     </Stack>
   );
 }
