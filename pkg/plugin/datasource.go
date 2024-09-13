@@ -127,7 +127,8 @@ func (d *Datasource) query(ctx context.Context, pCtx backend.PluginContext, mong
 	}
 
 	var pipeline []bson.D
-	err = bson.UnmarshalExtJSON([]byte(qm.QueryText), true, &pipeline)
+
+	err = bson.UnmarshalExtJSON([]byte(qm.QueryText), false, &pipeline)
 	if err != nil {
 		return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Failed to unmarshal JsonExt: %v", err.Error()))
 	}
@@ -145,9 +146,10 @@ func (d *Datasource) query(ctx context.Context, pCtx backend.PluginContext, mong
 	}
 
 	frames := make(map[string]frame_)
-
+	count := 0
 	for cursor.Next(ctx) {
 		var result queryResult
+		count++
 		if err := cursor.Decode(&result); err != nil {
 			backend.Logger.Error("Failed to decode doc: %v", err.Error())
 		} else {
@@ -164,6 +166,8 @@ func (d *Datasource) query(ctx context.Context, pCtx backend.PluginContext, mong
 			}
 		}
 	}
+
+	backend.Logger.Debug("Total count of documents: " + fmt.Sprintf("%d", count))
 
 	for k, v := range frames {
 		frame := data.NewFrame("response")
