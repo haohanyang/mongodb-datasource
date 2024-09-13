@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -28,12 +29,12 @@ var (
 )
 
 // NewDatasource creates a new datasource instance.
-func NewDatasource(_ context.Context, _ backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
+func NewDatasource(ctx context.Context, _ backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
 	const uri = "mongodb://mongo:27017"
 	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
 	opts := options.Client().ApplyURI(uri).SetServerAPIOptions(serverAPI)
 
-	client, err := mongo.Connect(context.TODO(), opts)
+	client, err := mongo.Connect(ctx, opts)
 	return &Datasource{mongoClient: client}, err
 }
 
@@ -72,8 +73,9 @@ func (d *Datasource) QueryData(ctx context.Context, req *backend.QueryDataReques
 }
 
 type queryModel struct {
-	QueryText  string `json:"queryText"`
-	Collection string `json:"collection"`
+	QueryText      string `json:"queryText"`
+	Collection     string `json:"collection"`
+	ApplyTimeRange bool   `json:"applyTimeRange"`
 }
 
 type queryResult struct {
@@ -87,15 +89,41 @@ type frame_ struct {
 	values     []int32
 }
 
-func (d *Datasource) query(_ context.Context, pCtx backend.PluginContext, mongo *mongo.Client, query backend.DataQuery) backend.DataResponse {
+func (d *Datasource) query(ctx context.Context, pCtx backend.PluginContext, mongo *mongo.Client, query backend.DataQuery) backend.DataResponse {
 	var response backend.DataResponse
 	backend.Logger.Debug("Raw query", query.JSON)
-	// Unmarshal the JSON into our queryModel.
+
 	var qm queryModel
 
 	err := json.Unmarshal(query.JSON, &qm)
 	if err != nil {
 		return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Failed to unmarshal json: %v", err.Error()))
+	}
+
+	if qm.Collection == "" {
+		return backend.ErrDataResponse(backend.StatusBadRequest, "Collection field is required")
+	}
+
+	if qm.ApplyTimeRange {
+
+		f_date, err := json.Marshal(map[string]string{"$date": query.TimeRange.From.Format(time.RFC3339)})
+		if err != nil {
+			backend.Logger.Error(err.Error())
+			return backend.ErrDataResponse(backend.StatusInternal, "Unknown error")
+		}
+
+		t_date, err := json.Marshal(map[string]string{"$date": query.TimeRange.To.Format(time.RFC3339)})
+		if err != nil {
+			backend.Logger.Error(err.Error())
+			return backend.ErrDataResponse(backend.StatusInternal, "Unknown error")
+		}
+
+		queryText := strings.ReplaceAll(qm.QueryText, "\"$from\"", string(f_date))
+		queryText = strings.ReplaceAll(queryText, "\"$to\"", string(t_date))
+		// queryText := strings.Replace(qm.QueryText, "\"$from\"", "\""+query.TimeRange.From.Format(time.RFC3339)+"\"", -1)
+		// queryText = strings.Replace(queryText, "\"$to\"", "\""+query.TimeRange.To.Format(time.RFC3339)+"\"", -1)
+		qm.QueryText = queryText
+		backend.Logger.Debug("Applied time series", queryText)
 	}
 
 	var pipeline []bson.D
@@ -104,12 +132,12 @@ func (d *Datasource) query(_ context.Context, pCtx backend.PluginContext, mongo 
 		return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Failed to unmarshal JsonExt: %v", err.Error()))
 	}
 
-	cursor, err := mongo.Database("test").Collection(qm.Collection).Aggregate(context.TODO(), pipeline)
+	cursor, err := mongo.Database("test").Collection(qm.Collection).Aggregate(ctx, pipeline)
 	if err != nil {
 		return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Failed to query: %v", err.Error()))
 
 	}
-	defer cursor.Close(context.TODO())
+	defer cursor.Close(ctx)
 
 	type frame_ struct {
 		timestamps []time.Time
@@ -118,7 +146,7 @@ func (d *Datasource) query(_ context.Context, pCtx backend.PluginContext, mongo 
 
 	frames := make(map[string]frame_)
 
-	for cursor.Next(context.TODO()) {
+	for cursor.Next(ctx) {
 		var result queryResult
 		if err := cursor.Decode(&result); err != nil {
 			backend.Logger.Error("Failed to decode doc: %v", err.Error())

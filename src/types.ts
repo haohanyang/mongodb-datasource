@@ -4,9 +4,14 @@ import { DataQuery } from '@grafana/schema';
 export interface MyQuery extends DataQuery {
   queryText: string;
   collection: string;
+  applyTimeRange: boolean;
 }
 
-export const DEFAULT_QUERY: Partial<MyQuery> = {};
+export const DEFAULT_QUERY: Partial<MyQuery> = {
+  queryText: "{}",
+  applyTimeRange: true,
+  collection: ""
+};
 
 export interface DataPoint {
   Time: number;
