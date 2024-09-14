@@ -181,7 +181,7 @@ func (d *Datasource) query(ctx context.Context, pCtx backend.PluginContext, db *
 		var result queryResult
 		count++
 		if err := cursor.Decode(&result); err != nil {
-			backend.Logger.Error("Failed to decode doc: %v", err.Error())
+			backend.Logger.Error(fmt.Sprintf("Failed to decode doc: %v", err.Error()))
 		} else {
 			name := result.Name
 			if f, ok := frames[name]; ok {
