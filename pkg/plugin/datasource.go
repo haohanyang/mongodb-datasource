@@ -64,13 +64,14 @@ func NewDatasource(ctx context.Context, source backend.DataSourceInstanceSetting
 		return nil, err
 	}
 
-	return &Datasource{mongoClient: client}, nil
+	return &Datasource{mongoClient: client, mongoDatabase: client.Database(config.Database)}, nil
 }
 
 // Datasource is an example datasource which can respond to data queries, reports
 // its health and has streaming skills.
 type Datasource struct {
-	mongoClient *mongo.Client
+	mongoClient   *mongo.Client
+	mongoDatabase *mongo.Database
 }
 
 // Dispose here tells plugin SDK that plugin wants to clean up resources when a new instance
@@ -90,7 +91,7 @@ func (d *Datasource) QueryData(ctx context.Context, req *backend.QueryDataReques
 	// loop over queries and execute them individually.
 	for _, q := range req.Queries {
 
-		res := d.query(ctx, req.PluginContext, d.mongoClient, q)
+		res := d.query(ctx, req.PluginContext, d.mongoDatabase, q)
 
 		// save the response in a hashmap
 		// based on with RefID as identifier
@@ -118,7 +119,7 @@ type frame_ struct {
 	values     []int32
 }
 
-func (d *Datasource) query(ctx context.Context, pCtx backend.PluginContext, mongo *mongo.Client, query backend.DataQuery) backend.DataResponse {
+func (d *Datasource) query(ctx context.Context, pCtx backend.PluginContext, db *mongo.Database, query backend.DataQuery) backend.DataResponse {
 	var response backend.DataResponse
 	backend.Logger.Debug("Raw query", query.JSON)
 
@@ -162,7 +163,7 @@ func (d *Datasource) query(ctx context.Context, pCtx backend.PluginContext, mong
 		return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Failed to unmarshal JsonExt: %v", err.Error()))
 	}
 
-	cursor, err := mongo.Database("test").Collection(qm.Collection).Aggregate(ctx, pipeline)
+	cursor, err := db.Collection(qm.Collection).Aggregate(ctx, pipeline)
 	if err != nil {
 		return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Failed to query: %v", err.Error()))
 
