@@ -3,6 +3,7 @@ package plugin
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -29,13 +30,41 @@ var (
 )
 
 // NewDatasource creates a new datasource instance.
-func NewDatasource(ctx context.Context, _ backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
-	const uri = "mongodb://mongo:27017"
+func NewDatasource(ctx context.Context, source backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
+
+	var uri string
+
+	config, err := models.LoadPluginSettings(source)
+	if err != nil {
+		backend.Logger.Error(fmt.Sprintf("Failed to load plugin settings: %s", err.Error()))
+		return nil, err
+	}
+
+	if config.Database == "" {
+		return nil, errors.New("missing MongoDB database")
+	}
+
+	if config.AuthMethod == "auth-none" {
+		uri = fmt.Sprintf("mongodb://%s:%d", config.Host, config.Port)
+	} else if config.AuthMethod == "auth-username-password" {
+		if config.Username == "" || config.Secrets.Password == "" {
+			return nil, errors.New("missing MongoDB username or password")
+		}
+		uri = fmt.Sprintf("mongodb://%s:%s@%s:%d", config.Username, config.Secrets.Password, config.Host, config.Port)
+	} else {
+		return nil, errors.New("authentication method not supported")
+	}
+
 	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
 	opts := options.Client().ApplyURI(uri).SetServerAPIOptions(serverAPI)
 
 	client, err := mongo.Connect(ctx, opts)
-	return &Datasource{mongoClient: client}, err
+	if err != nil {
+		backend.Logger.Error(fmt.Sprintf("Failed to connect to db: %s", err.Error()))
+		return nil, err
+	}
+
+	return &Datasource{mongoClient: client}, nil
 }
 
 // Datasource is an example datasource which can respond to data queries, reports
@@ -186,8 +215,9 @@ func (d *Datasource) query(ctx context.Context, pCtx backend.PluginContext, mong
 // The main use case for these health checks is the test button on the
 // datasource configuration page which allows users to verify that
 // a datasource is working as expected.
-func (d *Datasource) CheckHealth(_ context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
+func (d *Datasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
 	res := &backend.CheckHealthResult{}
+	backend.Logger.Debug("Checking health")
 	config, err := models.LoadPluginSettings(*req.PluginContext.DataSourceInstanceSettings)
 
 	if err != nil {
@@ -196,14 +226,68 @@ func (d *Datasource) CheckHealth(_ context.Context, req *backend.CheckHealthRequ
 		return res, nil
 	}
 
-	if config.Secrets.ApiKey == "" {
+	backend.Logger.Debug(fmt.Sprintf("Config: %v", config))
+
+	if config.AuthMethod == "" {
 		res.Status = backend.HealthStatusError
-		res.Message = "API key is missing"
+		res.Message = "Please specify the authentication type"
+		return res, nil
+	}
+
+	if config.Host == "" {
+		res.Status = backend.HealthStatusError
+		res.Message = "Please specify the host address"
+		return res, nil
+	}
+
+	if config.Database == "" {
+		res.Status = backend.HealthStatusError
+		res.Message = "Please specify the database"
+		return res, nil
+	}
+
+	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
+	var uri string
+
+	if config.AuthMethod == "auth-none" {
+		uri = fmt.Sprintf("mongodb://%s:%d", config.Host, config.Port)
+	} else if config.AuthMethod == "auth-username-password" {
+		if config.Username == "" || config.Secrets.Password == "" {
+			res.Status = backend.HealthStatusError
+			res.Message = "Please specify the username and password"
+			return res, nil
+		}
+		uri = fmt.Sprintf("mongodb://%s:%s@%s:%d", config.Username, config.Secrets.Password, config.Host, config.Port)
+	} else {
+		res.Status = backend.HealthStatusError
+		res.Message = "Please specify the authentication type"
+		return res, nil
+	}
+
+	opts := options.Client().ApplyURI(uri).SetServerAPIOptions(serverAPI)
+	client, err := mongo.Connect(ctx, opts)
+	if err != nil {
+		res.Status = backend.HealthStatusError
+		res.Message = err.Error()
+		backend.Logger.Error(err.Error())
+		return res, nil
+	}
+	defer func() {
+		if err = client.Disconnect(ctx); err != nil {
+			backend.Logger.Error(fmt.Sprintf("Failed to disconnect db: %s", err.Error()))
+		}
+	}()
+
+	var result bson.M
+	if err := client.Database(config.Database).RunCommand(ctx, bson.D{{Key: "ping", Value: 1}}).Decode(&result); err != nil {
+		backend.Logger.Error(fmt.Sprintf("Failed to ping db: %s", err.Error()))
+		res.Status = backend.HealthStatusError
+		res.Message = err.Error()
 		return res, nil
 	}
 
 	return &backend.CheckHealthResult{
 		Status:  backend.HealthStatusOk,
-		Message: "Data source is working",
+		Message: "Successfully connects to MongoDB",
 	}, nil
 }
