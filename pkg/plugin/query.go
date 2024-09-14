@@ -28,15 +28,13 @@ func getTimeSeriesFramesFromQuery(ctx context.Context, cursor *mongo.Cursor) ([]
 		Each "name" value corresponds to a frame
 	*/
 	results := make([]*data.Frame, 0)
-	rawValues := make([]bson.RawValue, 0)
-	frameData := make(map[string]timeSeriesFrameData)
+	frameData := make(map[string]*timeSeriesFrameData)
 	var valueType bsontype.Type
 
 	for cursor.Next(ctx) {
 		var row bson.Raw
 		if err := cursor.Decode(&row); err != nil {
 			return results, err
-			// backend.Logger.Error(fmt.Sprintf("Failed to decode doc: %v", err.Error()))
 		}
 
 		tr, err := parseTimeSeriesRow(row)
@@ -48,7 +46,7 @@ func getTimeSeriesFramesFromQuery(ctx context.Context, cursor *mongo.Cursor) ([]
 			valueType = tr.valueType
 		}
 
-		if len(rawValues) > 0 && tr.valueType != valueType {
+		if tr.valueType != valueType {
 			return results, errors.New("values should have the same type")
 		}
 
@@ -56,36 +54,35 @@ func getTimeSeriesFramesFromQuery(ctx context.Context, cursor *mongo.Cursor) ([]
 			f.timestamps = append(f.timestamps, tr.timestamp)
 			f.rawValues = append(f.rawValues, tr.rawValue)
 		} else {
-			frameData[tr.name] = timeSeriesFrameData{
-				timestamps: append(make([]time.Time, 1), tr.timestamp),
-				rawValues:  append(make([]bson.RawValue, 1), tr.rawValue),
+			frameData[tr.name] = &timeSeriesFrameData{
+				timestamps: []time.Time{tr.timestamp},
+				rawValues:  []bson.RawValue{tr.rawValue},
 			}
 		}
 	}
 
 	for k, v := range frameData {
-
 		tsField := data.NewField("time", nil, v.timestamps)
 		var valueField *data.Field
 
 		switch valueType {
 		case bson.TypeInt32:
-			values := make([]int32, len(rawValues))
-			for i, r := range rawValues {
+			values := make([]int32, len(v.rawValues))
+			for i, r := range v.rawValues {
 				values[i] = r.Int32()
 			}
 			valueField = data.NewField("values", nil, values)
 
 		case bson.TypeInt64:
-			values := make([]int64, len(rawValues))
-			for i, r := range rawValues {
+			values := make([]int64, len(v.rawValues))
+			for i, r := range v.rawValues {
 				values[i] = r.Int64()
 			}
 			valueField = data.NewField("values", nil, values)
 
 		case bson.TypeDouble:
-			values := make([]float64, len(rawValues))
-			for i, r := range rawValues {
+			values := make([]float64, len(v.rawValues))
+			for i, r := range v.rawValues {
 				values[i] = r.Double()
 			}
 			valueField = data.NewField("values", nil, values)
@@ -127,6 +124,7 @@ func parseTimeSeriesRow(r bson.Raw) (*timeSeriesRow, error) {
 			} else {
 				tr.timestamp = value.Time()
 			}
+
 		}
 
 		if element.Key() == "value" {
@@ -158,7 +156,6 @@ func getTableFramesFromQuery(ctx context.Context, cursor *mongo.Cursor) (*data.F
 	for cursor.Next(ctx) {
 		var result bson.Raw
 		if err := cursor.Decode(&result); err != nil {
-			// backend.Logger.Error(fmt.Sprintf("Failed to decode doc: %v", err.Error()))
 			return nil, err
 		}
 

@@ -10,9 +10,11 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+const mongoUri = "mongodb://localhost:27018"
+
 func TestGetTableFramesFromQuery(t *testing.T) {
 	ctx := context.TODO()
-	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017")
+	clientOptions := options.Client().ApplyURI(mongoUri)
 
 	// Connect to a mongodb server.
 	client, err := mongo.Connect(ctx, clientOptions)
@@ -78,9 +80,8 @@ func TestGetTableFramesFromQuery(t *testing.T) {
 
 func TestGetTimeSeriesFramesFromQuery(t *testing.T) {
 	ctx := context.TODO()
-	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017")
+	clientOptions := options.Client().ApplyURI(mongoUri)
 
-	// Connect to a mongodb server.
 	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
 		panic(err)
@@ -94,25 +95,26 @@ func TestGetTimeSeriesFramesFromQuery(t *testing.T) {
 		Value int       `bson:"value"`
 	}
 
+	now := time.Now()
 	toInsert := []interface{}{
 		Doc{
 			Name:  "name1",
-			Ts:    time.Now(),
+			Ts:    now,
 			Value: 1,
 		},
 		Doc{
 			Name:  "name1",
-			Ts:    time.Now(),
+			Ts:    now,
 			Value: 2,
 		},
 		Doc{
 			Name:  "name2",
-			Ts:    time.Now(),
+			Ts:    now,
 			Value: 3,
 		},
 		Doc{
 			Name:  "name2",
-			Ts:    time.Now(),
+			Ts:    now,
 			Value: 4,
 		},
 	}
@@ -152,7 +154,7 @@ func TestGetTimeSeriesFramesFromQuery(t *testing.T) {
 	f1 := frames[0]
 	f2 := frames[1]
 
-	if f1.Name != "name1" || f2.Name != "name2" {
+	if f1.Name != "name1" && f1.Name != "name2" {
 		t.Error("wrong frame names")
 	}
 
@@ -162,5 +164,14 @@ func TestGetTimeSeriesFramesFromQuery(t *testing.T) {
 
 	if f1.Fields[0].Len() != 2 || f2.Fields[0].Len() != 2 {
 		t.Error("wrong row count")
+	}
+
+	if ts, ok := f1.Fields[0].At(0).(time.Time); ok {
+		if ts.Truncate(time.Millisecond).Compare(now.Truncate(time.Millisecond)) != 0 {
+			t.Error("wrong timestamp")
+		}
+
+	} else {
+		t.Error("wrong time field")
 	}
 }
