@@ -125,7 +125,7 @@ func parseTimeSeriesRow(r bson.Raw) (*timeSeriesRow, error) {
 			if value.Type != bson.TypeDateTime {
 				return nil, errors.New("ts field should be datetime")
 			} else {
-				tr.timestamp = time.Unix(value.DateTime(), 0)
+				tr.timestamp = value.Time()
 			}
 		}
 
@@ -258,7 +258,7 @@ func (column *tableColumn) toDataField() *data.Field {
 	case bson.TypeDateTime:
 		values := make([]time.Time, size)
 		for i, r := range column.rawValues {
-			values[i] = time.Unix(r.DateTime(), 0)
+			values[i] = r.Time()
 		}
 		return data.NewField(column.columnName, nil, values)
 	case bson.TypeObjectID:
