@@ -8,9 +8,8 @@ export interface MongoQuery extends DataQuery {
 }
 
 export const DEFAULT_QUERY: Partial<MongoQuery> = {
-  queryText: "{}",
-  applyTimeRange: true,
-  collection: ""
+  queryText: "[]",
+  applyTimeRange: true
 };
 
 export interface DataPoint {
