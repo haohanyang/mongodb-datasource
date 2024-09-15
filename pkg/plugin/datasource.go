@@ -10,7 +10,6 @@ import (
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
-	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/haohanyang/mongodb-datasource/pkg/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -170,45 +169,13 @@ func (d *Datasource) query(ctx context.Context, pCtx backend.PluginContext, db *
 	}
 	defer cursor.Close(ctx)
 
-	type frame_ struct {
-		timestamps []time.Time
-		values     []int32
+	frames, err := getTimeSeriesFramesFromQuery(ctx, cursor)
+	if err != nil {
+		backend.Logger.Error(err.Error())
+		return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Failed to query: %v", err.Error()))
 	}
 
-	frames := make(map[string]frame_)
-	count := 0
-	for cursor.Next(ctx) {
-		var result queryResult
-		count++
-		if err := cursor.Decode(&result); err != nil {
-			backend.Logger.Error(fmt.Sprintf("Failed to decode doc: %v", err.Error()))
-		} else {
-			name := result.Name
-			if f, ok := frames[name]; ok {
-				f.timestamps = append(f.timestamps, result.Timestamp.Time())
-				f.values = append(f.values, int32(result.Value))
-			} else {
-				frames[name] = frame_{
-					timestamps: []time.Time{result.Timestamp.Time()},
-					values:     []int32{int32(result.Value)},
-				}
-
-			}
-		}
-	}
-
-	backend.Logger.Debug("Total count of documents: " + fmt.Sprintf("%d", count))
-
-	for k, v := range frames {
-		frame := data.NewFrame("response")
-		frame.Fields = append(frame.Fields,
-			data.NewField("time", nil, v.timestamps),
-			data.NewField("values", nil, v.values),
-		)
-		frame.Name = k
-		response.Frames = append(response.Frames, frame)
-	}
-
+	response.Frames = frames
 	return response
 }
 

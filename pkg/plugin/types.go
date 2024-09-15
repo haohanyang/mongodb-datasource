@@ -7,11 +7,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/bsontype"
 )
 
-type frame struct {
-	timestamps []time.Time
-	values     []int32
-}
-
 type tableColumn struct {
 	columnName string
 	columnType bsontype.Type
