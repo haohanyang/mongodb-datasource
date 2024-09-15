@@ -75,13 +75,13 @@ func getTimeSeriesFramesFromQuery(ctx context.Context, cursor *mongo.Cursor) ([]
 
 			switch valueType {
 			case bson.TypeInt32:
-				valueField = data.NewField("values", nil, []int32{tr.rawValue.Int32()})
+				valueField = data.NewField("Value", nil, []int32{tr.rawValue.Int32()})
 
 			case bson.TypeInt64:
-				valueField = data.NewField("values", nil, []int64{tr.rawValue.Int64()})
+				valueField = data.NewField("Value", nil, []int64{tr.rawValue.Int64()})
 
 			case bson.TypeDouble:
-				valueField = data.NewField("values", nil, []float64{tr.rawValue.Double()})
+				valueField = data.NewField("Value", nil, []float64{tr.rawValue.Double()})
 
 			default:
 				return results, errors.New("unsupported value type")
