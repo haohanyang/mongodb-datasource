@@ -1,13 +1,13 @@
 import { DataSourceJsonData } from '@grafana/data';
 import { DataQuery } from '@grafana/schema';
 
-export interface MyQuery extends DataQuery {
+export interface MongoQuery extends DataQuery {
   queryText: string;
   collection: string;
   applyTimeRange: boolean;
 }
 
-export const DEFAULT_QUERY: Partial<MyQuery> = {
+export const DEFAULT_QUERY: Partial<MongoQuery> = {
   queryText: "{}",
   applyTimeRange: true,
   collection: ""
@@ -30,7 +30,7 @@ export const MongoDBAuthMethod = {
 /**
  * These are options configured for each DataSource instance
  */
-export interface MyDataSourceOptions extends DataSourceJsonData {
+export interface MongoDataSourceOptions extends DataSourceJsonData {
   host?: string;
   port?: number;
   database?: string;

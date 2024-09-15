@@ -1,9 +1,9 @@
 import React, { ChangeEvent } from 'react';
-import { Divider, Field, FieldSet, InlineField, InlineFieldRow, Input, RadioButtonGroup, SecretInput, Select } from '@grafana/ui';
+import { Divider, Field, FieldSet, InlineField, InlineFieldRow, Input, RadioButtonGroup, SecretInput } from '@grafana/ui';
 import { DataSourcePluginOptionsEditorProps, SelectableValue } from '@grafana/data';
-import { MyDataSourceOptions, MySecureJsonData, MongoDBAuthMethod } from '../types';
+import { MongoDataSourceOptions, MySecureJsonData, MongoDBAuthMethod } from '../types';
 
-interface Props extends DataSourcePluginOptionsEditorProps<MyDataSourceOptions, MySecureJsonData> { }
+interface Props extends DataSourcePluginOptionsEditorProps<MongoDataSourceOptions, MySecureJsonData> { }
 
 const mongoDBAuthMethods: SelectableValue[] = [
   { label: "None", value: MongoDBAuthMethod.NONE },

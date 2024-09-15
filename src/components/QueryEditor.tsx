@@ -1,11 +1,11 @@
 import React, { ChangeEvent, FormEvent, useRef } from 'react';
-import { Button, CodeEditor, Divider, Field, InlineField, InlineFieldRow, InlineSwitch, Input, Stack, Switch, TextArea } from '@grafana/ui';
+import { Button, CodeEditor, Divider, Field, InlineField, InlineFieldRow, InlineSwitch, Input } from '@grafana/ui';
 import { QueryEditorProps } from '@grafana/data';
 import { DataSource } from '../datasource';
-import { MyDataSourceOptions, MyQuery } from '../types';
+import { MongoDataSourceOptions, MongoQuery } from '../types';
 import * as monacoType from 'monaco-editor/esm/vs/editor/editor.api';
 
-type Props = QueryEditorProps<DataSource, MyQuery, MyDataSourceOptions>;
+type Props = QueryEditorProps<DataSource, MongoQuery, MongoDataSourceOptions>;
 
 export function QueryEditor({ query, onChange, onRunQuery }: Props) {
 
@@ -50,10 +50,7 @@ export function QueryEditor({ query, onChange, onRunQuery }: Props) {
       <Field label="Query text" description="MongoDB aggregation pipeline in JSON format." required invalid={queryText == ""}>
         <CodeEditor onEditorDidMount={onCodeEditorDidMount} width="100%" height={300} language="json" onChange={onQueryTextChange} value={queryText} />
       </Field>
-      <Stack>
-        <Button onClick={onFormatQueryText}>Format</Button>
-        <Button onClick={onRunQuery} disabled={collection == "" || queryText == ""}>Query</Button>
-      </Stack>
+      <Button onClick={onFormatQueryText}>Format</Button>
     </>
   );
 }
