@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -151,10 +152,22 @@ func TestGetTimeSeriesFramesFromQuery(t *testing.T) {
 		t.Error("Size of frames should be 2")
 	}
 
-	f1 := frames[0]
-	f2 := frames[1]
+	var f1 *data.Frame
+	var f2 *data.Frame
 
-	if f1.Name != "name1" && f1.Name != "name2" {
+	if len(frames) != 2 {
+		t.Error("wrong frame count")
+	}
+
+	if frames[0].Name == "name1" {
+		f1 = frames[0]
+		f2 = frames[1]
+	} else {
+		f1 = frames[1]
+		f2 = frames[0]
+	}
+
+	if f1.Name != "name1" || f2.Name != "name2" {
 		t.Error("wrong frame names")
 	}
 
@@ -174,4 +187,13 @@ func TestGetTimeSeriesFramesFromQuery(t *testing.T) {
 	} else {
 		t.Error("wrong time field")
 	}
+
+	if v, ok := f1.Fields[1].At(0).(int32); ok {
+		if v != 1 {
+			t.Error("wrong value")
+		}
+	} else {
+		t.Error("wrong value")
+	}
+
 }
