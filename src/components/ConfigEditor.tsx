@@ -75,12 +75,11 @@ export function ConfigEditor(props: Props) {
     });
   };
 
-  // Secure field (only sent to the backend)
-  const onPasswordChange = (event: SelectableValue<string>) => {
+  const onPasswordChange = (event: ChangeEvent<HTMLInputElement>) => {
     onOptionsChange({
       ...options,
       secureJsonData: {
-        password: event.value,
+        password: event.target.value,
       },
     });
   };
@@ -155,13 +154,12 @@ export function ConfigEditor(props: Props) {
               onChange={onUsernameChange}
             ></Input>
           </InlineField>
-          <InlineField label="Password" labelWidth={14} interactive tooltip={'Secure json field (backend only)'}>
+          <InlineField label="Password" labelWidth={14} tooltip="MongoDB password">
             <SecretInput
               required
               id="config-editor-password"
               isConfigured={secureJsonFields.password}
-              value={secureJsonData?.password}
-              placeholder="Enter your API key"
+              value={secureJsonData?.password || ""}
               width={40}
               onReset={onResetPassword}
               onChange={onPasswordChange}
