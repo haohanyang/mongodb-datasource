@@ -25,11 +25,13 @@ var supportedBsonTypes = map[bsontype.Type]bool{
 func getTimeSeriesFramesFromQuery(ctx context.Context, cursor *mongo.Cursor) ([]*data.Frame, error) {
 	/*
 		Fields "value", "ts" must exist in the raw result.
+		"value" should be numeric
 		Each "name" value corresponds to a frame
 	*/
 	results := make([]*data.Frame, 0)
-	frameData := make(map[string]*timeSeriesFrameData)
 	var valueType bsontype.Type
+
+	results_ := make(map[string]*data.Frame)
 
 	for cursor.Next(ctx) {
 		var row bson.Raw
@@ -50,50 +52,49 @@ func getTimeSeriesFramesFromQuery(ctx context.Context, cursor *mongo.Cursor) ([]
 			return results, errors.New("values should have the same type")
 		}
 
-		if f, ok := frameData[tr.name]; ok {
-			f.timestamps = append(f.timestamps, tr.timestamp)
-			f.rawValues = append(f.rawValues, tr.rawValue)
+		if frame, ok := results_[tr.name]; ok {
+			frame.Fields[0].Append(tr.timestamp)
+
+			switch valueType {
+			case bson.TypeInt32:
+				frame.Fields[1].Append(tr.rawValue.Int32())
+
+			case bson.TypeInt64:
+				frame.Fields[1].Append(tr.rawValue.Int64())
+
+			case bson.TypeDouble:
+				frame.Fields[1].Append(tr.rawValue.Double())
+
+			default:
+				return results, errors.New("unsupported value type")
+			}
+
 		} else {
-			frameData[tr.name] = &timeSeriesFrameData{
-				timestamps: []time.Time{tr.timestamp},
-				rawValues:  []bson.RawValue{tr.rawValue},
+			tsField := data.NewField("time", nil, []time.Time{tr.timestamp})
+			var valueField *data.Field
+
+			switch valueType {
+			case bson.TypeInt32:
+				valueField = data.NewField("values", nil, []int32{tr.rawValue.Int32()})
+
+			case bson.TypeInt64:
+				valueField = data.NewField("values", nil, []int64{tr.rawValue.Int64()})
+
+			case bson.TypeDouble:
+				valueField = data.NewField("values", nil, []float64{tr.rawValue.Double()})
+
+			default:
+				return results, errors.New("unsupported value type")
 			}
+
+			results_[tr.name] = data.NewFrame(tr.name, tsField, valueField)
 		}
 	}
 
-	for k, v := range frameData {
-		tsField := data.NewField("time", nil, v.timestamps)
-		var valueField *data.Field
-
-		switch valueType {
-		case bson.TypeInt32:
-			values := make([]int32, len(v.rawValues))
-			for i, r := range v.rawValues {
-				values[i] = r.Int32()
-			}
-			valueField = data.NewField("values", nil, values)
-
-		case bson.TypeInt64:
-			values := make([]int64, len(v.rawValues))
-			for i, r := range v.rawValues {
-				values[i] = r.Int64()
-			}
-			valueField = data.NewField("values", nil, values)
-
-		case bson.TypeDouble:
-			values := make([]float64, len(v.rawValues))
-			for i, r := range v.rawValues {
-				values[i] = r.Double()
-			}
-			valueField = data.NewField("values", nil, values)
-
-		default:
-			return results, errors.New("unsupported value type")
-		}
-
-		frame := data.NewFrame(k, tsField, valueField)
-		results = append(results, frame)
+	for _, v := range results_ {
+		results = append(results, v)
 	}
+
 	return results, nil
 }
 

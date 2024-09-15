@@ -145,11 +145,12 @@ func TestGetTimeSeriesFramesFromQuery(t *testing.T) {
 	defer cursor.Close(context.TODO())
 
 	frames, err := getTimeSeriesFramesFromQuery(context.TODO(), cursor)
+
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(frames) != 2 {
-		t.Error("Size of frames should be 2")
+		t.Error("size of frames should be 2")
 	}
 
 	var f1 *data.Frame

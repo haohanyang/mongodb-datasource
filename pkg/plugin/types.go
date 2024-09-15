@@ -24,8 +24,3 @@ type timeSeriesRow struct {
 	valueType bsontype.Type
 	rawValue  bson.RawValue
 }
-
-type timeSeriesFrameData struct {
-	timestamps []time.Time
-	rawValues  []bson.RawValue
-}
