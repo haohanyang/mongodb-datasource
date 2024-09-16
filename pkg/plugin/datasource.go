@@ -98,12 +98,6 @@ func (d *Datasource) QueryData(ctx context.Context, req *backend.QueryDataReques
 	return response, nil
 }
 
-type queryModel struct {
-	QueryText      string `json:"queryText"`
-	Collection     string `json:"collection"`
-	ApplyTimeRange bool   `json:"applyTimeRange"`
-}
-
 func (d *Datasource) query(ctx context.Context, _ backend.PluginContext, db *mongo.Database, query backend.DataQuery) backend.DataResponse {
 	var response backend.DataResponse
 	backend.Logger.Debug("Raw query", query.JSON)
@@ -139,7 +133,10 @@ func (d *Datasource) query(ctx context.Context, _ backend.PluginContext, db *mon
 		return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Failed to query: %v", err.Error()))
 	}
 
-	response.Frames = frames
+	for _, frame := range frames {
+		response.Frames = append(response.Frames, frame)
+	}
+
 	return response
 }
 

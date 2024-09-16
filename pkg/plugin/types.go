@@ -2,20 +2,16 @@ package plugin
 
 import (
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/bsontype"
 )
 
-type tableColumn struct {
-	columnName string
-	columnType bsontype.Type
-	rawValues  []bson.RawValue
+type queryModel struct {
+	QueryText      string `json:"queryText"`
+	Collection     string `json:"collection"`
+	ApplyTimeRange bool   `json:"applyTimeRange"`
 }
 
-type timeSeriesRow struct {
-	timestamp time.Time
-	name      string
-	valueType bsontype.Type
-	rawValue  bson.RawValue
+type timeSeriesRow[T any] struct {
+	Timestamp time.Time `bson:"ts"`
+	Name      string    `bson:"name"`
+	Value     T         `bson:"value"`
 }
