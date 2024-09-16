@@ -5,14 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strings"
-	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
 	"github.com/haohanyang/mongodb-datasource/pkg/models"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -107,18 +104,7 @@ type queryModel struct {
 	ApplyTimeRange bool   `json:"applyTimeRange"`
 }
 
-type queryResult struct {
-	Timestamp primitive.DateTime `bson:"ts"`
-	Value     int                `bson:"value"`
-	Name      string             `bson:"name"`
-}
-
-type frame_ struct {
-	timestamps []time.Time
-	values     []int32
-}
-
-func (d *Datasource) query(ctx context.Context, pCtx backend.PluginContext, db *mongo.Database, query backend.DataQuery) backend.DataResponse {
+func (d *Datasource) query(ctx context.Context, _ backend.PluginContext, db *mongo.Database, query backend.DataQuery) backend.DataResponse {
 	var response backend.DataResponse
 	backend.Logger.Debug("Raw query", query.JSON)
 
@@ -131,28 +117,6 @@ func (d *Datasource) query(ctx context.Context, pCtx backend.PluginContext, db *
 
 	if qm.Collection == "" {
 		return backend.ErrDataResponse(backend.StatusBadRequest, "Collection field is required")
-	}
-
-	if qm.ApplyTimeRange {
-
-		f_date, err := json.Marshal(map[string]string{"$date": query.TimeRange.From.Format(time.RFC3339)})
-		if err != nil {
-			backend.Logger.Error(err.Error())
-			return backend.ErrDataResponse(backend.StatusInternal, "Unknown error")
-		}
-
-		t_date, err := json.Marshal(map[string]string{"$date": query.TimeRange.To.Format(time.RFC3339)})
-		if err != nil {
-			backend.Logger.Error(err.Error())
-			return backend.ErrDataResponse(backend.StatusInternal, "Unknown error")
-		}
-
-		queryText := strings.ReplaceAll(qm.QueryText, "\"$from\"", string(f_date))
-		queryText = strings.ReplaceAll(queryText, "\"$to\"", string(t_date))
-		// queryText := strings.Replace(qm.QueryText, "\"$from\"", "\""+query.TimeRange.From.Format(time.RFC3339)+"\"", -1)
-		// queryText = strings.Replace(queryText, "\"$to\"", "\""+query.TimeRange.To.Format(time.RFC3339)+"\"", -1)
-		qm.QueryText = queryText
-		backend.Logger.Debug("Applied time series", queryText)
 	}
 
 	var pipeline []bson.D

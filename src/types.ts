@@ -2,8 +2,8 @@ import { DataSourceJsonData } from '@grafana/data';
 import { DataQuery } from '@grafana/schema';
 
 export interface MongoQuery extends DataQuery {
-  queryText: string;
-  collection: string;
+  queryText?: string;
+  collection?: string;
   applyTimeRange: boolean;
 }
 

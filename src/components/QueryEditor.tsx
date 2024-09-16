@@ -7,7 +7,7 @@ import * as monacoType from 'monaco-editor/esm/vs/editor/editor.api';
 
 type Props = QueryEditorProps<DataSource, MongoQuery, MongoDataSourceOptions>;
 
-export function QueryEditor({ query, onChange, onRunQuery }: Props) {
+export function QueryEditor({ query, onChange }: Props) {
 
   const codeEditorRef = useRef<monacoType.editor.IStandaloneCodeEditor | null>(null)
 
@@ -39,16 +39,17 @@ export function QueryEditor({ query, onChange, onRunQuery }: Props) {
   return (
     <>
       <InlineFieldRow>
-        <InlineField label="Collection" tooltip="Name of the collection" required invalid={collection == ""}>
-          <Input id="query-editor-collection" onChange={onCollectionChange} value={collection} />
+        <InlineField label="Collection" tooltip="Name of the collection">
+          <Input id="query-editor-collection" onChange={onCollectionChange} value={collection} required />
         </InlineField>
         <InlineField label="Apply time range" tooltip="Apply time range">
           <InlineSwitch id="query-editor-apply-time-range" value={applyTimeRange} onChange={onApplyTimeRangeChange} />
         </InlineField>
       </InlineFieldRow>
       <Divider />
-      <Field label="Query text" description="MongoDB aggregation pipeline in JSON format." required invalid={queryText == ""}>
-        <CodeEditor onEditorDidMount={onCodeEditorDidMount} width="100%" height={300} language="json" onChange={onQueryTextChange} value={queryText} />
+      <Field label="Query Text" description="MongoDB aggregation pipeline in JSON format.">
+        <CodeEditor onEditorDidMount={onCodeEditorDidMount} width="100%" height={300} language="json"
+          onChange={onQueryTextChange} value={queryText || ""} />
       </Field>
       <Button onClick={onFormatQueryText}>Format</Button>
     </>
