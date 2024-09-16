@@ -1,4 +1,4 @@
-import { DataSourceInstanceSettings, CoreApp, ScopedVars, DataQueryRequest, DataQueryResponse } from '@grafana/data';
+import { DataSourceInstanceSettings, CoreApp, ScopedVars, DataQueryRequest, DataQueryResponse, DateTime } from '@grafana/data';
 import { DataSourceWithBackend, getTemplateSrv } from '@grafana/runtime';
 
 import { MongoQuery, MongoDataSourceOptions, DEFAULT_QUERY } from './types';
@@ -11,6 +11,12 @@ function isJsonStringValid(jsonString: string) {
     return false;
   }
   return true;
+}
+
+function datetimeToJson(datetime: DateTime) {
+  return JSON.stringify({
+    $date: datetime.toISOString()
+  });
 }
 
 export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourceOptions> {
@@ -30,7 +36,7 @@ export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourc
   }
 
   filterQuery(query: MongoQuery): boolean {
-    return !!query.queryText && !!query.collection && isJsonStringValid(query.queryText);
+    return !!query.queryText && !!query.collection && isJsonStringValid(query.queryText!);
   }
 
   query(request: DataQueryRequest<MongoQuery>): Observable<DataQueryResponse> {
@@ -38,9 +44,8 @@ export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourc
       if (query.applyTimeRange) {
         return {
           ...query,
-          queryText:
-            query.queryText?.replaceAll(/"\$from"/g, `"${request.range.from.toISOString()}"`)
-              .replaceAll(/"\$to"/g, `"${request.range.to.toISOString()}"`)
+          queryText: query.queryText?.replaceAll(/"\$from"/g, datetimeToJson(request.range.from))
+            .replaceAll(/"\$to"/g, datetimeToJson(request.range.to))
         };
       }
       return query;

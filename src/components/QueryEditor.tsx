@@ -9,14 +9,13 @@ type Props = QueryEditorProps<DataSource, MongoQuery, MongoDataSourceOptions>;
 
 export function QueryEditor({ query, onChange }: Props) {
 
-  const codeEditorRef = useRef<monacoType.editor.IStandaloneCodeEditor | null>(null)
+  const codeEditorRef = useRef<monacoType.editor.IStandaloneCodeEditor | null>(null);
 
   const onQueryTextChange = (queryText: string) => {
     onChange({ ...query, queryText: queryText });
   };
 
   const onApplyTimeRangeChange = (event: FormEvent<HTMLInputElement>) => {
-    console.log("haha", event.currentTarget.checked)
     onChange({ ...query, applyTimeRange: event.currentTarget.checked });
   };
 
@@ -25,14 +24,14 @@ export function QueryEditor({ query, onChange }: Props) {
   };
 
   const onCodeEditorDidMount = (e: monacoType.editor.IStandaloneCodeEditor) => {
-    codeEditorRef.current = e
-  }
+    codeEditorRef.current = e;
+  };
 
   const onFormatQueryText = () => {
     if (codeEditorRef.current) {
-      codeEditorRef.current.getAction('editor.action.formatDocument').run()
+      codeEditorRef.current.getAction('editor.action.formatDocument').run();
     }
-  }
+  };
 
   const { queryText, collection, applyTimeRange } = query;
 
