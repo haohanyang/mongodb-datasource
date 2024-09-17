@@ -113,166 +113,243 @@ func checkValueField(t *testing.T, field *data.Field, expected []interface{}) {
 	}
 }
 
+func TestUpdateFrameData(t *testing.T) {
+	t.Run("initialize with correct data", func(t *testing.T) {
+		frames := make(map[string]*data.Frame)
+		now := time.Now()
+		toInsert := []interface{}{
+			bson.M{
+				"name":  "name1",
+				"ts":    primitive.NewDateTimeFromTime(now),
+				"value": 1,
+			},
+		}
+
+		cursor, err := mongo.NewCursorFromDocuments(toInsert, nil, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		cursor.Next(context.TODO())
+
+		err = updateFrameData[int32](cursor, frames)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		frame := frames["name1"]
+		if frame == nil {
+			t.Fatal("field \"name1\" doesn't exist")
+		}
+
+		if frame.Name != "name1" {
+			t.Error("field name should be \"name1\"")
+		}
+
+		checkTsField(t, frame.Fields[0], []time.Time{now})
+		checkValueField(t, frame.Fields[1], []interface{}{1})
+	})
+
+	t.Run("append correct data", func(t *testing.T) {
+		frames := make(map[string]*data.Frame)
+		now := time.Now()
+
+		frames["name1"] = data.NewFrame("name1",
+			data.NewField("time", nil, []time.Time{now}),
+			data.NewField("Value", nil, []float64{1.1}),
+		)
+		toInsert := []interface{}{
+			bson.M{
+				"name":  "name1",
+				"ts":    primitive.NewDateTimeFromTime(now),
+				"value": 1.2,
+			},
+		}
+
+		cursor, err := mongo.NewCursorFromDocuments(toInsert, nil, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		cursor.Next(context.TODO())
+
+		err = updateFrameData[float64](cursor, frames)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		frame := frames["name1"]
+		if frame == nil {
+			t.Fatal("field \"name1\" doesn't exist")
+		}
+
+		if frame.Name != "name1" {
+			t.Error("field name should be \"name1\"")
+		}
+
+		checkTsField(t, frame.Fields[0], []time.Time{now, now})
+		checkValueField(t, frame.Fields[1], []interface{}{1.1, 1.2})
+	})
+}
+
 func TestGetTimeSeriesFramesFromQuery(t *testing.T) {
-	t.Run("TestAll", func(t *testing.T) {
-		t.Run("fields with correct int values and timestamps", func(t *testing.T) {
-			ctx := context.TODO()
-			now := time.Now()
-			toInsert := []interface{}{
-				bson.M{
-					"name":  "name1",
-					"ts":    primitive.NewDateTimeFromTime(now),
-					"value": 1,
-				},
-				bson.M{
-					"name":  "name1",
-					"ts":    primitive.NewDateTimeFromTime(now),
-					"value": 2,
-				},
-				bson.M{
-					"name":  "name2",
-					"ts":    primitive.NewDateTimeFromTime(now),
-					"value": 3,
-				},
-				bson.M{
-					"name":  "name2",
-					"ts":    primitive.NewDateTimeFromTime(now),
-					"value": 4,
-				},
-			}
 
-			cursor, err := mongo.NewCursorFromDocuments(toInsert, nil, nil)
-			if err != nil {
-				t.Fatal(err)
-			}
+	t.Run("fields with correct int values and timestamps", func(t *testing.T) {
+		ctx := context.TODO()
+		now := time.Now()
+		toInsert := []interface{}{
+			bson.M{
+				"name":  "name1",
+				"ts":    primitive.NewDateTimeFromTime(now),
+				"value": 1,
+			},
+			bson.M{
+				"name":  "name1",
+				"ts":    primitive.NewDateTimeFromTime(now),
+				"value": 2,
+			},
+			bson.M{
+				"name":  "name2",
+				"ts":    primitive.NewDateTimeFromTime(now),
+				"value": 3,
+			},
+			bson.M{
+				"name":  "name2",
+				"ts":    primitive.NewDateTimeFromTime(now),
+				"value": 4,
+			},
+		}
 
-			frames, err := getTimeSeriesFramesFromQuery(ctx, cursor)
+		cursor, err := mongo.NewCursorFromDocuments(toInsert, nil, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-			if err != nil {
-				t.Fatal(err)
-			}
+		frames, err := getTimeSeriesFramesFromQuery(ctx, cursor)
 
-			if len(frames) != 2 {
-				t.Fatal("number of frames should be 2")
-			}
+		if err != nil {
+			t.Fatal(err)
+		}
 
-			f1 := frames["name1"]
-			f2 := frames["name2"]
+		if len(frames) != 2 {
+			t.Fatal("number of frames should be 2")
+		}
 
-			if f1 == nil || f2 == nil {
-				t.Fatal("should have frame \"name1\" and \"name1\"")
-			}
+		f1 := frames["name1"]
+		f2 := frames["name2"]
 
-			if len(f1.Fields) != 2 || len(f2.Fields) != 2 {
-				t.Fatal("frame should have 2 entries")
-			}
+		if f1 == nil || f2 == nil {
+			t.Fatal("should have frame \"name1\" and \"name1\"")
+		}
 
-			checkTsField(t, f1.Fields[0], []time.Time{now, now})
-			checkTsField(t, f2.Fields[0], []time.Time{now, now})
+		if len(f1.Fields) != 2 || len(f2.Fields) != 2 {
+			t.Fatal("frame should have 2 entries")
+		}
 
-			checkValueField(t, f1.Fields[1], []interface{}{1, 2})
-			checkValueField(t, f2.Fields[1], []interface{}{3, 4})
-		})
+		checkTsField(t, f1.Fields[0], []time.Time{now, now})
+		checkTsField(t, f2.Fields[0], []time.Time{now, now})
 
-		t.Run("fields with correct float values and timestamps", func(t *testing.T) {
-			ctx := context.TODO()
-			now := time.Now()
-			toInsert := []interface{}{
-				bson.M{
-					"name":  "name1",
-					"ts":    primitive.NewDateTimeFromTime(now),
-					"value": 1.1,
-				},
-				bson.M{
-					"name":  "name1",
-					"ts":    primitive.NewDateTimeFromTime(now),
-					"value": 1.2,
-				},
-				bson.M{
-					"name":  "name2",
-					"ts":    primitive.NewDateTimeFromTime(now),
-					"value": 1.3,
-				},
-				bson.M{
-					"name":  "name2",
-					"ts":    primitive.NewDateTimeFromTime(now),
-					"value": 1.4,
-				},
-			}
+		checkValueField(t, f1.Fields[1], []interface{}{1, 2})
+		checkValueField(t, f2.Fields[1], []interface{}{3, 4})
+	})
 
-			cursor, err := mongo.NewCursorFromDocuments(toInsert, nil, nil)
-			if err != nil {
-				t.Fatal(err)
-			}
+	t.Run("fields with correct float values and timestamps", func(t *testing.T) {
+		ctx := context.TODO()
+		now := time.Now()
+		toInsert := []interface{}{
+			bson.M{
+				"name":  "name1",
+				"ts":    primitive.NewDateTimeFromTime(now),
+				"value": 1.1,
+			},
+			bson.M{
+				"name":  "name1",
+				"ts":    primitive.NewDateTimeFromTime(now),
+				"value": 1.2,
+			},
+			bson.M{
+				"name":  "name2",
+				"ts":    primitive.NewDateTimeFromTime(now),
+				"value": 1.3,
+			},
+			bson.M{
+				"name":  "name2",
+				"ts":    primitive.NewDateTimeFromTime(now),
+				"value": 1.4,
+			},
+		}
 
-			frames, err := getTimeSeriesFramesFromQuery(ctx, cursor)
+		cursor, err := mongo.NewCursorFromDocuments(toInsert, nil, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-			if err != nil {
-				t.Fatal(err)
-			}
+		frames, err := getTimeSeriesFramesFromQuery(ctx, cursor)
 
-			if len(frames) != 2 {
-				t.Fatal("number of frames should be 2")
-			}
+		if err != nil {
+			t.Fatal(err)
+		}
 
-			f1 := frames["name1"]
-			f2 := frames["name2"]
+		if len(frames) != 2 {
+			t.Fatal("number of frames should be 2")
+		}
 
-			if f1 == nil || f2 == nil {
-				t.Fatal("should have frame \"name1\" and \"name1\"")
-			}
+		f1 := frames["name1"]
+		f2 := frames["name2"]
 
-			if len(f1.Fields) != 2 || len(f2.Fields) != 2 {
-				t.Fatal("frame should have 2 entries")
-			}
+		if f1 == nil || f2 == nil {
+			t.Fatal("should have frame \"name1\" and \"name1\"")
+		}
 
-			checkTsField(t, f1.Fields[0], []time.Time{now, now})
-			checkTsField(t, f2.Fields[0], []time.Time{now, now})
+		if len(f1.Fields) != 2 || len(f2.Fields) != 2 {
+			t.Fatal("frame should have 2 entries")
+		}
 
-			checkValueField(t, f1.Fields[1], []interface{}{1.1, 1.2})
-			checkValueField(t, f2.Fields[1], []interface{}{1.3, 1.4})
-		})
+		checkTsField(t, f1.Fields[0], []time.Time{now, now})
+		checkTsField(t, f2.Fields[0], []time.Time{now, now})
 
-		t.Run("ignore invalid rows", func(t *testing.T) {
-			now := time.Now()
-			ctx := context.TODO()
-			toInsert := []interface{}{
-				bson.M{
-					"ts":    primitive.NewDateTimeFromTime(now),
-					"value": false,
-				},
-				bson.M{
-					"ts":    "invalid",
-					"value": 2,
-				},
-				bson.M{
-					"ts":    primitive.NewDateTimeFromTime(now),
-					"value": 3,
-				},
-				bson.M{
-					"ts":    primitive.NewDateTimeFromTime(now),
-					"value": 4,
-				},
-			}
+		checkValueField(t, f1.Fields[1], []interface{}{1.1, 1.2})
+		checkValueField(t, f2.Fields[1], []interface{}{1.3, 1.4})
+	})
 
-			cursor, err := mongo.NewCursorFromDocuments(toInsert, nil, nil)
-			if err != nil {
-				t.Fatal(err)
-			}
+	t.Run("ignore invalid rows", func(t *testing.T) {
+		now := time.Now()
+		ctx := context.TODO()
+		toInsert := []interface{}{
+			bson.M{
+				"ts":    primitive.NewDateTimeFromTime(now),
+				"value": false,
+			},
+			bson.M{
+				"ts":    "invalid",
+				"value": 2,
+			},
+			bson.M{
+				"ts":    primitive.NewDateTimeFromTime(now),
+				"value": 3,
+			},
+			bson.M{
+				"ts":    primitive.NewDateTimeFromTime(now),
+				"value": 4,
+			},
+		}
 
-			frames, err := getTimeSeriesFramesFromQuery(ctx, cursor)
-			if err != nil {
-				t.Fatal(err)
-			}
+		cursor, err := mongo.NewCursorFromDocuments(toInsert, nil, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-			frame := frames[""]
-			if frame.Fields[0].Len() != 2 || frame.Fields[1].Len() != 2 {
-				t.Error("field should have 2 entries")
-			}
+		frames, err := getTimeSeriesFramesFromQuery(ctx, cursor)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-			checkValueField(t, frame.Fields[1], []interface{}{3, 4})
-		})
+		frame := frames[""]
+		if frame.Fields[0].Len() != 2 || frame.Fields[1].Len() != 2 {
+			t.Error("field should have 2 entries")
+		}
 
+		checkValueField(t, frame.Fields[1], []interface{}{3, 4})
 	})
 
 }
