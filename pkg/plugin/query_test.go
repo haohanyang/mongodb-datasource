@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -117,25 +119,25 @@ func TestGetTimeSeriesFramesFromQuery(t *testing.T) {
 			ctx := context.TODO()
 			now := time.Now()
 			toInsert := []interface{}{
-				Doc[int]{
-					Name:  "name1",
-					Ts:    now,
-					Value: 1,
+				bson.M{
+					"name":  "name1",
+					"ts":    primitive.NewDateTimeFromTime(now),
+					"value": 1,
 				},
-				Doc[int]{
-					Name:  "name1",
-					Ts:    now,
-					Value: 2,
+				bson.M{
+					"name":  "name1",
+					"ts":    primitive.NewDateTimeFromTime(now),
+					"value": 2,
 				},
-				Doc[int]{
-					Name:  "name2",
-					Ts:    now,
-					Value: 3,
+				bson.M{
+					"name":  "name2",
+					"ts":    primitive.NewDateTimeFromTime(now),
+					"value": 3,
 				},
-				Doc[int]{
-					Name:  "name2",
-					Ts:    now,
-					Value: 4,
+				bson.M{
+					"name":  "name2",
+					"ts":    primitive.NewDateTimeFromTime(now),
+					"value": 4,
 				},
 			}
 
@@ -176,25 +178,25 @@ func TestGetTimeSeriesFramesFromQuery(t *testing.T) {
 			ctx := context.TODO()
 			now := time.Now()
 			toInsert := []interface{}{
-				Doc[float64]{
-					Name:  "name1",
-					Ts:    now,
-					Value: 1.1,
+				bson.M{
+					"name":  "name1",
+					"ts":    primitive.NewDateTimeFromTime(now),
+					"value": 1.1,
 				},
-				Doc[float64]{
-					Name:  "name1",
-					Ts:    now,
-					Value: 1.2,
+				bson.M{
+					"name":  "name1",
+					"ts":    primitive.NewDateTimeFromTime(now),
+					"value": 1.2,
 				},
-				Doc[float64]{
-					Name:  "name2",
-					Ts:    now,
-					Value: 1.3,
+				bson.M{
+					"name":  "name2",
+					"ts":    primitive.NewDateTimeFromTime(now),
+					"value": 1.3,
 				},
-				Doc[float64]{
-					Name:  "name2",
-					Ts:    now,
-					Value: 1.4,
+				bson.M{
+					"name":  "name2",
+					"ts":    primitive.NewDateTimeFromTime(now),
+					"value": 1.4,
 				},
 			}
 
