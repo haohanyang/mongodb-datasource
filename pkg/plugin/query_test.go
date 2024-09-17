@@ -2,6 +2,7 @@ package plugin
 
 import (
 	"context"
+	"math"
 	"reflect"
 	"testing"
 	"time"
@@ -9,6 +10,12 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"go.mongodb.org/mongo-driver/mongo"
 )
+
+type Doc[T any] struct {
+	Name  string    `bson:"name"`
+	Ts    time.Time `bson:"ts"`
+	Value T         `bson:"value"`
+}
 
 func checkTsField(t *testing.T, field *data.Field, expected []time.Time) {
 	if field.Name != "time" {
@@ -92,7 +99,7 @@ func checkValueField(t *testing.T, field *data.Field, expected []interface{}) {
 		}
 
 		if compareFloats {
-			if vfloat-efloat > 1e-7 {
+			if math.Abs(vfloat-efloat) > 1e-7 {
 				t.Error("wrong value")
 			}
 		} else {
@@ -105,66 +112,124 @@ func checkValueField(t *testing.T, field *data.Field, expected []interface{}) {
 }
 
 func TestGetTimeSeriesFramesFromQuery(t *testing.T) {
-	ctx := context.TODO()
-	type Doc struct {
-		Name  string    `bson:"name"`
-		Ts    time.Time `bson:"ts"`
-		Value int       `bson:"value"`
-	}
+	t.Run("TestAll", func(t *testing.T) {
+		t.Run("fields with correct int values and timestamps", func(t *testing.T) {
+			ctx := context.TODO()
+			now := time.Now()
+			toInsert := []interface{}{
+				Doc[int]{
+					Name:  "name1",
+					Ts:    now,
+					Value: 1,
+				},
+				Doc[int]{
+					Name:  "name1",
+					Ts:    now,
+					Value: 2,
+				},
+				Doc[int]{
+					Name:  "name2",
+					Ts:    now,
+					Value: 3,
+				},
+				Doc[int]{
+					Name:  "name2",
+					Ts:    now,
+					Value: 4,
+				},
+			}
 
-	now := time.Now()
-	toInsert := []interface{}{
-		Doc{
-			Name:  "name1",
-			Ts:    now,
-			Value: 1,
-		},
-		Doc{
-			Name:  "name1",
-			Ts:    now,
-			Value: 2,
-		},
-		Doc{
-			Name:  "name2",
-			Ts:    now,
-			Value: 3,
-		},
-		Doc{
-			Name:  "name2",
-			Ts:    now,
-			Value: 4,
-		},
-	}
+			cursor, err := mongo.NewCursorFromDocuments(toInsert, nil, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-	cursor, err := mongo.NewCursorFromDocuments(toInsert, nil, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+			frames, err := getTimeSeriesFramesFromQuery(ctx, cursor)
 
-	frames, err := getTimeSeriesFramesFromQuery(ctx, cursor)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-	if err != nil {
-		t.Fatal(err)
-	}
+			if len(frames) != 2 {
+				t.Fatal("size of frames should be 2")
+			}
 
-	if len(frames) != 2 {
-		t.Fatal("size of frames should be 2")
-	}
+			f1 := frames["name1"]
+			f2 := frames["name2"]
 
-	f1 := frames["name1"]
-	f2 := frames["name2"]
+			if f1 == nil || f2 == nil {
+				t.Fatal("wrong frame names")
+			}
 
-	if f1 == nil || f2 == nil {
-		t.Fatal("wrong frame names")
-	}
+			if len(f1.Fields) != 2 || len(f2.Fields) != 2 {
+				t.Fatal("wrong field count")
+			}
 
-	if len(f1.Fields) != 2 || len(f2.Fields) != 2 {
-		t.Fatal("wrong field count")
-	}
+			checkTsField(t, f1.Fields[0], []time.Time{now, now})
+			checkTsField(t, f2.Fields[0], []time.Time{now, now})
 
-	checkTsField(t, f1.Fields[0], []time.Time{now, now})
-	checkTsField(t, f2.Fields[0], []time.Time{now, now})
+			checkValueField(t, f1.Fields[1], []interface{}{1, 2})
+			checkValueField(t, f2.Fields[1], []interface{}{3, 4})
+		})
 
-	checkValueField(t, f1.Fields[1], []interface{}{1, 2})
-	checkValueField(t, f2.Fields[1], []interface{}{3, 4})
+		t.Run("fields with correct float values and timestamps", func(t *testing.T) {
+			ctx := context.TODO()
+			now := time.Now()
+			toInsert := []interface{}{
+				Doc[float64]{
+					Name:  "name1",
+					Ts:    now,
+					Value: 1.1,
+				},
+				Doc[float64]{
+					Name:  "name1",
+					Ts:    now,
+					Value: 1.2,
+				},
+				Doc[float64]{
+					Name:  "name2",
+					Ts:    now,
+					Value: 1.3,
+				},
+				Doc[float64]{
+					Name:  "name2",
+					Ts:    now,
+					Value: 1.4,
+				},
+			}
+
+			cursor, err := mongo.NewCursorFromDocuments(toInsert, nil, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			frames, err := getTimeSeriesFramesFromQuery(ctx, cursor)
+
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if len(frames) != 2 {
+				t.Fatal("size of frames should be 2")
+			}
+
+			f1 := frames["name1"]
+			f2 := frames["name2"]
+
+			if f1 == nil || f2 == nil {
+				t.Fatal("wrong frame names")
+			}
+
+			if len(f1.Fields) != 2 || len(f2.Fields) != 2 {
+				t.Fatal("wrong field count")
+			}
+
+			checkTsField(t, f1.Fields[0], []time.Time{now, now})
+			checkTsField(t, f2.Fields[0], []time.Time{now, now})
+
+			checkValueField(t, f1.Fields[1], []interface{}{1.1, 1.2})
+			checkValueField(t, f2.Fields[1], []interface{}{1.3, 1.4})
+		})
+	})
+
 }
