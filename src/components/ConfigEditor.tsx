@@ -8,18 +8,18 @@ interface Props extends DataSourcePluginOptionsEditorProps<MongoDataSourceOption
 const mongoDBAuthMethods: SelectableValue[] = [
   { label: "None", value: MongoDBAuthMethod.NONE },
   { label: "Username/Password", value: MongoDBAuthMethod.USERNAME_PASSWORD }
-]
+];
 
 export function ConfigEditor(props: Props) {
   const { onOptionsChange, options } = props;
   const { jsonData, secureJsonFields, secureJsonData } = options;
 
   if (!jsonData.authType) {
-    jsonData.authType = MongoDBAuthMethod.NONE
+    jsonData.authType = MongoDBAuthMethod.NONE;
   }
 
   if (!jsonData.port) {
-    jsonData.port = 27017
+    jsonData.port = 27017;
   }
 
 
@@ -144,7 +144,7 @@ export function ConfigEditor(props: Props) {
         </Field>
       </FieldSet>
 
-      {jsonData.authType == MongoDBAuthMethod.USERNAME_PASSWORD &&
+      {jsonData.authType === MongoDBAuthMethod.USERNAME_PASSWORD &&
         <>
           <InlineField label="Username" tooltip="MongoDB username">
             <Input
