@@ -38,7 +38,8 @@ export function QueryEditor({ query, onChange }: Props) {
   return (
     <>
       <InlineFieldRow>
-        <InlineField label="Collection" tooltip="Name of the collection">
+        <InlineField label="Collection" tooltip="Enter the collection to query"
+          error="Please enter the collection" invalid={!collection}>
           <Input id="query-editor-collection" onChange={onCollectionChange} value={collection} required />
         </InlineField>
         <InlineField label="Apply time range" tooltip="Apply time range">
@@ -46,9 +47,10 @@ export function QueryEditor({ query, onChange }: Props) {
         </InlineField>
       </InlineFieldRow>
       <Divider />
-      <Field label="Query Text" description="MongoDB aggregation pipeline in JSON format.">
+      <Field label="Query Text" description="MongoDB aggregation pipeline in JSON format."
+        error="Please enter the query" invalid={!queryText}>
         <CodeEditor onEditorDidMount={onCodeEditorDidMount} width="100%" height={300} language="json"
-          onChange={onQueryTextChange} value={queryText || ""} />
+          onBlur={onQueryTextChange} value={queryText || ""} />
       </Field>
       <Button onClick={onFormatQueryText}>Format</Button>
     </>
