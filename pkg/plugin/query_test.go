@@ -7,33 +7,8 @@ import (
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
-
-const mongoUri = "mongodb://localhost:27018"
-const testCollection = "query-test"
-
-func setupMongoDBWithData(ctx context.Context, initDataToInsert []interface{}) (*mongo.Client, error) {
-	clientOptions := options.Client().ApplyURI(mongoUri).SetTimeout(5 * time.Second)
-	client, err := mongo.Connect(ctx, clientOptions)
-	if err != nil {
-		return nil, err
-	}
-
-	collection := client.Database("test").Collection(testCollection)
-	if _, err := collection.InsertMany(ctx, initDataToInsert); err != nil {
-		defer func() { _ = client.Disconnect(ctx) }()
-		return nil, err
-	}
-	return client, nil
-}
-
-func cleanUpMongoDB(ctx context.Context, client *mongo.Client) {
-	client.Database("test").Collection(testCollection).Drop(ctx)
-	_ = client.Disconnect(ctx)
-}
 
 func checkTsField(t *testing.T, field *data.Field, expected []time.Time) {
 	if field.Name != "time" {
@@ -161,27 +136,10 @@ func TestGetTimeSeriesFramesFromQuery(t *testing.T) {
 		},
 	}
 
-	client, err := setupMongoDBWithData(ctx, toInsert)
+	cursor, err := mongo.NewCursorFromDocuments(toInsert, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	defer cleanUpMongoDB(ctx, client)
-
-	pipeline := bson.A{
-		bson.D{
-			{
-				Key: "$sort", Value: bson.D{
-					{Key: "value", Value: 1},
-				},
-			},
-		},
-	}
-	cursor, err := client.Database("test").Collection(testCollection).Aggregate(ctx, pipeline)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer cursor.Close(ctx)
 
 	frames, err := getTimeSeriesFramesFromQuery(ctx, cursor)
 
