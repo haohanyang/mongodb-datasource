@@ -21,24 +21,24 @@ type Doc[T any] struct {
 
 func checkTsField(t *testing.T, field *data.Field, expected []time.Time) {
 	if field.Name != "time" {
-		t.Error("wrong field name")
+		t.Error("field name should be \"time\"")
 	}
 
 	for i := 0; i < field.Len(); i++ {
 		eTs := expected[i]
 		if ts, ok := field.At(i).(time.Time); ok {
 			if ts.Truncate(time.Millisecond).Compare(eTs.Truncate(time.Millisecond)) != 0 {
-				t.Error("wrong timestamp")
+				t.Error("timestamp doesn't match")
 			}
 		} else {
-			t.Error("wrong field type")
+			t.Error("field type should be datetime")
 		}
 	}
 }
 
 func checkValueField(t *testing.T, field *data.Field, expected []interface{}) {
 	if field.Name != "Value" {
-		t.Error("wrong field name")
+		t.Error("field name should be \"Value\"")
 		return
 	}
 
@@ -72,7 +72,7 @@ func checkValueField(t *testing.T, field *data.Field, expected []interface{}) {
 			vfloat = v.(float64)
 			compareFloats = true
 		default:
-			t.Error("wrong field type")
+			t.Error("field type should be numeric")
 			return
 		}
 
@@ -88,13 +88,13 @@ func checkValueField(t *testing.T, field *data.Field, expected []interface{}) {
 			eint = int(ev.(int64))
 		case reflect.Float32:
 			if !compareFloats {
-				t.Error("wrong expected value type")
+				t.Error("different types to compare")
 				return
 			}
 			efloat = float64(ev.(float32))
 		case reflect.Float64:
 			if !compareFloats {
-				t.Error("wrong expected value type")
+				t.Error("different types to compare")
 				return
 			}
 			efloat = ev.(float64)
@@ -102,11 +102,11 @@ func checkValueField(t *testing.T, field *data.Field, expected []interface{}) {
 
 		if compareFloats {
 			if math.Abs(vfloat-efloat) > 1e-7 {
-				t.Error("wrong value")
+				t.Errorf("wrong value, expected: %f, got: %f", efloat, vfloat)
 			}
 		} else {
 			if vint != eint {
-				t.Error("wrong value")
+				t.Errorf("wrong value, expected: %d, got: %d", vint, eint)
 			}
 		}
 
@@ -153,18 +153,18 @@ func TestGetTimeSeriesFramesFromQuery(t *testing.T) {
 			}
 
 			if len(frames) != 2 {
-				t.Fatal("size of frames should be 2")
+				t.Fatal("number of frames should be 2")
 			}
 
 			f1 := frames["name1"]
 			f2 := frames["name2"]
 
 			if f1 == nil || f2 == nil {
-				t.Fatal("wrong frame names")
+				t.Fatal("should have frame \"name1\" and \"name1\"")
 			}
 
 			if len(f1.Fields) != 2 || len(f2.Fields) != 2 {
-				t.Fatal("wrong field count")
+				t.Fatal("frame should have 2 entries")
 			}
 
 			checkTsField(t, f1.Fields[0], []time.Time{now, now})
@@ -212,18 +212,18 @@ func TestGetTimeSeriesFramesFromQuery(t *testing.T) {
 			}
 
 			if len(frames) != 2 {
-				t.Fatal("size of frames should be 2")
+				t.Fatal("number of frames should be 2")
 			}
 
 			f1 := frames["name1"]
 			f2 := frames["name2"]
 
 			if f1 == nil || f2 == nil {
-				t.Fatal("wrong frame names")
+				t.Fatal("should have frame \"name1\" and \"name1\"")
 			}
 
 			if len(f1.Fields) != 2 || len(f2.Fields) != 2 {
-				t.Fatal("wrong field count")
+				t.Fatal("frame should have 2 entries")
 			}
 
 			checkTsField(t, f1.Fields[0], []time.Time{now, now})
@@ -232,6 +232,47 @@ func TestGetTimeSeriesFramesFromQuery(t *testing.T) {
 			checkValueField(t, f1.Fields[1], []interface{}{1.1, 1.2})
 			checkValueField(t, f2.Fields[1], []interface{}{1.3, 1.4})
 		})
+
+		t.Run("ignore invalid rows", func(t *testing.T) {
+			now := time.Now()
+			ctx := context.TODO()
+			toInsert := []interface{}{
+				bson.M{
+					"ts":    primitive.NewDateTimeFromTime(now),
+					"value": false,
+				},
+				bson.M{
+					"ts":    "invalid",
+					"value": 2,
+				},
+				bson.M{
+					"ts":    primitive.NewDateTimeFromTime(now),
+					"value": 3,
+				},
+				bson.M{
+					"ts":    primitive.NewDateTimeFromTime(now),
+					"value": 4,
+				},
+			}
+
+			cursor, err := mongo.NewCursorFromDocuments(toInsert, nil, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			frames, err := getTimeSeriesFramesFromQuery(ctx, cursor)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			frame := frames[""]
+			if frame.Fields[0].Len() != 2 || frame.Fields[1].Len() != 2 {
+				t.Error("field should have 2 entries")
+			}
+
+			checkValueField(t, frame.Fields[1], []interface{}{3, 4})
+		})
+
 	})
 
 }

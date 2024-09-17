@@ -29,7 +29,7 @@ func getTimeSeriesFramesFromQuery(ctx context.Context, cursor *mongo.Cursor) (ma
 			case bson.TypeDouble:
 				handler = updateFrameData[float64]
 			default:
-				return frames, errors.New("unsupported value type")
+				continue
 			}
 
 		}
