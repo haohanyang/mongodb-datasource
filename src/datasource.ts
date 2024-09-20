@@ -6,7 +6,11 @@ import { Observable } from 'rxjs';
 
 function isJsonStringValid(jsonString: string) {
   try {
-    JSON.parse(jsonString);
+    const json = JSON.parse(jsonString);
+    if (!Array.isArray(json)) {
+      return false;
+    }
+    return true;
   } catch (e) {
     return false;
   }

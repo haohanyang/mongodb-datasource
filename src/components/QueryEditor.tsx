@@ -1,4 +1,4 @@
-import React, { ChangeEvent, FormEvent, useRef } from 'react';
+import React, { ChangeEvent, FormEvent, useRef, useState } from 'react';
 import { Button, CodeEditor, Divider, Field, InlineField, InlineFieldRow, InlineSwitch, Input } from '@grafana/ui';
 import { QueryEditorProps } from '@grafana/data';
 import { DataSource } from '../datasource';
@@ -10,9 +10,24 @@ type Props = QueryEditorProps<DataSource, MongoQuery, MongoDataSourceOptions>;
 export function QueryEditor({ query, onChange }: Props) {
 
   const codeEditorRef = useRef<monacoType.editor.IStandaloneCodeEditor | null>(null);
+  const [queryTextError, setQueryTextError] = useState<string | null>(null);
 
   const onQueryTextChange = (queryText: string) => {
     onChange({ ...query, queryText: queryText });
+    if (!queryText) {
+      setQueryTextError('Please enter the query');
+    } else {
+      try {
+        const queryJson = JSON.parse(queryText);
+
+        if (!Array.isArray(queryJson)) {
+          setQueryTextError(null);
+        }
+        setQueryTextError("This is not a valid Mongo Aggregation Pipeline");
+      } catch (e) {
+        setQueryTextError("This is not a valid Mongo Aggregation Pipeline");
+      }
+    }
   };
 
   const onApplyTimeRangeChange = (event: FormEvent<HTMLInputElement>) => {
@@ -47,12 +62,12 @@ export function QueryEditor({ query, onChange }: Props) {
         </InlineField>
       </InlineFieldRow>
       <Divider />
-      <Field label="Query Text" description="MongoDB aggregation pipeline in JSON format."
-        error="Please enter the query" invalid={!queryText}>
+      <Field label="Query Text" description="Enter the Mongo Aggregation Pipeline"
+        error={queryTextError} invalid={!!queryTextError}>
         <CodeEditor onEditorDidMount={onCodeEditorDidMount} width="100%" height={300} language="json"
           onBlur={onQueryTextChange} value={queryText || ""} />
       </Field>
       <Button onClick={onFormatQueryText}>Format</Button>
     </>
   );
-}
+};
