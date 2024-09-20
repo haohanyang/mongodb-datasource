@@ -11,6 +11,6 @@ datasources:
     jsonData:
       host: mongo-no-auth
       port: 27017
-      database: admin
+      database: test
       authType: auth-none
     secureJsonData:

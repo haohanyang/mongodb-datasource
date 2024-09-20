@@ -41,6 +41,7 @@
     "imports-loader": "^5.0.0",
     "jest": "^29.5.0",
     "jest-environment-jsdom": "^29.5.0",
+    "mongodb": "^6.9.0",
     "prettier": "^2.8.7",
     "replace-in-file-webpack-plugin": "^1.0.6",
     "sass": "1.63.2",
@@ -63,8 +64,8 @@
     "@emotion/css": "11.10.6",
     "@grafana/data": "^11.2.0",
     "@grafana/runtime": "^11.2.0",
-    "@grafana/ui": "^11.2.0",
     "@grafana/schema": "^10.4.0",
+    "@grafana/ui": "^11.2.0",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "tslib": "2.5.3"
