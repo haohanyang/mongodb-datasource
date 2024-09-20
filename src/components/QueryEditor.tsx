@@ -1,5 +1,5 @@
 import React, { ChangeEvent, FormEvent, useRef, useState } from 'react';
-import { Button, CodeEditor, Divider, Field, InlineField, InlineFieldRow, InlineSwitch, Input, Select, SelectValue } from '@grafana/ui';
+import { Button, CodeEditor, Divider, Field, InlineField, InlineFieldRow, InlineSwitch, Input, Select } from '@grafana/ui';
 import { QueryEditorProps, SelectableValue } from '@grafana/data';
 import { DataSource } from '../datasource';
 import { MongoDataSourceOptions, MongoQuery, QueryType } from '../types';
@@ -7,7 +7,7 @@ import * as monacoType from 'monaco-editor/esm/vs/editor/editor.api';
 
 type Props = QueryEditorProps<DataSource, MongoQuery, MongoDataSourceOptions>;
 
-const queryTypes: SelectableValue<string>[] = [
+const queryTypes: Array<SelectableValue<string>> = [
   {
     label: "Time series",
     value: QueryType.TIMESERIES
