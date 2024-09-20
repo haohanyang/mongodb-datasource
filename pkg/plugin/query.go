@@ -99,6 +99,8 @@ func getTableFramesFromQuery(ctx context.Context, cursor *mongo.Cursor) (*data.F
 				}
 			}
 		}
+
+		rowCount++
 	}
 
 	return frame, nil
@@ -193,7 +195,7 @@ func initFrameField(element bson.RawElement, frame *data.Frame) columnDefinition
 		}
 
 	case bson.TypeObjectID:
-		field = data.NewField(key, nil, []string{value.ObjectID().Hex()})
+		field = data.NewField(key, nil, []string{value.ObjectID().String()})
 		frame.Fields = append(frame.Fields, field)
 
 		index := len(frame.Fields) - 1
@@ -201,6 +203,7 @@ func initFrameField(element bson.RawElement, frame *data.Frame) columnDefinition
 			if rv.Type != bson.TypeObjectID {
 				return fmt.Errorf("field \"%s\" should have objectId type", key)
 			}
+
 			f.Fields[index].Append(rv.ObjectID().Hex())
 			return nil
 		}
