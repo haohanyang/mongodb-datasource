@@ -5,11 +5,18 @@ export interface MongoQuery extends DataQuery {
   queryText?: string;
   collection?: string;
   applyTimeRange: boolean;
+  queryType?: string;
 }
+
+export const QueryType = {
+  TIMESERIES: "timeseries",
+  TABLE: "table"
+};
 
 export const DEFAULT_QUERY: Partial<MongoQuery> = {
   queryText: "[]",
-  applyTimeRange: true
+  applyTimeRange: true,
+  queryType: QueryType.TIMESERIES
 };
 
 export interface DataPoint {
@@ -24,7 +31,8 @@ export interface DataSourceResponse {
 export const MongoDBAuthMethod = {
   NONE: "auth-none",
   USERNAME_PASSWORD: "auth-username-password"
-}
+};
+
 
 /**
  * These are options configured for each DataSource instance

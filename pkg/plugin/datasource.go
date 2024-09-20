@@ -128,14 +128,25 @@ func (d *Datasource) query(ctx context.Context, _ backend.PluginContext, db *mon
 	}
 	defer cursor.Close(ctx)
 
-	frames, err := getTimeSeriesFramesFromQuery(ctx, cursor)
-	if err != nil {
-		backend.Logger.Error(err.Error())
-		return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Failed to query: %v", err.Error()))
-	}
+	if qm.QueryType == "table" {
+		frame, err := getTableFramesFromQuery(ctx, cursor)
+		if err != nil {
+			backend.Logger.Error(err.Error())
+			return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Failed to query: %v", err.Error()))
+		}
 
-	for _, frame := range frames {
 		response.Frames = append(response.Frames, frame)
+
+	} else {
+		frames, err := getTimeSeriesFramesFromQuery(ctx, cursor)
+		if err != nil {
+			backend.Logger.Error(err.Error())
+			return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Failed to query: %v", err.Error()))
+		}
+
+		for _, frame := range frames {
+			response.Frames = append(response.Frames, frame)
+		}
 	}
 
 	return response

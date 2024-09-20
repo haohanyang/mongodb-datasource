@@ -11,6 +11,7 @@ import (
 type queryModel struct {
 	QueryText      string `json:"queryText"`
 	Collection     string `json:"collection"`
+	QueryType      string `json:"queryType"`
 	ApplyTimeRange bool   `json:"applyTimeRange"`
 }
 

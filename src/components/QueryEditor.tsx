@@ -1,11 +1,22 @@
 import React, { ChangeEvent, FormEvent, useRef, useState } from 'react';
-import { Button, CodeEditor, Divider, Field, InlineField, InlineFieldRow, InlineSwitch, Input } from '@grafana/ui';
-import { QueryEditorProps } from '@grafana/data';
+import { Button, CodeEditor, Divider, Field, InlineField, InlineFieldRow, InlineSwitch, Input, Select, SelectValue } from '@grafana/ui';
+import { QueryEditorProps, SelectableValue } from '@grafana/data';
 import { DataSource } from '../datasource';
-import { MongoDataSourceOptions, MongoQuery } from '../types';
+import { MongoDataSourceOptions, MongoQuery, QueryType } from '../types';
 import * as monacoType from 'monaco-editor/esm/vs/editor/editor.api';
 
 type Props = QueryEditorProps<DataSource, MongoQuery, MongoDataSourceOptions>;
+
+const queryTypes: SelectableValue<string>[] = [
+  {
+    label: "Time series",
+    value: QueryType.TIMESERIES
+  },
+  {
+    label: "Table",
+    value: QueryType.TABLE
+  }
+];
 
 export function QueryEditor({ query, onChange }: Props) {
 
@@ -34,6 +45,10 @@ export function QueryEditor({ query, onChange }: Props) {
     onChange({ ...query, applyTimeRange: event.currentTarget.checked });
   };
 
+  const onQueryTypeChange = (sv: SelectableValue<string>) => {
+    onChange({ ...query, queryType: sv.value });
+  };
+
   const onCollectionChange = (event: ChangeEvent<HTMLInputElement>) => {
     onChange({ ...query, collection: event.target.value });
   };
@@ -48,11 +63,14 @@ export function QueryEditor({ query, onChange }: Props) {
     }
   };
 
-  const { queryText, collection, applyTimeRange } = query;
+  const { queryText, collection, applyTimeRange, queryType } = query;
 
   return (
     <>
       <InlineFieldRow>
+        <InlineField label="Query type">
+          <Select id="query-editor-query-type" options={queryTypes} value={queryType || QueryType.TIMESERIES} onChange={onQueryTypeChange}></Select>
+        </InlineField>
         <InlineField label="Collection" tooltip="Enter the collection to query"
           error="Please enter the collection" invalid={!collection}>
           <Input id="query-editor-collection" onChange={onCollectionChange} value={collection} required />
