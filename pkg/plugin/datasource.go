@@ -61,21 +61,18 @@ func NewDatasource(ctx context.Context, source backend.DataSourceInstanceSetting
 		return nil, err
 	}
 
-	return &Datasource{mongoClient: client, mongoDatabase: client.Database(config.Database)}, nil
-}
-
-// Datasource is an example datasource which can respond to data queries, reports
-// its health and has streaming skills.
-type Datasource struct {
-	mongoClient   *mongo.Client
-	mongoDatabase *mongo.Database
+	return &Datasource{
+		client:   client,
+		database: config.Database,
+		host:     config.Host,
+		port:     config.Port}, nil
 }
 
 // Dispose here tells plugin SDK that plugin wants to clean up resources when a new instance
 // created. As soon as datasource settings change detected by SDK old datasource instance will
 // be disposed and a new one will be created using NewSampleDatasource factory function.
 func (d *Datasource) Dispose() {
-	d.mongoClient.Disconnect(context.TODO())
+	d.client.Disconnect(context.TODO())
 }
 
 // QueryData handles multiple queries and returns multiple responses.
@@ -86,9 +83,10 @@ func (d *Datasource) QueryData(ctx context.Context, req *backend.QueryDataReques
 	// create response struct
 	response := backend.NewQueryDataResponse()
 	// loop over queries and execute them individually.
+	backend.Logger.Debug("New queries", d.host, d.port, d.database)
 	for _, q := range req.Queries {
 
-		res := d.query(ctx, req.PluginContext, d.mongoDatabase, q)
+		res := d.query(ctx, req.PluginContext, q)
 
 		// save the response in a hashmap
 		// based on with RefID as identifier
@@ -99,11 +97,11 @@ func (d *Datasource) QueryData(ctx context.Context, req *backend.QueryDataReques
 	return response, nil
 }
 
-func (d *Datasource) query(ctx context.Context, _ backend.PluginContext, db *mongo.Database, query backend.DataQuery) backend.DataResponse {
+func (d *Datasource) query(ctx context.Context, _ backend.PluginContext, query backend.DataQuery) backend.DataResponse {
 	var response backend.DataResponse
 	backend.Logger.Debug("Raw query", query.JSON)
-
 	var qm queryModel
+	db := d.client.Database(d.database)
 
 	err := json.Unmarshal(query.JSON, &qm)
 	if err != nil {
