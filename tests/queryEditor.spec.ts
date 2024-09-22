@@ -1,7 +1,10 @@
 import { test, expect } from '@grafana/plugin-e2e';
 import { MongoClient } from 'mongodb';
 
-test.beforeAll(async () => {
+test.beforeAll(async ({ createDataSource, readProvisionedDataSource }) => {
+    const ds = await readProvisionedDataSource({ fileName: 'test/mongo-no-auth.yml' });
+    await createDataSource(ds);
+
     const client = new MongoClient("mongodb://localhost:27018");
     await client.connect();
     const db = client.db("test");
@@ -67,7 +70,7 @@ test.beforeAll(async () => {
     await client.close();
 });
 
-test("data query should return correct temperature data", async ({ panelEditPage, readProvisionedDataSource, selectors, page }) => {
+test("data query should return correct temperature data", async ({ panelEditPage, readProvisionedDataSource, selectors, page, createDataSource }) => {
     const query = `
   [
     {
