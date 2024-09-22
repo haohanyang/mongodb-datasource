@@ -68,7 +68,7 @@ export function QueryEditor({ query, onChange }: Props) {
   return (
     <>
       <InlineFieldRow>
-        <InlineField label="Query type">
+        <InlineField label="Query Type">
           <Select id="query-editor-query-type" options={queryTypes} value={queryType || QueryType.TIMESERIES} onChange={onQueryTypeChange}></Select>
         </InlineField>
         <InlineField label="Collection" tooltip="Enter the collection to query"

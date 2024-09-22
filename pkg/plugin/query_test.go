@@ -113,6 +113,14 @@ func checkValueField(t *testing.T, field *data.Field, expected []interface{}) {
 	}
 }
 
+func getFieldByName(frame *data.Frame, name string, t *testing.T) *data.Field {
+	field, index := frame.FieldByName(name)
+	if index == -1 {
+		t.Fatalf("field \"%s\" doesn't exist", name)
+	}
+	return field
+}
+
 func TestUpdateFrameData(t *testing.T) {
 	t.Run("initialize with correct data", func(t *testing.T) {
 		frames := make(map[string]*data.Frame)
@@ -352,4 +360,37 @@ func TestGetTimeSeriesFramesFromQuery(t *testing.T) {
 		checkValueField(t, frame.Fields[1], []interface{}{3, 4})
 	})
 
+}
+
+func TestGetTableFramesFromQuery(t *testing.T) {
+	ctx := context.TODO()
+	now := primitive.NewDateTimeFromTime(time.Now())
+	toInsert := []interface{}{
+		bson.M{
+			"_id":         primitive.NewObjectID(),
+			"stringField": "name1",
+			"intField":    32,
+			"floatField":  1.1,
+			"dtField":     now,
+			"arrayField":  bson.A{1, 2, 3},
+		},
+		bson.M{
+			"_id":         primitive.NewObjectID(),
+			"stringField": "name2",
+			"intField":    33,
+			"floatField":  1.1,
+			"dtField":     now,
+			"arrayField":  bson.A{"a", "b", "c"},
+		},
+	}
+
+	cursor, err := mongo.NewCursorFromDocuments(toInsert, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = getTableFramesFromQuery(ctx, cursor)
+	if err != nil {
+		t.Fatal(err)
+	}
 }

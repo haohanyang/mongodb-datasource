@@ -1,8 +1,6 @@
 import { test, expect } from '@grafana/plugin-e2e';
 import { MongoClient } from 'mongodb';
 
-test.setTimeout(10000);
-
 test.beforeAll(async () => {
     const client = new MongoClient("mongodb://localhost:27018");
     await client.connect();
@@ -69,7 +67,7 @@ test.beforeAll(async () => {
     await client.close();
 });
 
-test("data query should return correct temperature data", async ({ panelEditPage, readProvisionedDataSource, selectors }) => {
+test("data query should return correct temperature data", async ({ panelEditPage, readProvisionedDataSource, selectors, page }) => {
     const query = `
   [
     {
