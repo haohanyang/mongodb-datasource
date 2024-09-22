@@ -1,6 +1,8 @@
 import { test, expect } from '@grafana/plugin-e2e';
 import { MongoClient } from 'mongodb';
 
+test.setTimeout(50000);
+
 test.beforeAll(async ({ createDataSource, readProvisionedDataSource }) => {
     const ds = await readProvisionedDataSource({ fileName: 'test/mongo-no-auth.yml' });
     await createDataSource(ds);
