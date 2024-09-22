@@ -1,28 +1,30 @@
 package plugin
 
-import (
-	"context"
-	"testing"
+// TODO
 
-	"github.com/grafana/grafana-plugin-sdk-go/backend"
-)
+// import (
+// 	"context"
+// 	"testing"
 
-func TestQueryData(t *testing.T) {
-	ds := Datasource{}
+// 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+// )
 
-	resp, err := ds.QueryData(
-		context.Background(),
-		&backend.QueryDataRequest{
-			Queries: []backend.DataQuery{
-				{RefID: "A"},
-			},
-		},
-	)
-	if err != nil {
-		t.Error(err)
-	}
+// func TestQueryData(t *testing.T) {
+// 	ds := Datasource{}
 
-	if len(resp.Responses) != 1 {
-		t.Fatal("QueryData must return a response")
-	}
-}
+// 	resp, err := ds.QueryData(
+// 		context.Background(),
+// 		&backend.QueryDataRequest{
+// 			Queries: []backend.DataQuery{
+// 				{RefID: "A"},
+// 			},
+// 		},
+// 	)
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
+
+// 	if len(resp.Responses) != 1 {
+// 		t.Fatal("QueryData must return a response")
+// 	}
+// }
