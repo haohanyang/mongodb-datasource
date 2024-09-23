@@ -152,15 +152,16 @@ export function ConfigEditor(props: Props) {
               id="config-editor-username"
               value={jsonData.username}
               onChange={onUsernameChange}
+              width={35}
             ></Input>
           </InlineField>
-          <InlineField label="Password" labelWidth={14} tooltip="MongoDB password">
+          <InlineField label="Password" tooltip="MongoDB password">
             <SecretInput
               required
               id="config-editor-password"
               isConfigured={secureJsonFields.password}
               value={secureJsonData?.password || ""}
-              width={40}
+              width={35}
               onReset={onResetPassword}
               onChange={onPasswordChange}
             />

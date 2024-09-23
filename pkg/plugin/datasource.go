@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -218,10 +219,17 @@ func (d *Datasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRe
 	}()
 
 	var result bson.M
-	if err := client.Database(config.Database).RunCommand(ctx, bson.D{{Key: "ping", Value: 1}}).Decode(&result); err != nil {
-		backend.Logger.Error(fmt.Sprintf("Failed to ping db: %s", err.Error()))
+	command := bson.D{{Key: "dbStats", Value: 1}}
+	if err := client.Database(config.Database).RunCommand(ctx, command).Decode(&result); err != nil {
+		backend.Logger.Error(fmt.Sprintf("Failed to get database status: %s", err.Error()))
 		res.Status = backend.HealthStatusError
-		res.Message = err.Error()
+
+		if strings.Contains(strings.ToLower(err.Error()), "authenticationfailed") || strings.Contains(strings.ToLower(err.Error()), "unauthorized") {
+			res.Message = "Authentication failed"
+		} else {
+			res.Message = err.Error()
+		}
+
 		return res, nil
 	}
 
