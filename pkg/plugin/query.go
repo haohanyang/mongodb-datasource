@@ -204,7 +204,7 @@ func initFrameField(element bson.RawElement, frame *data.Frame) columnDefinition
 				return fmt.Errorf("field \"%s\" should have objectId type", key)
 			}
 
-			f.Fields[index].Append(rv.ObjectID().Hex())
+			f.Fields[index].Append(rv.ObjectID().String())
 			return nil
 		}
 

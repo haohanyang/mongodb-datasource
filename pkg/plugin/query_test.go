@@ -2,7 +2,6 @@ package plugin
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -167,34 +166,48 @@ func TestGetTimeSeriesFramesFromQuery(t *testing.T) {
 }
 
 func TestGetTableFramesFromQuery(t *testing.T) {
-	ctx := context.TODO()
-	now := primitive.NewDateTimeFromTime(time.Now())
-	toInsert := []interface{}{
-		bson.M{
-			"_id":         primitive.NewObjectID(),
-			"stringField": "name1",
-			"intField":    32,
-			"floatField":  1.1,
-			"dtField":     now,
-			"arrayField":  bson.A{1, 2, 3},
-		},
-		bson.M{
-			"_id":         primitive.NewObjectID(),
-			"stringField": "name2",
-			"intField":    33,
-			"floatField":  1.1,
-			"dtField":     now,
-			"arrayField":  bson.A{"a", "b", "c"},
-		},
-	}
+	t.Run("should return dataframe on valid data", func(t *testing.T) {
+		ctx := context.Background()
+		now := time.Now()
 
-	cursor, err := mongo.NewCursorFromDocuments(toInsert, nil, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+		oid := primitive.NewObjectID()
+		toInsert := []interface{}{
+			bson.M{
+				"_id":      oid,
+				"string":   "name1",
+				"int":      32,
+				"float":    0.1,
+				"datetime": primitive.NewDateTimeFromTime(now),
+			},
+			bson.M{
+				"_id":      oid,
+				"string":   "name2",
+				"int":      33,
+				"float":    0.2,
+				"datetime": primitive.NewDateTimeFromTime(now),
+			},
+		}
 
-	_, err = getTableFramesFromQuery(ctx, cursor)
-	if err != nil {
-		t.Fatal(err)
-	}
+		cursor, err := mongo.NewCursorFromDocuments(toInsert, nil, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		frame, err := getTableFramesFromQuery(ctx, cursor)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expectedFrame := data.NewFrame("Table",
+			data.NewField("_id", nil, []string{oid.String(), oid.String()}),
+			data.NewField("string", nil, []string{"name1", "name2"}),
+			data.NewField("int", nil, []int32{32, 33}),
+			data.NewField("float", nil, []float64{0.1, 0.2}),
+			data.NewField("datetime", nil, []time.Time{now, now}),
+		)
+
+		if !cmp.Equal(frame, expectedFrame, dataFrameComparer) {
+			t.Error("Data frame not correct")
+		}
+	})
 }
