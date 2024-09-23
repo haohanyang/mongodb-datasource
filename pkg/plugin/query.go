@@ -30,14 +30,14 @@ func getTimeSeriesFramesFromQuery(ctx context.Context, cursor *mongo.Cursor) (ma
 			case bson.TypeDouble:
 				handler = updateFrameData[float64]
 			default:
-				continue
+				return frames, errors.New("invalid value type")
 			}
 
 		}
 
 		err := handler(cursor, frames)
 		if err != nil {
-			continue
+			return frames, err
 		}
 
 		rowCount++
@@ -45,22 +45,22 @@ func getTimeSeriesFramesFromQuery(ctx context.Context, cursor *mongo.Cursor) (ma
 	return frames, nil
 }
 
-func updateFrameData[T any](cursor *mongo.Cursor, allFrames map[string]*data.Frame) error {
+// Decode the corrent document and update the dataframe
+func updateFrameData[T any](cursor *mongo.Cursor, frames map[string]*data.Frame) error {
 	var tr timeSeriesRow[T]
 	err := cursor.Decode(&tr)
 	if err != nil {
-		return err
+		return errors.New("failed to decode the data")
 	}
 
 	if tr.Timestamp.IsZero() {
 		return errors.New("ts field is missing")
 	}
 
-	if frame, ok := allFrames[tr.Name]; ok {
-		frame.Fields[0].Append(tr.Timestamp)
-		frame.Fields[1].Append(tr.Value)
+	if frame, ok := frames[tr.Name]; ok {
+		frame.AppendRow(tr.Timestamp, tr.Value)
 	} else {
-		allFrames[tr.Name] = data.NewFrame(tr.Name,
+		frames[tr.Name] = data.NewFrame(tr.Name,
 			data.NewField("time", nil, []time.Time{tr.Timestamp}),
 			data.NewField("Value", nil, []T{tr.Value}))
 	}
