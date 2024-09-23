@@ -37,3 +37,7 @@ ci/
 .idea
 
 .eslintcache
+
+.env
+venv/
+mongodb-datasource/
