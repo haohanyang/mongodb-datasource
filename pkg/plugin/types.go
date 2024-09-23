@@ -33,5 +33,5 @@ type timeSeriesRow[T any] struct {
 type columnDefinition struct {
 	name      string
 	valueType bsontype.Type
-	addField  func(*data.Frame, bson.RawValue) error
+	appendValue  func(*data.Frame, bson.RawValue) error
 }

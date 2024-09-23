@@ -11,7 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func getTimeSeriesFramesFromQuery(ctx context.Context, cursor *mongo.Cursor) (map[string]*data.Frame, error) {
+func createTimeSeriesFramesFromQuery(ctx context.Context, cursor *mongo.Cursor) (map[string]*data.Frame, error) {
 	frames := make(map[string]*data.Frame)
 	var handler func(*mongo.Cursor, map[string]*data.Frame) error
 	rowCount := 0
@@ -67,7 +67,7 @@ func updateFrameData[T any](cursor *mongo.Cursor, frames map[string]*data.Frame)
 	return nil
 }
 
-func getTableFramesFromQuery(ctx context.Context, cursor *mongo.Cursor) (*data.Frame, error) {
+func createTableFramesFromQuery(ctx context.Context, cursor *mongo.Cursor) (*data.Frame, error) {
 	frame := data.NewFrame("Table")
 
 	columns := make(map[string]columnDefinition)
@@ -90,7 +90,7 @@ func getTableFramesFromQuery(ctx context.Context, cursor *mongo.Cursor) (*data.F
 			} else {
 				name := element.Key()
 				if c, ok := columns[name]; ok {
-					err = c.addField(frame, element.Value())
+					err = c.appendValue(frame, element.Value())
 					if err != nil {
 						return nil, err
 					}
@@ -122,7 +122,7 @@ func initFrameField(element bson.RawElement, frame *data.Frame) columnDefinition
 		frame.Fields = append(frame.Fields, field)
 
 		index := len(frame.Fields) - 1
-		d.addField = func(f *data.Frame, rv bson.RawValue) error {
+		d.appendValue = func(f *data.Frame, rv bson.RawValue) error {
 			if rv.Type != bson.TypeBoolean {
 				return fmt.Errorf("field \"%s\" should have boolean type", key)
 			}
@@ -134,7 +134,7 @@ func initFrameField(element bson.RawElement, frame *data.Frame) columnDefinition
 		frame.Fields = append(frame.Fields, field)
 
 		index := len(frame.Fields) - 1
-		d.addField = func(f *data.Frame, rv bson.RawValue) error {
+		d.appendValue = func(f *data.Frame, rv bson.RawValue) error {
 			if rv.Type != bson.TypeInt32 {
 				return fmt.Errorf("field \"%s\" should have int32 type", key)
 			}
@@ -147,7 +147,7 @@ func initFrameField(element bson.RawElement, frame *data.Frame) columnDefinition
 		frame.Fields = append(frame.Fields, field)
 
 		index := len(frame.Fields) - 1
-		d.addField = func(f *data.Frame, rv bson.RawValue) error {
+		d.appendValue = func(f *data.Frame, rv bson.RawValue) error {
 			if rv.Type != bson.TypeInt64 {
 				return fmt.Errorf("field \"%s\" should have int64 type", key)
 			}
@@ -160,7 +160,7 @@ func initFrameField(element bson.RawElement, frame *data.Frame) columnDefinition
 		frame.Fields = append(frame.Fields, field)
 
 		index := len(frame.Fields) - 1
-		d.addField = func(f *data.Frame, rv bson.RawValue) error {
+		d.appendValue = func(f *data.Frame, rv bson.RawValue) error {
 			if rv.Type != bson.TypeDouble {
 				return fmt.Errorf("field \"%s\" should have double type", key)
 			}
@@ -173,7 +173,7 @@ func initFrameField(element bson.RawElement, frame *data.Frame) columnDefinition
 		frame.Fields = append(frame.Fields, field)
 
 		index := len(frame.Fields) - 1
-		d.addField = func(f *data.Frame, rv bson.RawValue) error {
+		d.appendValue = func(f *data.Frame, rv bson.RawValue) error {
 			if rv.Type != bson.TypeString {
 				return fmt.Errorf("field \"%s\" should have string type", key)
 			}
@@ -186,7 +186,7 @@ func initFrameField(element bson.RawElement, frame *data.Frame) columnDefinition
 		frame.Fields = append(frame.Fields, field)
 
 		index := len(frame.Fields) - 1
-		d.addField = func(f *data.Frame, rv bson.RawValue) error {
+		d.appendValue = func(f *data.Frame, rv bson.RawValue) error {
 			if rv.Type != bson.TypeDateTime {
 				return fmt.Errorf("field \"%s\" should have datetime type", key)
 			}
@@ -199,7 +199,7 @@ func initFrameField(element bson.RawElement, frame *data.Frame) columnDefinition
 		frame.Fields = append(frame.Fields, field)
 
 		index := len(frame.Fields) - 1
-		d.addField = func(f *data.Frame, rv bson.RawValue) error {
+		d.appendValue = func(f *data.Frame, rv bson.RawValue) error {
 			if rv.Type != bson.TypeObjectID {
 				return fmt.Errorf("field \"%s\" should have objectId type", key)
 			}
@@ -213,7 +213,7 @@ func initFrameField(element bson.RawElement, frame *data.Frame) columnDefinition
 		frame.Fields = append(frame.Fields, field)
 
 		index := len(frame.Fields) - 1
-		d.addField = func(f *data.Frame, rv bson.RawValue) error {
+		d.appendValue = func(f *data.Frame, rv bson.RawValue) error {
 			f.Fields[index].Append(rv.String())
 			return nil
 		}

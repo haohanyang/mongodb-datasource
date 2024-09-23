@@ -18,7 +18,7 @@ type Doc[T any] struct {
 	Value T         `bson:"value"`
 }
 
-func TestGetTimeSeriesFramesFromQuery(t *testing.T) {
+func TestCreateTimeSeriesFramesFromQuery(t *testing.T) {
 
 	t.Run("fields with correct int values and timestamps", func(t *testing.T) {
 		ctx := context.Background()
@@ -47,7 +47,7 @@ func TestGetTimeSeriesFramesFromQuery(t *testing.T) {
 		}
 
 		cursor := initCursorWithData(docs, t)
-		frames, err := getTimeSeriesFramesFromQuery(ctx, cursor)
+		frames, err := createTimeSeriesFramesFromQuery(ctx, cursor)
 
 		if err != nil {
 			t.Fatal(err)
@@ -103,7 +103,7 @@ func TestGetTimeSeriesFramesFromQuery(t *testing.T) {
 
 		cursor := initCursorWithData(docs, t)
 
-		frames, err := getTimeSeriesFramesFromQuery(ctx, cursor)
+		frames, err := createTimeSeriesFramesFromQuery(ctx, cursor)
 
 		if err != nil {
 			t.Fatal(err)
@@ -142,7 +142,7 @@ func TestGetTimeSeriesFramesFromQuery(t *testing.T) {
 		}
 
 		cursor := initCursorWithData(docs, t)
-		_, err := getTimeSeriesFramesFromQuery(ctx, cursor)
+		_, err := createTimeSeriesFramesFromQuery(ctx, cursor)
 		if !(err != nil && err.Error() == "invalid value type") {
 			t.Error("should return invalid type error")
 		}
@@ -158,14 +158,14 @@ func TestGetTimeSeriesFramesFromQuery(t *testing.T) {
 		}
 
 		cursor := initCursorWithData(docs, t)
-		_, err := getTimeSeriesFramesFromQuery(ctx, cursor)
+		_, err := createTimeSeriesFramesFromQuery(ctx, cursor)
 		if !(err != nil && err.Error() == "failed to decode the data") {
 			t.Error("should return decode error")
 		}
 	})
 }
 
-func TestGetTableFramesFromQuery(t *testing.T) {
+func TestCreateTableFramesFromQuery(t *testing.T) {
 	t.Run("should return dataframe on valid data", func(t *testing.T) {
 		ctx := context.Background()
 		now := time.Now()
@@ -193,7 +193,7 @@ func TestGetTableFramesFromQuery(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		frame, err := getTableFramesFromQuery(ctx, cursor)
+		frame, err := createTableFramesFromQuery(ctx, cursor)
 		if err != nil {
 			t.Fatal(err)
 		}
