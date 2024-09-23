@@ -4,7 +4,6 @@ import { DataQuery } from '@grafana/schema';
 export interface MongoQuery extends DataQuery {
   queryText?: string;
   collection?: string;
-  applyTimeRange: boolean;
   queryType?: string;
 }
 
@@ -15,7 +14,6 @@ export const QueryType = {
 
 export const DEFAULT_QUERY: Partial<MongoQuery> = {
   queryText: "[]",
-  applyTimeRange: true,
   queryType: QueryType.TIMESERIES
 };
 

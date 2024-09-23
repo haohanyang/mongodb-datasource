@@ -1,5 +1,5 @@
-import React, { ChangeEvent, FormEvent, useRef, useState } from 'react';
-import { Button, CodeEditor, Divider, Field, InlineField, InlineFieldRow, InlineSwitch, Input, Select } from '@grafana/ui';
+import React, { ChangeEvent, useRef, useState } from 'react';
+import { Button, CodeEditor, Divider, Field, InlineField, InlineFieldRow, Input, Select } from '@grafana/ui';
 import { QueryEditorProps, SelectableValue } from '@grafana/data';
 import { DataSource } from '../datasource';
 import { MongoDataSourceOptions, MongoQuery, QueryType } from '../types';
@@ -42,10 +42,6 @@ export function QueryEditor({ query, onChange }: Props) {
     }
   };
 
-  const onApplyTimeRangeChange = (event: FormEvent<HTMLInputElement>) => {
-    onChange({ ...query, applyTimeRange: event.currentTarget.checked });
-  };
-
   const onQueryTypeChange = (sv: SelectableValue<string>) => {
     onChange({ ...query, queryType: sv.value });
   };
@@ -64,7 +60,7 @@ export function QueryEditor({ query, onChange }: Props) {
     }
   };
 
-  const { queryText, collection, applyTimeRange, queryType } = query;
+  const { queryText, collection, queryType } = query;
 
   return (
     <>
@@ -75,9 +71,6 @@ export function QueryEditor({ query, onChange }: Props) {
         <InlineField label="Collection" tooltip="Enter the collection to query"
           error="Please enter the collection" invalid={!collection}>
           <Input id="query-editor-collection" onChange={onCollectionChange} value={collection} required />
-        </InlineField>
-        <InlineField label="Apply time range" tooltip="Apply time range">
-          <InlineSwitch id="query-editor-apply-time-range" value={applyTimeRange} onChange={onApplyTimeRangeChange} />
         </InlineField>
       </InlineFieldRow>
       <Divider />
