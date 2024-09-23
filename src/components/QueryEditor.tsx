@@ -32,11 +32,12 @@ export function QueryEditor({ query, onChange }: Props) {
         const queryJson = JSON.parse(queryText);
 
         if (!Array.isArray(queryJson)) {
+          setQueryTextError("Invalid query");
+        } else {
           setQueryTextError(null);
         }
-        setQueryTextError("This is not a valid Mongo Aggregation Pipeline");
       } catch (e) {
-        setQueryTextError("This is not a valid Mongo Aggregation Pipeline");
+        setQueryTextError("Invalid query");
       }
     }
   };
@@ -81,9 +82,9 @@ export function QueryEditor({ query, onChange }: Props) {
       </InlineFieldRow>
       <Divider />
       <Field label="Query Text" description="Enter the Mongo Aggregation Pipeline"
-        error={queryTextError} invalid={!!queryTextError}>
+        error={queryTextError} invalid={queryTextError != null}>
         <CodeEditor onEditorDidMount={onCodeEditorDidMount} width="100%" height={300} language="json"
-          onBlur={onQueryTextChange} value={queryText || ""} />
+          onBlur={onQueryTextChange} value={queryText || ""} showMiniMap={false} />
       </Field>
       <Button onClick={onFormatQueryText}>Format</Button>
     </>
