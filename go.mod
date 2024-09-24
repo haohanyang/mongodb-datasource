@@ -2,7 +2,7 @@ module github.com/haohanyang/mongodb-datasource
 
 go 1.21
 
-require github.com/grafana/grafana-plugin-sdk-go v0.248.0
+require github.com/grafana/grafana-plugin-sdk-go v0.250.0
 
 require (
 	github.com/golang/snappy v0.0.4 // indirect
@@ -34,7 +34,7 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/flatbuffers v23.5.26+incompatible // indirect
-	github.com/google/go-cmp v0.6.0 // indirect
+	github.com/google/go-cmp v0.6.0
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/grafana/otel-profiling-go v0.5.1 // indirect
