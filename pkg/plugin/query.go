@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
+	"github.com/haohanyang/mongodb-datasource/pkg/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -220,4 +221,49 @@ func initFrameField(element bson.RawElement, frame *data.Frame) columnDefinition
 	}
 
 	return d
+}
+
+func createTableFramesFromQuery_(ctx context.Context, cursor *mongo.Cursor) (*data.Frame, error) {
+
+	columns := make(map[string]*models.Column)
+	rowIndex := 0
+	for cursor.Next(ctx) {
+		var result bson.Raw
+		if err := cursor.Decode(&result); err != nil {
+			return nil, err
+		}
+
+		elements, err := result.Elements()
+		if err != nil {
+			return nil, err
+		}
+
+		for _, element := range elements {
+			name := element.Key()
+			if c, ok := columns[name]; ok {
+				err = c.AppendValue(element.Value())
+				if err != nil {
+					return nil, err
+				}
+			} else {
+				columns[name] = models.NewColumn(rowIndex, element)
+			}
+		}
+
+		for _, c := range columns {
+			// Pad other columns with null value
+			if c.Size != rowIndex+1 {
+				c.Field.Append(nil)
+			}
+		}
+
+		rowIndex++
+	}
+
+	frame := data.NewFrame("Table")
+	for _, c := range columns {
+		frame.Fields = append(frame.Fields, c.Field)
+	}
+
+	return frame, nil
 }
