@@ -246,10 +246,14 @@ func createTableFramesFromQuery_(ctx context.Context, cursor *mongo.Cursor) (*da
 					return nil, err
 				}
 			} else {
+				if element.Value().Type == bson.TypeNull {
+					continue
+				}
 				columns[name] = models.NewColumn(rowIndex, element)
 			}
 		}
 
+		// Make sure all columns have the same size
 		for _, c := range columns {
 			// Pad other columns with null value
 			if c.Size != rowIndex+1 {

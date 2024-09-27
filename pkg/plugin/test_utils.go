@@ -24,7 +24,9 @@ var dataFieldComparer = cmp.Comparer(func(x, y data.Field) bool {
 	}
 
 	for i := 0; i < x.Len(); i++ {
-		if !cmp.Equal(x.At(i), y.At(i), datetimeComparer, float32Comparer, float64Comparer) {
+		xi, _ := x.ConcreteAt(i)
+		yi, _ := y.ConcreteAt(i)
+		if !cmp.Equal(xi, yi, datetimeComparer, float32Comparer, float64Comparer) {
 			return false
 		}
 	}
@@ -63,3 +65,24 @@ var datetimeComparer = cmp.Comparer(func(x, y time.Time) bool {
 	// MongoDB datetime has precision of milliseconds
 	return x.Truncate(time.Millisecond).Compare(y.Truncate(time.Millisecond)) == 0
 })
+
+func newValue[T any](value T) Optional[T] {
+	return Optional[T]{
+		Value:   value,
+		Nothing: false,
+	}
+}
+
+func newNull[T any]() Optional[T] {
+	return Optional[T]{
+		Nothing: true,
+	}
+}
+
+func toPointerArray[T any](opts []Optional[T]) []*T {
+	res := make([]*T, len(opts))
+	for i, opt := range opts {
+		res[i] = opt.ToPointer()
+	}
+	return res
+}

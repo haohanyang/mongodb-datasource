@@ -211,3 +211,203 @@ func TestCreateTableFramesFromQuery(t *testing.T) {
 		}
 	})
 }
+
+func TestCreateTableFramesFromQuery_(t *testing.T) {
+	t.Run("should return dataframe on valid data", func(t *testing.T) {
+		ctx := context.Background()
+		now := time.Now()
+
+		oid := primitive.NewObjectID()
+		toInsert := []interface{}{
+			bson.M{
+				"_id":      oid,
+				"string":   "name1",
+				"int":      32,
+				"float":    0.1,
+				"datetime": primitive.NewDateTimeFromTime(now),
+			},
+			bson.M{
+				"_id":      oid,
+				"string":   "name2",
+				"int":      33,
+				"float":    0.2,
+				"datetime": primitive.NewDateTimeFromTime(now),
+			},
+		}
+
+		cursor, err := mongo.NewCursorFromDocuments(toInsert, nil, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		frame, err := createTableFramesFromQuery_(ctx, cursor)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expectedFrame := data.NewFrame("Table",
+			data.NewField("_id", nil, []string{oid.String(), oid.String()}),
+			data.NewField("string", nil, []string{"name1", "name2"}),
+			data.NewField("int", nil, []int32{32, 33}),
+			data.NewField("float", nil, []float64{0.1, 0.2}),
+			data.NewField("datetime", nil, []time.Time{now, now}),
+		)
+
+		if !cmp.Equal(frame, expectedFrame, dataFrameComparer) {
+			t.Error("Data frame not correct")
+		}
+	})
+
+	t.Run("should pad missing values with nil", func(t *testing.T) {
+		ctx := context.Background()
+		toInsert := []interface{}{
+			bson.M{
+				"a": 1,
+				"b": 2,
+			},
+			bson.M{
+				"c": 3,
+				"d": 4,
+			},
+		}
+
+		cursor, err := mongo.NewCursorFromDocuments(toInsert, nil, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		frame, err := createTableFramesFromQuery_(ctx, cursor)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expectedFrame := data.NewFrame("Table",
+			data.NewField("a", nil, toPointerArray([]Optional[int32]{newValue[int32](1), newNull[int32]()})),
+			data.NewField("b", nil, toPointerArray([]Optional[int32]{newValue[int32](2), newNull[int32]()})),
+			data.NewField("c", nil, toPointerArray([]Optional[int32]{newNull[int32](), newValue[int32](3)})),
+			data.NewField("d", nil, toPointerArray([]Optional[int32]{newNull[int32](), newValue[int32](4)})),
+		)
+
+		if !cmp.Equal(frame, expectedFrame, dataFrameComparer) {
+			t.Error("Data frame is not expected")
+		}
+	})
+
+	t.Run("should pad missing values with nil - 1", func(t *testing.T) {
+		ctx := context.Background()
+		toInsert := []interface{}{
+			bson.M{
+				"a": 1,
+				"b": 2,
+			},
+			bson.M{
+				"c": 3,
+				"d": 4,
+			},
+		}
+
+		cursor, err := mongo.NewCursorFromDocuments(toInsert, nil, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		frame, err := createTableFramesFromQuery_(ctx, cursor)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expectedFrame := data.NewFrame("Table",
+			data.NewField("a", nil, toPointerArray([]Optional[int32]{newValue[int32](1), newNull[int32]()})),
+			data.NewField("b", nil, toPointerArray([]Optional[int32]{newValue[int32](2), newNull[int32]()})),
+			data.NewField("c", nil, toPointerArray([]Optional[int32]{newNull[int32](), newValue[int32](3)})),
+			data.NewField("d", nil, toPointerArray([]Optional[int32]{newNull[int32](), newValue[int32](4)})),
+		)
+
+		if !cmp.Equal(frame, expectedFrame, dataFrameComparer) {
+			t.Error("Data frame is not expected")
+		}
+	})
+
+	t.Run("should pad missing values with nil - 2", func(t *testing.T) {
+		ctx := context.Background()
+		toInsert := []interface{}{
+			bson.M{
+				"a": "foo",
+				"b": "bar",
+			},
+			bson.M{
+				"b": "baz",
+				"c": "qux",
+			},
+		}
+
+		cursor, err := mongo.NewCursorFromDocuments(toInsert, nil, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		frame, err := createTableFramesFromQuery_(ctx, cursor)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expectedFrame := data.NewFrame("Table",
+			data.NewField("a", nil, toPointerArray([]Optional[string]{
+				newValue[string]("foo"),
+				newNull[string](),
+			})),
+			data.NewField("b", nil, toPointerArray([]Optional[string]{
+				newValue[string]("bar"),
+				newValue[string]("baz"),
+			})),
+			data.NewField("c", nil, toPointerArray([]Optional[string]{
+				newNull[string](),
+				newValue[string]("qux"),
+			})),
+		)
+
+		if !cmp.Equal(frame, expectedFrame, dataFrameComparer) {
+			t.Error("Data frame is not expected")
+		}
+	})
+
+	t.Run("should handle nil values", func(t *testing.T) {
+		ctx := context.Background()
+		toInsert := []interface{}{
+			bson.M{
+				"a": "foo",
+				"b": nil,
+			},
+			bson.M{
+				"a": nil,
+				"b": "qux",
+			},
+		}
+
+		cursor, err := mongo.NewCursorFromDocuments(toInsert, nil, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		frame, err := createTableFramesFromQuery_(ctx, cursor)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expectedFrame := data.NewFrame("Table",
+			data.NewField("a", nil, toPointerArray([]Optional[string]{
+				newValue[string]("foo"),
+				newNull[string](),
+			})),
+			data.NewField("b", nil, toPointerArray([]Optional[string]{
+				newNull[string](),
+				newValue[string]("qux"),
+			})),
+		)
+
+		if !cmp.Equal(frame, expectedFrame, dataFrameComparer) {
+			t.Error("Data frame is not expected")
+		}
+	})
+
+}

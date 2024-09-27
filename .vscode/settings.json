@@ -1,0 +1,9 @@
+{
+    "typescript.format.semicolons": "insert",
+    "typescript.preferences.quoteStyle": "double",
+    "editor.formatOnSave": true,
+    "editor.trimAutoWhitespace": true,
+    "go.testFlags": [
+        "-v"
+    ]
+}

@@ -31,7 +31,19 @@ type timeSeriesRow[T any] struct {
 }
 
 type columnDefinition struct {
-	name      string
-	valueType bsontype.Type
-	appendValue  func(*data.Frame, bson.RawValue) error
+	name        string
+	valueType   bsontype.Type
+	appendValue func(*data.Frame, bson.RawValue) error
+}
+
+type Optional[T any] struct {
+	Value   T
+	Nothing bool
+}
+
+func (opt Optional[T]) ToPointer() *T {
+	if opt.Nothing {
+		return nil
+	}
+	return &opt.Value
 }
