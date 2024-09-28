@@ -47,7 +47,7 @@ func TestCreateTimeSeriesFramesFromQuery(t *testing.T) {
 		}
 
 		cursor := initCursorWithData(docs, t)
-		frames, err := createTimeSeriesFramesFromQuery(ctx, cursor)
+		frames, err := CreateTimeSeriesFramesFromQuery(ctx, cursor)
 
 		if err != nil {
 			t.Fatal(err)
@@ -103,7 +103,7 @@ func TestCreateTimeSeriesFramesFromQuery(t *testing.T) {
 
 		cursor := initCursorWithData(docs, t)
 
-		frames, err := createTimeSeriesFramesFromQuery(ctx, cursor)
+		frames, err := CreateTimeSeriesFramesFromQuery(ctx, cursor)
 
 		if err != nil {
 			t.Fatal(err)
@@ -142,7 +142,7 @@ func TestCreateTimeSeriesFramesFromQuery(t *testing.T) {
 		}
 
 		cursor := initCursorWithData(docs, t)
-		_, err := createTimeSeriesFramesFromQuery(ctx, cursor)
+		_, err := CreateTimeSeriesFramesFromQuery(ctx, cursor)
 		if !(err != nil && err.Error() == "invalid value type") {
 			t.Error("should return invalid type error")
 		}
@@ -158,7 +158,7 @@ func TestCreateTimeSeriesFramesFromQuery(t *testing.T) {
 		}
 
 		cursor := initCursorWithData(docs, t)
-		_, err := createTimeSeriesFramesFromQuery(ctx, cursor)
+		_, err := CreateTimeSeriesFramesFromQuery(ctx, cursor)
 		if !(err != nil && err.Error() == "failed to decode the data") {
 			t.Error("should return decode error")
 		}
@@ -193,54 +193,7 @@ func TestCreateTableFramesFromQuery(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		frame, err := createTableFramesFromQuery(ctx, cursor)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		expectedFrame := data.NewFrame("Table",
-			data.NewField("_id", nil, []string{oid.String(), oid.String()}),
-			data.NewField("string", nil, []string{"name1", "name2"}),
-			data.NewField("int", nil, []int32{32, 33}),
-			data.NewField("float", nil, []float64{0.1, 0.2}),
-			data.NewField("datetime", nil, []time.Time{now, now}),
-		)
-
-		if !cmp.Equal(frame, expectedFrame, dataFrameComparer) {
-			t.Error("Data frame not correct")
-		}
-	})
-}
-
-func TestCreateTableFramesFromQuery_(t *testing.T) {
-	t.Run("should return dataframe on valid data", func(t *testing.T) {
-		ctx := context.Background()
-		now := time.Now()
-
-		oid := primitive.NewObjectID()
-		toInsert := []interface{}{
-			bson.M{
-				"_id":      oid,
-				"string":   "name1",
-				"int":      32,
-				"float":    0.1,
-				"datetime": primitive.NewDateTimeFromTime(now),
-			},
-			bson.M{
-				"_id":      oid,
-				"string":   "name2",
-				"int":      33,
-				"float":    0.2,
-				"datetime": primitive.NewDateTimeFromTime(now),
-			},
-		}
-
-		cursor, err := mongo.NewCursorFromDocuments(toInsert, nil, nil)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		frame, err := createTableFramesFromQuery_(ctx, cursor)
+		frame, err := CreateTableFramesFromQuery(ctx, "test", cursor)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -276,7 +229,7 @@ func TestCreateTableFramesFromQuery_(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		frame, err := createTableFramesFromQuery_(ctx, cursor)
+		frame, err := CreateTableFramesFromQuery(ctx, "test", cursor)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -311,12 +264,12 @@ func TestCreateTableFramesFromQuery_(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		frame, err := createTableFramesFromQuery_(ctx, cursor)
+		frame, err := CreateTableFramesFromQuery(ctx, "test", cursor)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		expectedFrame := data.NewFrame("Table",
+		expectedFrame := data.NewFrame("test",
 			data.NewField("a", nil, toPointerArray([]Optional[int32]{newValue[int32](1), newNull[int32]()})),
 			data.NewField("b", nil, toPointerArray([]Optional[int32]{newValue[int32](2), newNull[int32]()})),
 			data.NewField("c", nil, toPointerArray([]Optional[int32]{newNull[int32](), newValue[int32](3)})),
@@ -346,12 +299,12 @@ func TestCreateTableFramesFromQuery_(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		frame, err := createTableFramesFromQuery_(ctx, cursor)
+		frame, err := CreateTableFramesFromQuery(ctx, "test", cursor)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		expectedFrame := data.NewFrame("Table",
+		expectedFrame := data.NewFrame("test",
 			data.NewField("a", nil, toPointerArray([]Optional[string]{
 				newValue[string]("foo"),
 				newNull[string](),
@@ -367,11 +320,11 @@ func TestCreateTableFramesFromQuery_(t *testing.T) {
 		)
 
 		if !cmp.Equal(frame, expectedFrame, dataFrameComparer) {
-			t.Error("Data frame is not expected")
+			t.Error("Unexpected data frame")
 		}
 	})
 
-	t.Run("should handle nil values", func(t *testing.T) {
+	t.Run("should handle null values", func(t *testing.T) {
 		ctx := context.Background()
 		toInsert := []interface{}{
 			bson.M{
@@ -389,7 +342,7 @@ func TestCreateTableFramesFromQuery_(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		frame, err := createTableFramesFromQuery_(ctx, cursor)
+		frame, err := CreateTableFramesFromQuery(ctx, "test", cursor)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -406,7 +359,49 @@ func TestCreateTableFramesFromQuery_(t *testing.T) {
 		)
 
 		if !cmp.Equal(frame, expectedFrame, dataFrameComparer) {
-			t.Error("Data frame is not expected")
+			t.Error("Unexpected data frame")
+		}
+	})
+
+	t.Run("should handle embedded document field", func(t *testing.T) {
+		ctx := context.Background()
+		toInsert := []interface{}{
+			bson.M{
+				"emb": bson.M{
+					"a": 1,
+				},
+			},
+		}
+
+		cursor, err := mongo.NewCursorFromDocuments(toInsert, nil, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		_, err = CreateTableFramesFromQuery(ctx, "test", cursor)
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	t.Run("should handle array field", func(t *testing.T) {
+		ctx := context.Background()
+		toInsert := []interface{}{
+			bson.M{
+				"arr": bson.A{1, "ok", bson.M{
+					"a": 1,
+				}},
+			},
+		}
+
+		cursor, err := mongo.NewCursorFromDocuments(toInsert, nil, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		_, err = CreateTableFramesFromQuery(ctx, "test", cursor)
+		if err != nil {
+			t.Fatal(err)
 		}
 	})
 

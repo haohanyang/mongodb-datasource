@@ -109,7 +109,7 @@ func (c *Column) AppendValue(rv bson.RawValue) error {
 func NewColumn(rowIndex int, element bson.RawElement) *Column {
 	key := element.Key()
 	value := element.Value()
-	savedAsString := false
+	storedAsString := false
 	var field *data.Field
 
 	switch value.Type {
@@ -143,7 +143,7 @@ func NewColumn(rowIndex int, element bson.RawElement) *Column {
 		*v = value.StringValue()
 		field.Set(rowIndex, v)
 
-		savedAsString = true
+		storedAsString = true
 
 	case bson.TypeDateTime:
 		field = data.NewField(key, nil, make([]*time.Time, rowIndex+1))
@@ -157,7 +157,7 @@ func NewColumn(rowIndex int, element bson.RawElement) *Column {
 		*v = value.ObjectID().String()
 		field.Set(rowIndex, v)
 
-		savedAsString = true
+		storedAsString = true
 
 	case bson.TypeEmbeddedDocument:
 		field = data.NewField(key, nil, make([]*json.RawMessage, rowIndex+1))
@@ -165,20 +165,20 @@ func NewColumn(rowIndex int, element bson.RawElement) *Column {
 		*v = json.RawMessage([]byte(value.Document().String()))
 		field.Set(rowIndex, v)
 
-		savedAsString = true
+		storedAsString = false
 	default:
 		field = data.NewField(key, nil, make([]*string, rowIndex+1))
 		v := new(string)
 		*v = value.String()
 		field.Set(rowIndex, v)
 
-		savedAsString = true
+		storedAsString = true
 	}
 
 	return &Column{
 		Name:           key,
 		ValueType:      value.Type,
-		StoredAsString: savedAsString,
+		StoredAsString: storedAsString,
 		Field:          field,
 		Size:           rowIndex + 1,
 	}

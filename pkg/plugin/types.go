@@ -3,9 +3,6 @@ package plugin
 import (
 	"time"
 
-	"github.com/grafana/grafana-plugin-sdk-go/data"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/bsontype"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -24,16 +21,10 @@ type queryModel struct {
 	QueryType  string `json:"queryType"`
 }
 
-type timeSeriesRow[T any] struct {
+type TimeSeriesRow[T any] struct {
 	Timestamp time.Time `bson:"ts"`
 	Name      string    `bson:"name"`
 	Value     T         `bson:"value"`
-}
-
-type columnDefinition struct {
-	name        string
-	valueType   bsontype.Type
-	appendValue func(*data.Frame, bson.RawValue) error
 }
 
 type Optional[T any] struct {

@@ -128,7 +128,7 @@ func (d *Datasource) query(ctx context.Context, _ backend.PluginContext, query b
 	defer cursor.Close(ctx)
 
 	if qm.QueryType == "table" {
-		frame, err := createTableFramesFromQuery(ctx, cursor)
+		frame, err := CreateTableFramesFromQuery(ctx, query.RefID, cursor)
 		if err != nil {
 			backend.Logger.Error(err.Error())
 			return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Failed to query: %v", err.Error()))
@@ -137,7 +137,7 @@ func (d *Datasource) query(ctx context.Context, _ backend.PluginContext, query b
 		response.Frames = append(response.Frames, frame)
 
 	} else {
-		frames, err := createTimeSeriesFramesFromQuery(ctx, cursor)
+		frames, err := CreateTimeSeriesFramesFromQuery(ctx, cursor)
 		if err != nil {
 			backend.Logger.Error(err.Error())
 			return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Failed to query: %v", err.Error()))
