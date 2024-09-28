@@ -1,7 +1,7 @@
-import React, { ChangeEvent } from 'react';
-import { Divider, Field, FieldSet, InlineField, InlineFieldRow, Input, RadioButtonGroup, SecretInput } from '@grafana/ui';
-import { DataSourcePluginOptionsEditorProps, SelectableValue } from '@grafana/data';
-import { MongoDataSourceOptions, MySecureJsonData, MongoDBAuthMethod } from '../types';
+import React, { ChangeEvent } from "react";
+import { Divider, Field, FieldSet, InlineField, InlineFieldRow, Input, RadioButtonGroup, SecretInput } from "@grafana/ui";
+import { DataSourcePluginOptionsEditorProps, SelectableValue } from "@grafana/data";
+import { MongoDataSourceOptions, MySecureJsonData, MongoDBAuthMethod } from "../types";
 
 interface Props extends DataSourcePluginOptionsEditorProps<MongoDataSourceOptions, MySecureJsonData> { }
 
@@ -93,7 +93,7 @@ export function ConfigEditor(props: Props) {
       },
       secureJsonData: {
         ...options.secureJsonData,
-        password: ''
+        password: ""
       },
     });
   };

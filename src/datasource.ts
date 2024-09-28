@@ -1,20 +1,11 @@
-import { DataSourceInstanceSettings, CoreApp, ScopedVars, DataQueryRequest, DataQueryResponse, DateTime } from '@grafana/data';
-import { DataSourceWithBackend, getTemplateSrv } from '@grafana/runtime';
+import { DataSourceInstanceSettings, CoreApp, ScopedVars, DataQueryRequest, DataQueryResponse, DateTime } from "@grafana/data";
+import { DataSourceWithBackend, getTemplateSrv } from "@grafana/runtime";
+import { validateQueryText } from "./utils";
+import { MongoQuery, MongoDataSourceOptions, DEFAULT_QUERY } from "./types";
+import { Observable } from "rxjs";
 
-import { MongoQuery, MongoDataSourceOptions, DEFAULT_QUERY } from './types';
-import { Observable } from 'rxjs';
 
-function isJsonStringValid(jsonString: string) {
-  try {
-    const json = JSON.parse(jsonString);
-    if (!Array.isArray(json)) {
-      return false;
-    }
-    return true;
-  } catch (e) {
-    return false;
-  }
-}
+
 
 function datetimeToJson(datetime: DateTime) {
   return JSON.stringify({
@@ -41,7 +32,7 @@ export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourc
   }
 
   filterQuery(query: MongoQuery): boolean {
-    return !!query.queryText && !!query.collection && isJsonStringValid(query.queryText!);
+    return !!query.queryText && !!query.collection && !validateQueryText(query.queryText!);
   }
 
   query(request: DataQueryRequest<MongoQuery>): Observable<DataQueryResponse> {

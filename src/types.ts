@@ -1,5 +1,5 @@
-import { DataSourceJsonData } from '@grafana/data';
-import { DataQuery } from '@grafana/schema';
+import { DataSourceJsonData } from "@grafana/data";
+import { DataQuery } from "@grafana/schema";
 
 export interface MongoQuery extends DataQuery {
   queryText?: string;

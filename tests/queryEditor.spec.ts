@@ -1,10 +1,10 @@
-import { test, expect } from '@grafana/plugin-e2e';
-import { MongoClient } from 'mongodb';
+import { test, expect } from "@grafana/plugin-e2e";
+import { MongoClient } from "mongodb";
 
 test.setTimeout(50000);
 
 test.beforeAll(async ({ createDataSource, readProvisionedDataSource }) => {
-    const ds = await readProvisionedDataSource({ fileName: 'test/mongo-no-auth.yml' });
+    const ds = await readProvisionedDataSource({ fileName: "test/mongo-no-auth.yml" });
     await createDataSource(ds);
 
     const client = new MongoClient("mongodb://localhost:27018");
@@ -109,12 +109,12 @@ test("data query should return correct temperature data", async ({ panelEditPage
 ]
   `;
 
-    const ds = await readProvisionedDataSource({ fileName: 'test/mongo-no-auth.yml' });
+    const ds = await readProvisionedDataSource({ fileName: "test/mongo-no-auth.yml" });
     await panelEditPage.datasource.set(ds.name);
     await panelEditPage.getQueryEditorRow("A").getByLabel("Collection").fill("test_temperatureData");
     const editor = panelEditPage.getByGrafanaSelector(selectors.components.CodeEditor.container, {
         root: panelEditPage.getQueryEditorRow("A")
-    }).getByRole('textbox');
+    }).getByRole("textbox");
 
     await editor.clear();
     await editor.fill(query);
