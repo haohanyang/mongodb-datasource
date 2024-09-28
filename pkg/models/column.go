@@ -1,6 +1,7 @@
 package models
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -85,6 +86,15 @@ func (c *Column) AppendValue(rv bson.RawValue) error {
 			*v = rv.ObjectID().String()
 			c.Field.Append(v)
 
+		case bson.TypeEmbeddedDocument:
+			if rv.Type != bson.TypeEmbeddedDocument {
+				return fmt.Errorf("field \"%s\" should have embedded document type", c.Name)
+			}
+
+			v := new(json.RawMessage)
+			*v = json.RawMessage([]byte(rv.Document().String()))
+			c.Field.Append(v)
+
 		default:
 			v := new(string)
 			*v = rv.String()
@@ -145,6 +155,14 @@ func NewColumn(rowIndex int, element bson.RawElement) *Column {
 		field = data.NewField(key, nil, make([]*string, rowIndex+1))
 		v := new(string)
 		*v = value.ObjectID().String()
+		field.Set(rowIndex, v)
+
+		savedAsString = true
+
+	case bson.TypeEmbeddedDocument:
+		field = data.NewField(key, nil, make([]*json.RawMessage, rowIndex+1))
+		v := new(json.RawMessage)
+		*v = json.RawMessage([]byte(value.Document().String()))
 		field.Set(rowIndex, v)
 
 		savedAsString = true
