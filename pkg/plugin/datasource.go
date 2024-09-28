@@ -27,7 +27,7 @@ var (
 	_ instancemgmt.InstanceDisposer = (*Datasource)(nil)
 )
 
-// NewDatasource creates a new datasource instance.
+// NewDatasource creates a new MongoDB datasource instance.
 func NewDatasource(ctx context.Context, source backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
 
 	var uri string
@@ -54,7 +54,7 @@ func NewDatasource(ctx context.Context, source backend.DataSourceInstanceSetting
 	}
 
 	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
-	opts := options.Client().ApplyURI(uri).SetServerAPIOptions(serverAPI).SetTimeout(5 * time.Second)
+	opts := options.Client().ApplyURI(uri).SetServerAPIOptions(serverAPI)
 
 	client, err := mongo.Connect(ctx, opts)
 	if err != nil {
