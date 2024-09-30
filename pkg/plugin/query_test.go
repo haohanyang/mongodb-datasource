@@ -166,7 +166,7 @@ func TestCreateTimeSeriesFramesFromQuery(t *testing.T) {
 }
 
 func TestCreateTableFramesFromQuery(t *testing.T) {
-	t.Run("should return dataframe on valid data", func(t *testing.T) {
+	t.Run("should create dataframe on valid data", func(t *testing.T) {
 		ctx := context.Background()
 		now := time.Now()
 
@@ -198,7 +198,7 @@ func TestCreateTableFramesFromQuery(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		expectedFrame := data.NewFrame("Table",
+		expectedFrame := data.NewFrame("test",
 			data.NewField("_id", nil, []string{oid.String(), oid.String()}),
 			data.NewField("string", nil, []string{"name1", "name2"}),
 			data.NewField("int", nil, []int32{32, 33}),
@@ -207,7 +207,7 @@ func TestCreateTableFramesFromQuery(t *testing.T) {
 		)
 
 		if !cmp.Equal(frame, expectedFrame, dataFrameComparer) {
-			t.Error("Data frame not correct")
+			t.Error("Unexpected data frame")
 		}
 	})
 
@@ -242,7 +242,7 @@ func TestCreateTableFramesFromQuery(t *testing.T) {
 		)
 
 		if !cmp.Equal(frame, expectedFrame, dataFrameComparer) {
-			t.Error("Data frame is not expected")
+			t.Error("Unexpected data frame")
 		}
 	})
 
@@ -277,7 +277,7 @@ func TestCreateTableFramesFromQuery(t *testing.T) {
 		)
 
 		if !cmp.Equal(frame, expectedFrame, dataFrameComparer) {
-			t.Error("Data frame is not expected")
+			t.Error("Unexpected data frame")
 		}
 	})
 

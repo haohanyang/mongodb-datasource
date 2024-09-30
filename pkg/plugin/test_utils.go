@@ -1,6 +1,7 @@
 package plugin
 
 import (
+	"fmt"
 	"math"
 	"testing"
 	"time"
@@ -19,7 +20,13 @@ func initCursorWithData(initData []interface{}, t *testing.T) *mongo.Cursor {
 }
 
 var dataFieldComparer = cmp.Comparer(func(x, y data.Field) bool {
-	if x.Name != y.Name || x.Len() != y.Len() {
+	if x.Name != y.Name {
+		fmt.Printf("Field name %s != %s", x.Name, y.Name)
+		return false
+	}
+
+	if x.Len() != y.Len() {
+		fmt.Printf("Field size %d != %d", x.Len(), y.Len())
 		return false
 	}
 
@@ -27,6 +34,7 @@ var dataFieldComparer = cmp.Comparer(func(x, y data.Field) bool {
 		xi, _ := x.ConcreteAt(i)
 		yi, _ := y.ConcreteAt(i)
 		if !cmp.Equal(xi, yi, datetimeComparer, float32Comparer, float64Comparer) {
+			fmt.Printf("%v != %v", xi, yi)
 			return false
 		}
 	}
