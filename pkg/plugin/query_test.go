@@ -234,7 +234,7 @@ func TestCreateTableFramesFromQuery(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		expectedFrame := data.NewFrame("Table",
+		expectedFrame := data.NewFrame("test",
 			data.NewField("a", nil, toPointerArray([]Optional[int32]{newValue[int32](1), newNull[int32]()})),
 			data.NewField("b", nil, toPointerArray([]Optional[int32]{newValue[int32](2), newNull[int32]()})),
 			data.NewField("c", nil, toPointerArray([]Optional[int32]{newNull[int32](), newValue[int32](3)})),
@@ -347,7 +347,7 @@ func TestCreateTableFramesFromQuery(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		expectedFrame := data.NewFrame("Table",
+		expectedFrame := data.NewFrame("test",
 			data.NewField("a", nil, toPointerArray([]Optional[string]{
 				newValue[string]("foo"),
 				newNull[string](),
