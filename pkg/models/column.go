@@ -19,88 +19,96 @@ type Column struct {
 }
 
 func (c *Column) AppendValue(rv bson.RawValue) error {
-	if rv.Type == bson.TypeNull {
+	switch rv.Type {
+	case bson.TypeNull:
 		c.Field.Append(nil)
 		c.NullValueCount++
-	} else {
-		switch c.ValueType {
-		case bson.TypeBoolean:
-			if rv.Type != bson.TypeBoolean {
-				return fmt.Errorf("field \"%s\" should have boolean type", c.Name)
-			}
 
-			v := new(bool)
-			*v = rv.Boolean()
-			c.Field.Append(v)
-
-		case bson.TypeInt32:
-			if rv.Type != bson.TypeInt32 {
-				return fmt.Errorf("field \"%s\" should have int32 type", c.Name)
-			}
-
-			v := new(int32)
-			*v = rv.Int32()
-			c.Field.Append(v)
-
-		case bson.TypeInt64:
-			if rv.Type != bson.TypeInt64 {
-				return fmt.Errorf("field \"%s\" should have int64 type", c.Name)
-			}
-
-			v := new(int64)
-			*v = rv.Int64()
-			c.Field.Append(v)
-
-		case bson.TypeDouble:
-			if rv.Type != bson.TypeDouble {
-				return fmt.Errorf("field \"%s\" should have double type", c.Name)
-			}
-
-			v := new(float64)
-			*v = rv.Double()
-			c.Field.Append(v)
-
-		case bson.TypeString:
-			if rv.Type != bson.TypeString {
-				return fmt.Errorf("field \"%s\" should have string type", c.Name)
-			}
-
-			v := new(string)
-			*v = rv.StringValue()
-			c.Field.Append(v)
-
-		case bson.TypeDateTime:
-			if rv.Type != bson.TypeDateTime {
-				return fmt.Errorf("field \"%s\" should have datetime type", c.Name)
-			}
-
-			v := new(time.Time)
-			*v = rv.Time()
-			c.Field.Append(v)
-
-		case bson.TypeObjectID:
-			if rv.Type != bson.TypeObjectID {
-				return fmt.Errorf("field \"%s\" should have objectId type", c.Name)
-			}
-
-			v := new(string)
-			*v = rv.ObjectID().String()
-			c.Field.Append(v)
-
-		case bson.TypeEmbeddedDocument:
-			if rv.Type != bson.TypeEmbeddedDocument {
-				return fmt.Errorf("field \"%s\" should have embedded document type", c.Name)
-			}
-
-			v := new(json.RawMessage)
-			*v = json.RawMessage([]byte(rv.Document().String()))
-			c.Field.Append(v)
-
-		default:
-			v := new(string)
-			*v = rv.String()
-			c.Field.Append(v)
+	case bson.TypeBoolean:
+		if c.ValueType != bson.TypeBoolean {
+			return fmt.Errorf("field \"%s\" should have %s type", c.Name, c.ValueType.String())
 		}
+
+		v := new(bool)
+		*v = rv.Boolean()
+		c.Field.Append(v)
+
+	case bson.TypeInt32:
+		if c.ValueType != bson.TypeInt32 {
+			return fmt.Errorf("field \"%s\" should have %s type", c.Name, c.ValueType.String())
+		}
+
+		v := new(int32)
+		*v = rv.Int32()
+		c.Field.Append(v)
+
+	case bson.TypeInt64:
+		if c.ValueType != bson.TypeInt64 {
+			return fmt.Errorf("field \"%s\" should have %s type", c.Name, c.ValueType.String())
+		}
+
+		v := new(int64)
+		*v = rv.Int64()
+		c.Field.Append(v)
+
+	case bson.TypeDouble:
+		if c.ValueType != bson.TypeDouble {
+			return fmt.Errorf("field \"%s\" should have %s type", c.Name, c.ValueType.String())
+		}
+
+		v := new(float64)
+		*v = rv.Double()
+		c.Field.Append(v)
+
+	case bson.TypeString:
+		if c.ValueType != bson.TypeString {
+			return fmt.Errorf("field \"%s\" should have %s type", c.Name, c.ValueType.String())
+		}
+
+		v := new(string)
+		*v = rv.StringValue()
+		c.Field.Append(v)
+
+	case bson.TypeDateTime:
+		if c.ValueType != bson.TypeDateTime {
+			return fmt.Errorf("field \"%s\" should have %s type", c.Name, c.ValueType.String())
+		}
+
+		v := new(time.Time)
+		*v = rv.Time()
+		c.Field.Append(v)
+
+	case bson.TypeObjectID:
+		if c.ValueType != bson.TypeObjectID {
+			return fmt.Errorf("field \"%s\" should have %s type", c.Name, c.ValueType.String())
+		}
+
+		v := new(string)
+		*v = rv.ObjectID().String()
+		c.Field.Append(v)
+
+	case bson.TypeEmbeddedDocument:
+		if c.ValueType != bson.TypeEmbeddedDocument && c.ValueType != bson.TypeArray {
+			return fmt.Errorf("field \"%s\" should have %s type", c.Name, c.ValueType.String())
+		}
+
+		v := new(json.RawMessage)
+		*v = json.RawMessage([]byte(rv.Document().String()))
+
+		c.Field.Append(v)
+	case bson.TypeArray:
+		if c.ValueType != bson.TypeArray && c.ValueType != bson.TypeEmbeddedDocument {
+			return fmt.Errorf("field \"%s\" should have %s type", c.Name, c.ValueType.String())
+		}
+
+		v := new(json.RawMessage)
+		*v = json.RawMessage([]byte(rv.Array().String()))
+
+		c.Field.Append(v)
+	default:
+		v := new(string)
+		*v = rv.String()
+		c.Field.Append(v)
 	}
 
 	return nil
@@ -167,6 +175,14 @@ func NewColumn(rowIndex int, element bson.RawElement) *Column {
 		field = data.NewField(key, nil, make([]*json.RawMessage, rowIndex+1))
 		v := new(json.RawMessage)
 		*v = json.RawMessage([]byte(value.Document().String()))
+		field.Set(rowIndex, v)
+
+		storedAsString = false
+
+	case bson.TypeArray:
+		field = data.NewField(key, nil, make([]*json.RawMessage, rowIndex+1))
+		v := new(json.RawMessage)
+		*v = json.RawMessage([]byte(value.Array().String()))
 		field.Set(rowIndex, v)
 
 		storedAsString = false

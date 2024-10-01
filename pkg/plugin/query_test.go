@@ -405,4 +405,30 @@ func TestCreateTableFramesFromQuery(t *testing.T) {
 		}
 	})
 
+	t.Run("array and embed can exist in the same field", func(t *testing.T) {
+		ctx := context.Background()
+		toInsert := []interface{}{
+			bson.M{
+				"a": bson.A{1, 2, 3},
+			},
+			bson.M{
+				"a": bson.M{
+					"a": 1,
+				},
+			},
+			bson.M{
+				"b": 2,
+			},
+		}
+
+		cursor, err := mongo.NewCursorFromDocuments(toInsert, nil, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		_, err = CreateTableFramesFromQuery(ctx, "test", cursor)
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
 }
