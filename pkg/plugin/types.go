@@ -16,9 +16,10 @@ type Datasource struct {
 }
 
 type queryModel struct {
-	QueryText  string `json:"queryText"`
-	Collection string `json:"collection"`
-	QueryType  string `json:"queryType"`
+	QueryText     string `json:"queryText"`
+	Collection    string `json:"collection"`
+	QueryType     string `json:"queryType"`
+	QueryLanguage string `json:"queryLanguage"`
 }
 
 type TimeSeriesRow[T any] struct {

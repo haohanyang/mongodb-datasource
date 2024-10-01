@@ -1,11 +1,8 @@
 import { DataSourceInstanceSettings, CoreApp, ScopedVars, DataQueryRequest, DataQueryResponse, DateTime } from "@grafana/data";
 import { DataSourceWithBackend, getTemplateSrv } from "@grafana/runtime";
-import { validateQueryText } from "./utils";
-import { MongoQuery, MongoDataSourceOptions, DEFAULT_QUERY } from "./types";
+import { validateJsonQueryText, validateJsQueryText, parseJsQuery } from "./utils";
+import { MongoQuery, MongoDataSourceOptions, DEFAULT_QUERY, QueryLanguage } from "./types";
 import { Observable } from "rxjs";
-
-
-
 
 function datetimeToJson(datetime: DateTime) {
   return JSON.stringify({
@@ -32,17 +29,32 @@ export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourc
   }
 
   filterQuery(query: MongoQuery): boolean {
-    return !!query.queryText && !!query.collection && !validateQueryText(query.queryText!);
+    if (!query.collection) {
+      return false;
+    }
+
+    if (query.queryLanguage == QueryLanguage.JAVASCRIPT) {
+      return !validateJsQueryText(query.queryText);
+    } else {
+      return !validateJsonQueryText(query.queryText);
+    }
   }
 
   query(request: DataQueryRequest<MongoQuery>): Observable<DataQueryResponse> {
     const queries = request.targets.map(query => {
+      let queryText = query.queryText!;
+      if (query.queryLanguage == QueryLanguage.JAVASCRIPT) {
+        const { jsonQuery } = parseJsQuery(queryText);
+        queryText = jsonQuery!;
+      }
+
       return {
         ...query,
-        queryText: query.queryText?.replaceAll(/"\$from"/g, datetimeToJson(request.range.from))
+        queryText: queryText.replaceAll(/"\$from"/g, datetimeToJson(request.range.from))
           .replaceAll(/"\$to"/g, datetimeToJson(request.range.to))
       };
     });
+
     return super.query({ ...request, targets: queries });
   }
 }

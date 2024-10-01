@@ -5,6 +5,7 @@ export interface MongoQuery extends DataQuery {
   queryText?: string;
   collection?: string;
   queryType?: string;
+  queryLanguage?: string;
 }
 
 export const QueryType = {
@@ -12,14 +13,27 @@ export const QueryType = {
   TABLE: "table"
 };
 
+export const QueryLanguage = {
+  JSON: "json",
+  JAVASCRIPT: "javascript"
+};
+
+
 export const DEFAULT_QUERY: Partial<MongoQuery> = {
   queryText: "[]",
-  queryType: QueryType.TIMESERIES
+  queryType: QueryType.TIMESERIES,
+  queryLanguage: QueryLanguage.JSON
 };
 
 export interface DataPoint {
   Time: number;
   Value: number;
+}
+
+export interface JsQueryResult {
+  jsonQuery?: string;
+  collection?: string;
+  error: string | null;
 }
 
 export interface DataSourceResponse {
