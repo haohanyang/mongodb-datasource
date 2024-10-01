@@ -15,12 +15,13 @@ type Column struct {
 	ValueType      bsontype.Type
 	StoredAsString bool
 	Field          *data.Field
-	Size           int
+	NullValueCount int
 }
 
 func (c *Column) AppendValue(rv bson.RawValue) error {
 	if rv.Type == bson.TypeNull {
 		c.Field.Append(nil)
+		c.NullValueCount++
 	} else {
 		switch c.ValueType {
 		case bson.TypeBoolean:
@@ -102,8 +103,11 @@ func (c *Column) AppendValue(rv bson.RawValue) error {
 		}
 	}
 
-	c.Size++
 	return nil
+}
+
+func (c *Column) Size() int {
+	return c.Field.Len()
 }
 
 func NewColumn(rowIndex int, element bson.RawElement) *Column {
@@ -180,6 +184,6 @@ func NewColumn(rowIndex int, element bson.RawElement) *Column {
 		ValueType:      value.Type,
 		StoredAsString: storedAsString,
 		Field:          field,
-		Size:           rowIndex + 1,
+		NullValueCount: rowIndex,
 	}
 }

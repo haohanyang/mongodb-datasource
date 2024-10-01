@@ -102,7 +102,7 @@ func CreateTableFramesFromQuery(ctx context.Context, tableName string, cursor *m
 		// Make sure all columns have the same size
 		for _, c := range columns {
 			// Pad other columns with null value
-			if c.Size != rowIndex+1 {
+			if c.Size() != rowIndex+1 {
 				c.Field.Append(nil)
 			}
 		}
