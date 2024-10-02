@@ -70,7 +70,6 @@ export function QueryEditor({ query, onChange }: Props) {
 
   return (
     <>
-      <code>{query.queryText!.trim().replace(/(;$)/g, "").replace(/(\r\n|\n|\r)/gm, "")}</code>
       <InlineFieldRow>
         <InlineField label="Query Type">
           <Select id="query-editor-query-type" options={queryTypes} value={query.queryType || QueryType.TIMESERIES} onChange={onQueryTypeChange}></Select>
