@@ -33,7 +33,7 @@ export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourc
       return false;
     }
 
-    if (query.queryLanguage == QueryLanguage.JAVASCRIPT) {
+    if (query.queryLanguage === QueryLanguage.JAVASCRIPT) {
       return !validateJsQueryText(query.queryText);
     } else {
       return !validateJsonQueryText(query.queryText);
@@ -43,7 +43,7 @@ export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourc
   query(request: DataQueryRequest<MongoQuery>): Observable<DataQueryResponse> {
     const queries = request.targets.map(query => {
       let queryText = query.queryText!;
-      if (query.queryLanguage == QueryLanguage.JAVASCRIPT) {
+      if (query.queryLanguage === QueryLanguage.JAVASCRIPT) {
         const { jsonQuery } = parseJsQuery(queryText);
         queryText = jsonQuery!;
       }

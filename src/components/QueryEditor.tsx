@@ -26,7 +26,7 @@ export function QueryEditor({ query, onChange }: Props) {
   const [queryTextError, setQueryTextError] = useState<string | null>(null);
 
   const onQueryTextChange = (queryText: string) => {
-    if (query.queryLanguage == QueryLanguage.JAVASCRIPT) {
+    if (query.queryLanguage === QueryLanguage.JAVASCRIPT) {
       const { collection, error } = parseJsQuery(queryText);
       onChange({ ...query, collection: collection, queryText: queryText });
       setQueryTextError(error);
@@ -74,16 +74,16 @@ export function QueryEditor({ query, onChange }: Props) {
         <InlineField label="Query Type">
           <Select id="query-editor-query-type" options={queryTypes} value={query.queryType || QueryType.TIMESERIES} onChange={onQueryTypeChange}></Select>
         </InlineField>
-        {query.queryLanguage == QueryLanguage.JSON && <InlineField label="Collection" tooltip="Enter the collection to query"
+        {query.queryLanguage === QueryLanguage.JSON && <InlineField label="Collection" tooltip="Enter the collection to query"
           error="Please enter the collection" invalid={!query.collection}>
           <Input id="query-editor-collection" onChange={onCollectionChange} value={query.collection} required />
         </InlineField>}
       </InlineFieldRow>
       <Divider />
       <InlineField label="Use JavaScript Query">
-        <InlineSwitch id="query-editor-use-js-query" value={query.queryLanguage == QueryLanguage.JAVASCRIPT} onChange={onQueryLanguageChange} />
+        <InlineSwitch id="query-editor-use-js-query" value={query.queryLanguage === QueryLanguage.JAVASCRIPT} onChange={onQueryLanguageChange} />
       </InlineField>
-      <Field label="Query Text" description={`Enter the Mongo Aggregation Pipeline (${query.queryLanguage == QueryLanguage.JSON ? "JSON" : "JavaScript"})`}
+      <Field label="Query Text" description={`Enter the Mongo Aggregation Pipeline (${query.queryLanguage === QueryLanguage.JSON ? "JSON" : "JavaScript"})`}
         error={queryTextError} invalid={queryTextError != null}>
         <CodeEditor onEditorDidMount={onCodeEditorDidMount} width="100%" height={300} language={query.queryLanguage || ""}
           onBlur={onQueryTextChange} value={query.queryText || ""} showMiniMap={false} showLineNumbers={true} />
