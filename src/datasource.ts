@@ -1,6 +1,6 @@
 import { DataSourceInstanceSettings, CoreApp, ScopedVars, DataQueryRequest, DataQueryResponse, DateTime } from "@grafana/data";
 import { DataSourceWithBackend, getTemplateSrv } from "@grafana/runtime";
-import { validateJsonQueryText, validateJsQueryText, parseJsQuery } from "./utils";
+import { parseJsQuery } from "./utils";
 import { MongoQuery, MongoDataSourceOptions, DEFAULT_QUERY, QueryLanguage } from "./types";
 import { Observable } from "rxjs";
 
@@ -29,15 +29,7 @@ export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourc
   }
 
   filterQuery(query: MongoQuery): boolean {
-    if (!query.collection) {
-      return false;
-    }
-
-    if (query.queryLanguage === QueryLanguage.JAVASCRIPT) {
-      return !validateJsQueryText(query.queryText);
-    } else {
-      return !validateJsonQueryText(query.queryText);
-    }
+    return !!query.queryText && !!query.collection;
   }
 
   query(request: DataQueryRequest<MongoQuery>): Observable<DataQueryResponse> {

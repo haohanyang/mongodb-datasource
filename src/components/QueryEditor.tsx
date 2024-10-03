@@ -20,7 +20,7 @@ const queryTypes: Array<SelectableValue<string>> = [
 ];
 
 
-export function QueryEditor({ query, onChange }: Props) {
+export function QueryEditor({ query, onChange, onRunQuery }: Props) {
 
   const codeEditorRef = useRef<monacoType.editor.IStandaloneCodeEditor | null>(null);
   const [queryTextError, setQueryTextError] = useState<string | null>(null);
@@ -30,9 +30,15 @@ export function QueryEditor({ query, onChange }: Props) {
       const { collection, error } = parseJsQuery(queryText);
       onChange({ ...query, collection: collection, queryText: queryText });
       setQueryTextError(error);
+      if (!error) {
+        onRunQuery();
+      }
     } else {
       onChange({ ...query, queryText: queryText });
       const error = validateJsonQueryText(queryText);
+      if (!error) {
+        onRunQuery();
+      }
       setQueryTextError(error);
     }
   };

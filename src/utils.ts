@@ -2,19 +2,19 @@ import { JsQueryResult } from "types";
 
 export function validateJsonQueryText(queryText?: string): string | null {
     if (!queryText) {
-        return "json:empty";
+        return "Please enter the query text";
     }
 
     try {
         const queryJson = JSON.parse(queryText);
 
         if (!Array.isArray(queryJson)) {
-            return "json:no array";
+            return "Invalid query";
         } else {
             return null;
         }
     } catch (e) {
-        return "json:no json";
+        return "Invalid query";
     }
 }
 
@@ -33,7 +33,7 @@ export function parseJsQuery(queryText: string): JsQueryResult {
         };
     } else {
         return {
-            error: "js:nomatch"
+            error: "Invalid query"
         };
     }
 }
