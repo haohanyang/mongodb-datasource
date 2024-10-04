@@ -36,3 +36,7 @@ func PrintDataFrame(dataFrame *data.Frame) {
 		fmt.Println("|")
 	}
 }
+
+func pointer[K any](val K) *K {
+	return &val
+}

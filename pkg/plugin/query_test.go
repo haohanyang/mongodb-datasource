@@ -165,6 +165,453 @@ func TestCreateTimeSeriesFramesFromQuery(t *testing.T) {
 	})
 }
 
+func TestCreateTimeSeriesFramesFromQuery2(t *testing.T) {
+
+	t.Run("fields with correct int values and timestamps", func(t *testing.T) {
+		ctx := context.Background()
+		now := time.Now()
+		docs := []interface{}{
+			bson.M{
+				"name":  "name1",
+				"ts":    primitive.NewDateTimeFromTime(now),
+				"value": 1,
+			},
+			bson.M{
+				"name":  "name1",
+				"ts":    primitive.NewDateTimeFromTime(now),
+				"value": 2,
+			},
+			bson.M{
+				"name":  "name2",
+				"ts":    primitive.NewDateTimeFromTime(now),
+				"value": 3,
+			},
+			bson.M{
+				"name":  "name2",
+				"ts":    primitive.NewDateTimeFromTime(now),
+				"value": 4,
+			},
+		}
+
+		cursor := initCursorWithData(docs, t)
+		frames, err := CreateTimeSeriesFramesFromQuery2(ctx, cursor)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		f1 := frames["name1"]
+		f2 := frames["name2"]
+
+		if f1 == nil || f2 == nil {
+			t.Fatal("should have frame \"name1\" and \"name1\"")
+		}
+
+		expectedF1 := data.NewFrame("name1",
+			data.NewField("time", nil, []time.Time{now, now}),
+			data.NewField("Value", nil, []int32{1, 2}),
+		)
+
+		expectedF2 := data.NewFrame("name2",
+			data.NewField("time", nil, []time.Time{now, now}),
+			data.NewField("Value", nil, []int32{3, 4}),
+		)
+
+		if !cmp.Equal(f1, expectedF1, dataFrameComparer) || !cmp.Equal(f2, expectedF2, dataFrameComparer) {
+			t.Error("Unexpected data frame")
+		}
+	})
+
+	t.Run("fields with correct float values and timestamps", func(t *testing.T) {
+		ctx := context.Background()
+		now := time.Now()
+		docs := []interface{}{
+			bson.M{
+				"name":  "name1",
+				"ts":    primitive.NewDateTimeFromTime(now),
+				"value": 1.1,
+			},
+			bson.M{
+				"name":  "name1",
+				"ts":    primitive.NewDateTimeFromTime(now),
+				"value": 1.2,
+			},
+			bson.M{
+				"name":  "name2",
+				"ts":    primitive.NewDateTimeFromTime(now),
+				"value": 1.3,
+			},
+			bson.M{
+				"name":  "name2",
+				"ts":    primitive.NewDateTimeFromTime(now),
+				"value": 1.4,
+			},
+		}
+
+		cursor := initCursorWithData(docs, t)
+
+		frames, err := CreateTimeSeriesFramesFromQuery2(ctx, cursor)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		f1 := frames["name1"]
+		f2 := frames["name2"]
+
+		if f1 == nil || f2 == nil {
+			t.Fatal("should have frame \"name1\" and \"name1\"")
+		}
+
+		expectedF1 := data.NewFrame("name1",
+			data.NewField("time", nil, []time.Time{now, now}),
+			data.NewField("Value", nil, []float64{1.1, 1.2}),
+		)
+
+		expectedF2 := data.NewFrame("name2",
+			data.NewField("time", nil, []time.Time{now, now}),
+			data.NewField("Value", nil, []float64{1.3, 1.4}),
+		)
+
+		if !cmp.Equal(f1, expectedF1, dataFrameComparer) || !cmp.Equal(f2, expectedF2, dataFrameComparer) {
+			t.Error("Unexpected data frame")
+		}
+	})
+
+	t.Run("return error on non-numeric value", func(t *testing.T) {
+		now := time.Now()
+		ctx := context.Background()
+		docs := []interface{}{
+			bson.M{
+				"ts":    primitive.NewDateTimeFromTime(now),
+				"value": false,
+			},
+		}
+
+		cursor := initCursorWithData(docs, t)
+		_, err := CreateTimeSeriesFramesFromQuery2(ctx, cursor)
+		if !(err != nil && err.Error() == "value should be numeric") {
+			t.Error("should return value should be numeric error")
+		}
+	})
+
+	t.Run("return decode error on invalid ts value", func(t *testing.T) {
+		ctx := context.Background()
+		docs := []interface{}{
+			bson.M{
+				"ts":    "",
+				"value": 2,
+			},
+		}
+
+		cursor := initCursorWithData(docs, t)
+		_, err := CreateTimeSeriesFramesFromQuery2(ctx, cursor)
+		if !(err != nil && err.Error() == "ts should be timestamp") {
+			t.Error("should return ts should be timestamp error")
+		}
+	})
+
+	t.Run("should tolerate missing values", func(t *testing.T) {
+		now := time.Now()
+		ctx := context.Background()
+		docs := []interface{}{
+			bson.M{
+				"ts": primitive.NewDateTimeFromTime(now),
+			},
+			bson.M{
+				"ts":    primitive.NewDateTimeFromTime(now),
+				"value": 2,
+			},
+		}
+
+		cursor := initCursorWithData(docs, t)
+		frames, err := CreateTimeSeriesFramesFromQuery2(ctx, cursor)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		frame := frames[""]
+		var nullInt *int32
+		assertEq(t, frame.Fields[1].At(0), nullInt)
+		assertEq(t, frame.Fields[1].At(1), pointer[int32](2))
+	})
+
+	t.Run("should tolerate null values", func(t *testing.T) {
+		now := time.Now()
+		ctx := context.Background()
+		docs := []interface{}{
+			bson.M{
+				"ts":    primitive.NewDateTimeFromTime(now),
+				"value": nil,
+			},
+			bson.M{
+				"ts":    primitive.NewDateTimeFromTime(now),
+				"value": 2,
+			},
+		}
+
+		cursor := initCursorWithData(docs, t)
+		frames, err := CreateTimeSeriesFramesFromQuery2(ctx, cursor)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		frame := frames[""]
+		var nullInt *int32
+		assertEq(t, frame.Fields[1].At(0), nullInt)
+		assertEq(t, frame.Fields[1].At(1), pointer[int32](2))
+	})
+
+	t.Run("should tolerate missing timestamps", func(t *testing.T) {
+		now := time.Now()
+		ctx := context.Background()
+		docs := []interface{}{
+			bson.M{
+				"value": 1,
+			},
+			bson.M{
+				"ts":    primitive.NewDateTimeFromTime(now),
+				"value": 2,
+			},
+		}
+
+		cursor := initCursorWithData(docs, t)
+		frames, err := CreateTimeSeriesFramesFromQuery2(ctx, cursor)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		frame := frames[""]
+		var nullTs *time.Time
+		assertEq(t, frame.Fields[0].At(0), nullTs)
+		assertEq(t, frame.Fields[0].At(1), pointer(now))
+	})
+
+	t.Run("should tolerate null timestamps", func(t *testing.T) {
+		now := time.Now()
+		ctx := context.Background()
+		docs := []interface{}{
+			bson.M{
+				"ts":    nil,
+				"value": 1,
+			},
+			bson.M{
+				"ts":    primitive.NewDateTimeFromTime(now),
+				"value": 2,
+			},
+		}
+
+		cursor := initCursorWithData(docs, t)
+		frames, err := CreateTimeSeriesFramesFromQuery2(ctx, cursor)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		frame := frames[""]
+		var nullTs *time.Time
+		assertEq(t, frame.Fields[0].At(0), nullTs)
+		assertEq(t, frame.Fields[0].At(1), pointer(now))
+	})
+
+	t.Run("should tolerate int and double values - 1", func(t *testing.T) {
+		now := time.Now()
+		ctx := context.Background()
+		docs := []interface{}{
+			bson.M{
+				"ts":    primitive.NewDateTimeFromTime(now),
+				"value": 1.1,
+			},
+			bson.M{
+				"ts":    primitive.NewDateTimeFromTime(now),
+				"value": 2,
+			},
+		}
+
+		cursor := initCursorWithData(docs, t)
+		frames, err := CreateTimeSeriesFramesFromQuery2(ctx, cursor)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		frame := frames[""]
+
+		assertEq(t, frame.Fields[1].At(0), pointer(1.1))
+		assertEq(t, frame.Fields[1].At(1), pointer(2.0))
+	})
+
+	t.Run("should tolerate int and double values - 2", func(t *testing.T) {
+		now := time.Now()
+		ctx := context.Background()
+		docs := []interface{}{
+			bson.M{
+				"ts":    primitive.NewDateTimeFromTime(now),
+				"value": 2,
+			},
+			bson.M{
+				"ts":    primitive.NewDateTimeFromTime(now),
+				"value": 1.1,
+			},
+		}
+
+		cursor := initCursorWithData(docs, t)
+		frames, err := CreateTimeSeriesFramesFromQuery2(ctx, cursor)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		frame := frames[""]
+
+		assertEq(t, frame.Fields[1].At(0), pointer(2.0))
+		assertEq(t, frame.Fields[1].At(1), pointer(1.1))
+	})
+
+	t.Run("should tolerate int, double and null values - 1", func(t *testing.T) {
+		now := time.Now()
+		ctx := context.Background()
+		docs := []interface{}{
+			bson.M{
+				"ts":    primitive.NewDateTimeFromTime(now),
+				"value": 2,
+			},
+			bson.M{
+				"ts": primitive.NewDateTimeFromTime(now),
+			},
+			bson.M{
+				"ts":    primitive.NewDateTimeFromTime(now),
+				"value": 1.1,
+			},
+		}
+
+		cursor := initCursorWithData(docs, t)
+		frames, err := CreateTimeSeriesFramesFromQuery2(ctx, cursor)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		frame := frames[""]
+		PrintDataFrame(frame)
+		var nullDouble *float64
+		assertEq(t, frame.Fields[1].At(0), pointer(2.0))
+		assertEq(t, frame.Fields[1].At(1), nullDouble)
+		assertEq(t, frame.Fields[1].At(2), pointer(1.1))
+	})
+
+	t.Run("should tolerate int, double and null values - 2", func(t *testing.T) {
+		now := time.Now()
+		ctx := context.Background()
+		docs := []interface{}{
+			bson.M{
+				"ts": primitive.NewDateTimeFromTime(now),
+			},
+			bson.M{
+				"ts":    primitive.NewDateTimeFromTime(now),
+				"value": 2,
+			},
+			bson.M{
+				"ts":    primitive.NewDateTimeFromTime(now),
+				"value": 1.1,
+			},
+		}
+
+		cursor := initCursorWithData(docs, t)
+		frames, err := CreateTimeSeriesFramesFromQuery2(ctx, cursor)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		frame := frames[""]
+		PrintDataFrame(frame)
+		var nullDouble *float64
+		assertEq(t, frame.Fields[1].At(0), nullDouble)
+		assertEq(t, frame.Fields[1].At(1), pointer(2.0))
+		assertEq(t, frame.Fields[1].At(2), pointer(1.1))
+	})
+
+	t.Run("should tolerate int, double and null values - 3", func(t *testing.T) {
+		now := time.Now()
+		ctx := context.Background()
+		docs := []interface{}{
+			bson.M{
+				"ts":    primitive.NewDateTimeFromTime(now),
+				"value": 1.1,
+			},
+			bson.M{
+				"ts":    primitive.NewDateTimeFromTime(now),
+				"value": 2,
+			},
+			bson.M{
+				"ts": primitive.NewDateTimeFromTime(now),
+			},
+		}
+
+		cursor := initCursorWithData(docs, t)
+		frames, err := CreateTimeSeriesFramesFromQuery2(ctx, cursor)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		frame := frames[""]
+		PrintDataFrame(frame)
+		var nullDouble *float64
+		assertEq(t, frame.Fields[1].At(0), pointer(1.1))
+		assertEq(t, frame.Fields[1].At(1), pointer(2.0))
+		assertEq(t, frame.Fields[1].At(2), nullDouble)
+	})
+
+	t.Run("should skip empty rows", func(t *testing.T) {
+		now := time.Now()
+		ctx := context.Background()
+		docs := []interface{}{
+			bson.M{
+				"ts":    primitive.NewDateTimeFromTime(now),
+				"value": 1.1,
+			},
+			bson.M{},
+			bson.M{
+				"ts":    primitive.NewDateTimeFromTime(now),
+				"value": 1.2,
+			},
+		}
+
+		cursor := initCursorWithData(docs, t)
+		frames, err := CreateTimeSeriesFramesFromQuery2(ctx, cursor)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		frame := frames[""]
+		PrintDataFrame(frame)
+		assertEq(t, len(frame.Fields), 2)
+		assertEq(t, frame.Fields[1].At(0), pointer(1.1))
+		assertEq(t, frame.Fields[1].At(1), pointer(1.2))
+	})
+
+	t.Run("should return nil data frame if all values are empty or null", func(t *testing.T) {
+		now := time.Now()
+		ctx := context.Background()
+		docs := []interface{}{
+			bson.M{
+				"ts": primitive.NewDateTimeFromTime(now),
+			},
+			bson.M{},
+			bson.M{
+				"ts": primitive.NewDateTimeFromTime(now),
+			},
+		}
+
+		cursor := initCursorWithData(docs, t)
+		frames, err := CreateTimeSeriesFramesFromQuery2(ctx, cursor)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		frame := frames[""]
+		var emptyFrame *data.Frame
+		assertEq(t, frame, emptyFrame)
+	})
+
+}
+
 func TestCreateTableFramesFromQuery(t *testing.T) {
 	t.Run("should create dataframe on valid data", func(t *testing.T) {
 		ctx := context.Background()

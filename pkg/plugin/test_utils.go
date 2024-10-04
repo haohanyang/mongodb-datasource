@@ -3,6 +3,7 @@ package plugin
 import (
 	"fmt"
 	"math"
+	"reflect"
 	"testing"
 	"time"
 
@@ -93,4 +94,10 @@ func toPointerArray[T any](opts []Optional[T]) []*T {
 		res[i] = opt.ToPointer()
 	}
 	return res
+}
+
+func assertEq(t *testing.T, a interface{}, b interface{}) {
+	if !cmp.Equal(a, b, datetimeComparer, float32Comparer, float64Comparer) {
+		t.Errorf("%v != %v", reflect.ValueOf(a), reflect.ValueOf(a))
+	}
 }

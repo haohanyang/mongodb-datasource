@@ -3,8 +3,10 @@ package plugin
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/haohanyang/mongodb-datasource/pkg/models"
 	"go.mongodb.org/mongo-driver/bson"
@@ -45,6 +47,51 @@ func CreateTimeSeriesFramesFromQuery(ctx context.Context, cursor *mongo.Cursor) 
 		rowCount++
 	}
 	return frames, nil
+}
+
+func CreateTimeSeriesFramesFromQuery2(ctx context.Context, cursor *mongo.Cursor) (map[string]*data.Frame, error) {
+	timeSeriesTables := make(map[string]*models.TimeSeriesTable)
+	dataFrames := make(map[string]*data.Frame)
+
+	rowCount := 0
+	for cursor.Next(ctx) {
+		backend.Logger.Debug(fmt.Sprintf("Processing row %d\n", rowCount+1))
+		elements, err := cursor.Current.Elements()
+		if err != nil {
+			return dataFrames, err
+		}
+
+		name := ""
+		rawName := cursor.Current.Lookup("name")
+		if !rawName.IsZero() && rawName.Type == bson.TypeString {
+			name = rawName.StringValue()
+		}
+
+		if table, ok := timeSeriesTables[name]; ok {
+			err = table.AppendRow(elements)
+			if err != nil {
+				return dataFrames, err
+			}
+		} else {
+			table := models.NewTimeSeriesTable(name)
+			err = table.AppendRow(elements)
+			if err != nil {
+				return dataFrames, err
+			}
+
+			timeSeriesTables[name] = table
+		}
+		rowCount++
+	}
+
+	for name, table := range timeSeriesTables {
+		dataFrame := table.MakeDataFrame()
+		if dataFrame != nil {
+			dataFrames[name] = dataFrame
+		}
+	}
+
+	return dataFrames, nil
 }
 
 // Decode the corrent document and update the dataframe
