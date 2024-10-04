@@ -6,7 +6,7 @@ This plugin provides a Grafana datasource for querying and visualizing data from
 
 ## Use
 ### Query language
-The query text should be a valid MongoDB Aggregate pipeline - an array consisting of MongoDB Aggregate operations. Your may use the Grafana's built-in variables "$__from" and "$__to" to query data based on the current panel's time range. The plugin supports JSON and JavaScript query languages. In JSON query, you need to enter the database in the UI. Here is an example of JSON query.
+The query text should be a valid MongoDB Aggregate pipeline - an array consisting of MongoDB Aggregate operations. Your may use the Grafana's built-in variables `"$__from"` and `"$__to"` to query data based on the current panel's time range. The plugin supports JSON and JavaScript query languages. In JSON query, you need to enter the database in the UI. Here is an example of JSON query.
 ```json
 [
     {
@@ -53,13 +53,13 @@ You can also use the `"$from"` and `"$to"` conventions originated from a legacy 
 ]
 ```
 ### Query type
-#### Time series**
+#### Time series
 Time series query type is suitable for time series panels. The query results should consist the following fields:
-* ts
+* `ts`
 The timestamp
-* value
+* `value`
 Either integer or double. Currently all values should be of the same type.
-* name (Optional)
+* `name` (Optional)
 Useful if you want to show time series data of different categories.
 
 Here is an example of JSON query from [Sample AirBnB Listings Dataset](https://www.mongodb.com/docs/atlas/sample-data/sample-airbnb/). The query shows the number of created AirBnB reviews of apartment and house property type in each month during the selected time range.
