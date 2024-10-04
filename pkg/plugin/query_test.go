@@ -71,7 +71,7 @@ func TestCreateTimeSeriesFramesFromQuery(t *testing.T) {
 		)
 
 		if !cmp.Equal(f1, expectedF1, dataFrameComparer) || !cmp.Equal(f2, expectedF2, dataFrameComparer) {
-			t.Error("Data frame not correct")
+			t.Error("Unexpected data frame")
 		}
 	})
 
@@ -127,153 +127,6 @@ func TestCreateTimeSeriesFramesFromQuery(t *testing.T) {
 		)
 
 		if !cmp.Equal(f1, expectedF1, dataFrameComparer) || !cmp.Equal(f2, expectedF2, dataFrameComparer) {
-			t.Error("Data frame not correct")
-		}
-	})
-
-	t.Run("return error on invalid value field", func(t *testing.T) {
-		now := time.Now()
-		ctx := context.Background()
-		docs := []interface{}{
-			bson.M{
-				"ts":    primitive.NewDateTimeFromTime(now),
-				"value": false,
-			},
-		}
-
-		cursor := initCursorWithData(docs, t)
-		_, err := CreateTimeSeriesFramesFromQuery(ctx, cursor)
-		if !(err != nil && err.Error() == "invalid value type") {
-			t.Error("should return invalid type error")
-		}
-	})
-
-	t.Run("return decode error on invalid ts field", func(t *testing.T) {
-		ctx := context.Background()
-		docs := []interface{}{
-			bson.M{
-				"ts":    "",
-				"value": 2,
-			},
-		}
-
-		cursor := initCursorWithData(docs, t)
-		_, err := CreateTimeSeriesFramesFromQuery(ctx, cursor)
-		if !(err != nil && err.Error() == "failed to decode the data") {
-			t.Error("should return decode error")
-		}
-	})
-}
-
-func TestCreateTimeSeriesFramesFromQuery2(t *testing.T) {
-
-	t.Run("fields with correct int values and timestamps", func(t *testing.T) {
-		ctx := context.Background()
-		now := time.Now()
-		docs := []interface{}{
-			bson.M{
-				"name":  "name1",
-				"ts":    primitive.NewDateTimeFromTime(now),
-				"value": 1,
-			},
-			bson.M{
-				"name":  "name1",
-				"ts":    primitive.NewDateTimeFromTime(now),
-				"value": 2,
-			},
-			bson.M{
-				"name":  "name2",
-				"ts":    primitive.NewDateTimeFromTime(now),
-				"value": 3,
-			},
-			bson.M{
-				"name":  "name2",
-				"ts":    primitive.NewDateTimeFromTime(now),
-				"value": 4,
-			},
-		}
-
-		cursor := initCursorWithData(docs, t)
-		frames, err := CreateTimeSeriesFramesFromQuery2(ctx, cursor)
-
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		f1 := frames["name1"]
-		f2 := frames["name2"]
-
-		if f1 == nil || f2 == nil {
-			t.Fatal("should have frame \"name1\" and \"name1\"")
-		}
-
-		expectedF1 := data.NewFrame("name1",
-			data.NewField("time", nil, []time.Time{now, now}),
-			data.NewField("Value", nil, []int32{1, 2}),
-		)
-
-		expectedF2 := data.NewFrame("name2",
-			data.NewField("time", nil, []time.Time{now, now}),
-			data.NewField("Value", nil, []int32{3, 4}),
-		)
-
-		if !cmp.Equal(f1, expectedF1, dataFrameComparer) || !cmp.Equal(f2, expectedF2, dataFrameComparer) {
-			t.Error("Unexpected data frame")
-		}
-	})
-
-	t.Run("fields with correct float values and timestamps", func(t *testing.T) {
-		ctx := context.Background()
-		now := time.Now()
-		docs := []interface{}{
-			bson.M{
-				"name":  "name1",
-				"ts":    primitive.NewDateTimeFromTime(now),
-				"value": 1.1,
-			},
-			bson.M{
-				"name":  "name1",
-				"ts":    primitive.NewDateTimeFromTime(now),
-				"value": 1.2,
-			},
-			bson.M{
-				"name":  "name2",
-				"ts":    primitive.NewDateTimeFromTime(now),
-				"value": 1.3,
-			},
-			bson.M{
-				"name":  "name2",
-				"ts":    primitive.NewDateTimeFromTime(now),
-				"value": 1.4,
-			},
-		}
-
-		cursor := initCursorWithData(docs, t)
-
-		frames, err := CreateTimeSeriesFramesFromQuery2(ctx, cursor)
-
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		f1 := frames["name1"]
-		f2 := frames["name2"]
-
-		if f1 == nil || f2 == nil {
-			t.Fatal("should have frame \"name1\" and \"name1\"")
-		}
-
-		expectedF1 := data.NewFrame("name1",
-			data.NewField("time", nil, []time.Time{now, now}),
-			data.NewField("Value", nil, []float64{1.1, 1.2}),
-		)
-
-		expectedF2 := data.NewFrame("name2",
-			data.NewField("time", nil, []time.Time{now, now}),
-			data.NewField("Value", nil, []float64{1.3, 1.4}),
-		)
-
-		if !cmp.Equal(f1, expectedF1, dataFrameComparer) || !cmp.Equal(f2, expectedF2, dataFrameComparer) {
 			t.Error("Unexpected data frame")
 		}
 	})
@@ -289,7 +142,7 @@ func TestCreateTimeSeriesFramesFromQuery2(t *testing.T) {
 		}
 
 		cursor := initCursorWithData(docs, t)
-		_, err := CreateTimeSeriesFramesFromQuery2(ctx, cursor)
+		_, err := CreateTimeSeriesFramesFromQuery(ctx, cursor)
 		if !(err != nil && err.Error() == "value should be numeric") {
 			t.Error("should return value should be numeric error")
 		}
@@ -305,7 +158,7 @@ func TestCreateTimeSeriesFramesFromQuery2(t *testing.T) {
 		}
 
 		cursor := initCursorWithData(docs, t)
-		_, err := CreateTimeSeriesFramesFromQuery2(ctx, cursor)
+		_, err := CreateTimeSeriesFramesFromQuery(ctx, cursor)
 		if !(err != nil && err.Error() == "ts should be timestamp") {
 			t.Error("should return ts should be timestamp error")
 		}
@@ -325,7 +178,7 @@ func TestCreateTimeSeriesFramesFromQuery2(t *testing.T) {
 		}
 
 		cursor := initCursorWithData(docs, t)
-		frames, err := CreateTimeSeriesFramesFromQuery2(ctx, cursor)
+		frames, err := CreateTimeSeriesFramesFromQuery(ctx, cursor)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -351,7 +204,7 @@ func TestCreateTimeSeriesFramesFromQuery2(t *testing.T) {
 		}
 
 		cursor := initCursorWithData(docs, t)
-		frames, err := CreateTimeSeriesFramesFromQuery2(ctx, cursor)
+		frames, err := CreateTimeSeriesFramesFromQuery(ctx, cursor)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -376,7 +229,7 @@ func TestCreateTimeSeriesFramesFromQuery2(t *testing.T) {
 		}
 
 		cursor := initCursorWithData(docs, t)
-		frames, err := CreateTimeSeriesFramesFromQuery2(ctx, cursor)
+		frames, err := CreateTimeSeriesFramesFromQuery(ctx, cursor)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -402,7 +255,7 @@ func TestCreateTimeSeriesFramesFromQuery2(t *testing.T) {
 		}
 
 		cursor := initCursorWithData(docs, t)
-		frames, err := CreateTimeSeriesFramesFromQuery2(ctx, cursor)
+		frames, err := CreateTimeSeriesFramesFromQuery(ctx, cursor)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -428,7 +281,7 @@ func TestCreateTimeSeriesFramesFromQuery2(t *testing.T) {
 		}
 
 		cursor := initCursorWithData(docs, t)
-		frames, err := CreateTimeSeriesFramesFromQuery2(ctx, cursor)
+		frames, err := CreateTimeSeriesFramesFromQuery(ctx, cursor)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -454,7 +307,7 @@ func TestCreateTimeSeriesFramesFromQuery2(t *testing.T) {
 		}
 
 		cursor := initCursorWithData(docs, t)
-		frames, err := CreateTimeSeriesFramesFromQuery2(ctx, cursor)
+		frames, err := CreateTimeSeriesFramesFromQuery(ctx, cursor)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -483,7 +336,7 @@ func TestCreateTimeSeriesFramesFromQuery2(t *testing.T) {
 		}
 
 		cursor := initCursorWithData(docs, t)
-		frames, err := CreateTimeSeriesFramesFromQuery2(ctx, cursor)
+		frames, err := CreateTimeSeriesFramesFromQuery(ctx, cursor)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -514,7 +367,7 @@ func TestCreateTimeSeriesFramesFromQuery2(t *testing.T) {
 		}
 
 		cursor := initCursorWithData(docs, t)
-		frames, err := CreateTimeSeriesFramesFromQuery2(ctx, cursor)
+		frames, err := CreateTimeSeriesFramesFromQuery(ctx, cursor)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -545,7 +398,7 @@ func TestCreateTimeSeriesFramesFromQuery2(t *testing.T) {
 		}
 
 		cursor := initCursorWithData(docs, t)
-		frames, err := CreateTimeSeriesFramesFromQuery2(ctx, cursor)
+		frames, err := CreateTimeSeriesFramesFromQuery(ctx, cursor)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -574,7 +427,7 @@ func TestCreateTimeSeriesFramesFromQuery2(t *testing.T) {
 		}
 
 		cursor := initCursorWithData(docs, t)
-		frames, err := CreateTimeSeriesFramesFromQuery2(ctx, cursor)
+		frames, err := CreateTimeSeriesFramesFromQuery(ctx, cursor)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -600,7 +453,7 @@ func TestCreateTimeSeriesFramesFromQuery2(t *testing.T) {
 		}
 
 		cursor := initCursorWithData(docs, t)
-		frames, err := CreateTimeSeriesFramesFromQuery2(ctx, cursor)
+		frames, err := CreateTimeSeriesFramesFromQuery(ctx, cursor)
 		if err != nil {
 			t.Fatal(err)
 		}

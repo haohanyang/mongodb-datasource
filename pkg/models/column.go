@@ -34,81 +34,120 @@ func (c *Column) AppendValue(rv bson.RawValue) error {
 		c.Field.Append(v)
 
 	case bson.TypeInt32:
-		if c.ValueType != bson.TypeInt32 {
-			return fmt.Errorf("field \"%s\" should have %s type", c.Name, c.ValueType.String())
+		v := rv.Int32()
+		if c.ValueType == bson.TypeInt32 {
+			c.Field.Append(pointer(v))
+
+		} else if c.ValueType == bson.TypeInt64 {
+			c.Field.Append(pointer(int64(v)))
+
+		} else if c.ValueType == bson.TypeDouble {
+			c.Field.Append(pointer(float64(v)))
+
+		} else {
+			return fmt.Errorf("field \"%s\" should have numeric type", c.Name)
+
 		}
-
-		v := new(int32)
-		*v = rv.Int32()
-		c.Field.Append(v)
-
 	case bson.TypeInt64:
-		if c.ValueType != bson.TypeInt64 {
-			return fmt.Errorf("field \"%s\" should have %s type", c.Name, c.ValueType.String())
-		}
+		v := rv.Int64()
 
-		v := new(int64)
-		*v = rv.Int64()
-		c.Field.Append(v)
+		if c.ValueType == bson.TypeInt64 {
+			c.Field.Append(pointer(v))
+		} else if c.ValueType == bson.TypeInt32 {
+			// Convert all previous *int32 values to *int64
+
+			int64Values := make([]*int64, c.Field.Len()+1)
+			for i := 0; i < c.Field.Len(); i++ {
+				cv, ok := c.Field.ConcreteAt(i)
+				if ok {
+					int64Values[i] = pointer(int64(cv.(int32)))
+				}
+			}
+
+			int64Values[c.Field.Len()] = pointer(v)
+			c.Field = data.NewField(c.Name, nil, int64Values)
+			c.ValueType = rv.Type
+
+		} else if c.ValueType == bson.TypeDouble {
+			c.Field.Append(pointer(float64(v)))
+
+		} else {
+			return fmt.Errorf("field \"%s\" should have numeric type", c.Name)
+		}
 
 	case bson.TypeDouble:
-		if c.ValueType != bson.TypeDouble {
-			return fmt.Errorf("field \"%s\" should have %s type", c.Name, c.ValueType.String())
+		v := rv.Double()
+
+		if c.ValueType == bson.TypeDouble {
+			c.Field.Append(pointer(v))
+		} else if c.ValueType == bson.TypeInt32 {
+			// Convert all previous *int32 values to *float64
+			float64Values := make([]*float64, c.Field.Len()+1)
+			for i := 0; i < c.Field.Len(); i++ {
+				cv, ok := c.Field.ConcreteAt(i)
+				if ok {
+					float64Values[i] = pointer(float64(cv.(int32)))
+				}
+			}
+
+			float64Values[c.Field.Len()] = pointer(v)
+			c.Field = data.NewField(c.Name, nil, float64Values)
+			c.ValueType = rv.Type
+
+		} else if c.ValueType == bson.TypeInt64 {
+			// Convert all previous *int64 values to *float64
+			float64Values := make([]*float64, c.Field.Len()+1)
+			for i := 0; i < c.Field.Len(); i++ {
+				cv, ok := c.Field.ConcreteAt(i)
+				if ok {
+					float64Values[i] = pointer(float64(cv.(int64)))
+				}
+			}
+
+			float64Values[c.Field.Len()] = pointer(v)
+			c.Field = data.NewField(c.Name, nil, float64Values)
+			c.ValueType = rv.Type
 		}
 
-		v := new(float64)
-		*v = rv.Double()
-		c.Field.Append(v)
+		if c.ValueType != bson.TypeDouble {
+			return fmt.Errorf("field \"%s\" should have numeric", c.Name)
+		}
 
 	case bson.TypeString:
 		if c.ValueType != bson.TypeString {
 			return fmt.Errorf("field \"%s\" should have %s type", c.Name, c.ValueType.String())
 		}
 
-		v := new(string)
-		*v = rv.StringValue()
-		c.Field.Append(v)
+		c.Field.Append(pointer(rv.StringValue()))
 
 	case bson.TypeDateTime:
 		if c.ValueType != bson.TypeDateTime {
 			return fmt.Errorf("field \"%s\" should have %s type", c.Name, c.ValueType.String())
 		}
 
-		v := new(time.Time)
-		*v = rv.Time()
-		c.Field.Append(v)
+		c.Field.Append(pointer(rv.Time()))
 
 	case bson.TypeObjectID:
 		if c.ValueType != bson.TypeObjectID {
 			return fmt.Errorf("field \"%s\" should have %s type", c.Name, c.ValueType.String())
 		}
 
-		v := new(string)
-		*v = rv.ObjectID().String()
-		c.Field.Append(v)
+		c.Field.Append(pointer(rv.ObjectID().String()))
 
 	case bson.TypeEmbeddedDocument:
 		if c.ValueType != bson.TypeEmbeddedDocument && c.ValueType != bson.TypeArray {
 			return fmt.Errorf("field \"%s\" should have %s type", c.Name, c.ValueType.String())
 		}
 
-		v := new(json.RawMessage)
-		*v = json.RawMessage([]byte(rv.Document().String()))
-
-		c.Field.Append(v)
+		c.Field.Append(pointer(json.RawMessage([]byte(rv.Document().String()))))
 	case bson.TypeArray:
 		if c.ValueType != bson.TypeArray && c.ValueType != bson.TypeEmbeddedDocument {
 			return fmt.Errorf("field \"%s\" should have %s type", c.Name, c.ValueType.String())
 		}
 
-		v := new(json.RawMessage)
-		*v = json.RawMessage([]byte(rv.Array().String()))
-
-		c.Field.Append(v)
+		c.Field.Append(json.RawMessage([]byte(rv.Array().String())))
 	default:
-		v := new(string)
-		*v = rv.String()
-		c.Field.Append(v)
+		c.Field.Append(pointer(rv.String()))
 	}
 
 	return nil
