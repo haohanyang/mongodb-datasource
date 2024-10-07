@@ -3,9 +3,11 @@
 
 This plugin provides a Grafana datasource for querying and visualizing data from MongoDB.
 
+![screenshot](/static/screenshot.png)
+
+## Download
 [Download the latest build](https://github.com/haohanyang/mongodb-datasource/actions/runs/11219607911/artifacts/2024932705)
 
-![screenshot](/static/screenshot.png)
 
 ## Use
 ### Query language
@@ -122,7 +124,7 @@ Table type is more flexible and doesn't require the output schema. This usually 
 
 
 ## Install
-* Download the artifact package plugin `haohanyang-mongodb-datasource-<version>.zip` from [GitHub Action](https://github.com/haohanyang/mongodb-datasource/actions/workflows/ci.yml?query=branch%3Amaster) page to the root directory (where the `docker-compose.yaml` exists) and extract files to folder `mongodb-datasource`
+* Download the packaged plugin `haohanyang-mongodb-datasource-<version>.zip` from [Workflow artifacts](#download) to the root directory (where `docker-compose.yaml` exists) and extract files to folder `mongodb-datasource`
 
 ```bash
 unzip haohanyang-mongodb-datasource-<version>.zip -d mongodb-datasource
