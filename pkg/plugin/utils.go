@@ -40,3 +40,7 @@ func PrintDataFrame(dataFrame *data.Frame) {
 func pointer[K any](val K) *K {
 	return &val
 }
+func null[K any]() *K {
+	var nullValue *K
+	return nullValue
+}

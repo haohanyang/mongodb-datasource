@@ -75,29 +75,9 @@ var datetimeComparer = cmp.Comparer(func(x, y time.Time) bool {
 	return x.Truncate(time.Millisecond).Compare(y.Truncate(time.Millisecond)) == 0
 })
 
-func newValue[T any](value T) Optional[T] {
-	return Optional[T]{
-		Value:   value,
-		Nothing: false,
-	}
-}
-
-func newNull[T any]() Optional[T] {
-	return Optional[T]{
-		Nothing: true,
-	}
-}
-
-func toPointerArray[T any](opts []Optional[T]) []*T {
-	res := make([]*T, len(opts))
-	for i, opt := range opts {
-		res[i] = opt.ToPointer()
-	}
-	return res
-}
-
 func assertEq(t *testing.T, a interface{}, b interface{}) {
 	if !cmp.Equal(a, b, datetimeComparer, float32Comparer, float64Comparer) {
-		t.Errorf("%v != %v", reflect.ValueOf(a), reflect.ValueOf(a))
+		t.Errorf("(%v)%v != (%v)%v", reflect.TypeOf(a), reflect.ValueOf(a), reflect.TypeOf(b),
+			reflect.ValueOf(b))
 	}
 }
