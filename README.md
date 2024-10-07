@@ -3,7 +3,7 @@
 
 This plugin provides a Grafana datasource for querying and visualizing data from MongoDB.
 
-[Download the latest build](https://github.com/haohanyang/mongodb-datasource/actions/runs/11219320677/artifacts/2024847609)
+[Download the latest build](https://github.com/haohanyang/mongodb-datasource/actions/runs/11219607911/artifacts/2024932705)
 
 ![screenshot](/static/screenshot.png)
 
