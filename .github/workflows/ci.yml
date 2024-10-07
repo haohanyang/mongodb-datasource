@@ -216,7 +216,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Update the latest build URL
-        if: github.ref == 'refs/heads/auto-update-latest-build-link'
+        if: github.ref == 'refs/heads/master'
         run: |
           sed -i 's|\[Download the latest build\](.*)|\[Download the latest build\](${{ needs.build.outputs.artifact-url }})|' README.md
           git config --global user.name 'github-actions[bot]'
