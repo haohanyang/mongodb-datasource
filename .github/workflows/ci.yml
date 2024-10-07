@@ -4,12 +4,17 @@ on:
   push:
     branches:
       - '*'
+    paths-ignore:
+      - README.md
   pull_request:
     branches:
       - master
       - main
+    paths-ignore:
+      - README.md
 
-permissions: read-all
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -20,6 +25,7 @@ jobs:
       plugin-version: ${{ steps.metadata.outputs.plugin-version }}
       has-e2e: ${{ steps.check-for-e2e.outputs.has-e2e }}
       has-backend: ${{ steps.check-for-backend.outputs.has-backend }}
+      artifact-url: ${{ steps.archive-build.outputs.artifact-url }}
     env:
       GRAFANA_ACCESS_POLICY_TOKEN: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
     steps:
@@ -103,6 +109,7 @@ jobs:
 
       - name: Archive Build
         uses: actions/upload-artifact@v4
+        id: archive-build
         with:
           name: ${{ steps.metadata.outputs.plugin-id }}-${{ steps.metadata.outputs.plugin-version }}
           path: ${{ steps.metadata.outputs.plugin-id }}
@@ -174,6 +181,15 @@ jobs:
       - name: Run Playwright tests
         id: run-tests
         run: npm run e2e
+      
+      - name: Update the latest build URL
+        if: ${{ github.ref == 'refs/heads/auto-update-latest-build-link' && steps.run-tests.outcome == 'success' }}
+        run: |
+          sed -i 's|\[Download the latest build\](.*)|\[Download the latest build\](${{ needs.build.outputs.artifact-url }})|' README.md
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git commit -am "Update link to latest build"
+          git push
 
       - name: Docker logs
         if: ${{ always() && steps.run-tests.outcome == 'failure' }}
