@@ -145,7 +145,7 @@ func (c *Column) AppendValue(rv bson.RawValue) error {
 			return fmt.Errorf("field \"%s\" should have %s type", c.Name, c.ValueType.String())
 		}
 
-		c.Field.Append(json.RawMessage([]byte(rv.Array().String())))
+		c.Field.Append(pointer(json.RawMessage([]byte(rv.Array().String()))))
 	default:
 		c.Field.Append(pointer(rv.String()))
 	}
