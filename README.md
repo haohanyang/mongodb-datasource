@@ -5,6 +5,10 @@ This plugin provides a Grafana datasource for querying and visualizing data from
 
 ![screenshot](/static/screenshot.png)
 
+## Download
+[Download the latest build](https://github.com/haohanyang/mongodb-datasource/actions/runs/11218336228/artifacts/2024560027)
+
+
 ## Use
 ### Query language
 The query text should be a valid MongoDB Aggregate pipeline - an array consisting of MongoDB Aggregate operations. Your may use the Grafana's built-in variables `"$__from"` and `"$__to"` to query data based on the current panel's time range. The plugin supports JSON and JavaScript query languages. In JSON query, you need to enter the database in the UI. Here is an example of JSON query.
@@ -120,7 +124,7 @@ Table type is more flexible and doesn't require the output schema. This usually 
 
 
 ## Install
-* Download the artifact package plugin `haohanyang-mongodb-datasource-<version>.zip` from [GitHub Action](https://github.com/haohanyang/mongodb-datasource/actions/workflows/ci.yml?query=branch%3Amaster) page to the root directory (where the `docker-compose.yaml` exists) and extract files to folder `mongodb-datasource`
+* Download the packaged plugin `haohanyang-mongodb-datasource-<version>.zip` from [workflow artifacts](#download) to the root directory (where `docker-compose.yaml` exists) and extract files to folder `mongodb-datasource`
 
 ```bash
 unzip haohanyang-mongodb-datasource-<version>.zip -d mongodb-datasource
