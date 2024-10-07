@@ -185,7 +185,6 @@ func (d *Datasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRe
 		return res, nil
 	}
 
-	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
 	var uri string
 
 	if config.AuthMethod == "auth-none" {
