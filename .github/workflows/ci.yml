@@ -215,11 +215,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Update the latest build URL
+      - name: Update the latest workflow artifact URL
         if: github.ref == 'refs/heads/master'
         run: |
           sed -i 's|\[Download the latest build\](.*)|\[Download the latest build\](${{ needs.build.outputs.artifact-url }})|' README.md
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git commit -am "Update link to latest build"
+          git commit -am "Update link to the latest workflow artifact"
           git push
