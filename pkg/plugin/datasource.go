@@ -53,8 +53,7 @@ func NewDatasource(ctx context.Context, source backend.DataSourceInstanceSetting
 		return nil, errors.New("authentication method not supported")
 	}
 
-	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
-	opts := options.Client().ApplyURI(uri).SetServerAPIOptions(serverAPI)
+	opts := options.Client().ApplyURI(uri)
 
 	client, err := mongo.Connect(ctx, opts)
 	if err != nil {
@@ -204,7 +203,7 @@ func (d *Datasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRe
 		return res, nil
 	}
 
-	opts := options.Client().ApplyURI(uri).SetServerAPIOptions(serverAPI).SetTimeout(5 * time.Second)
+	opts := options.Client().ApplyURI(uri).SetTimeout(5 * time.Second)
 	client, err := mongo.Connect(ctx, opts)
 	if err != nil {
 		res.Status = backend.HealthStatusError
