@@ -2,9 +2,7 @@ package plugin
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/haohanyang/mongodb-datasource/pkg/models"
 	"go.mongodb.org/mongo-driver/bson"
@@ -19,7 +17,6 @@ func CreateTimeSeriesFramesFromQuery(ctx context.Context, cursor *mongo.Cursor) 
 
 	rowCount := 0
 	for cursor.Next(ctx) {
-		backend.Logger.Debug(fmt.Sprintf("Processing row %d\n", rowCount+1))
 		elements, err := cursor.Current.Elements()
 		if err != nil {
 			return dataFrames, err

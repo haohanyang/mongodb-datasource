@@ -26,7 +26,6 @@ var datasetLinks = []string{
 	"https://github.com/neelabalan/mongodb-sample-dataset/raw/refs/heads/main/sample_analytics/accounts.json",
 	"https://github.com/neelabalan/mongodb-sample-dataset/raw/refs/heads/main/sample_analytics/customers.json",
 	"https://github.com/neelabalan/mongodb-sample-dataset/raw/refs/heads/main/sample_analytics/transactions.json",
-	"https://github.com/neelabalan/mongodb-sample-dataset/raw/refs/heads/main/sample_geospatial/shipwrecks.json",
 	"https://github.com/neelabalan/mongodb-sample-dataset/raw/refs/heads/main/sample_mflix/comments.json",
 	"https://github.com/neelabalan/mongodb-sample-dataset/raw/refs/heads/main/sample_mflix/theaters.json",
 	"https://github.com/neelabalan/mongodb-sample-dataset/raw/refs/heads/main/sample_mflix/users.json",
