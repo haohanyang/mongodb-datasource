@@ -20,6 +20,8 @@ import (
 var uri = "mongodb://localhost:27018"
 
 var datasetLinks = []string{
+	"https://github.com/ozlerhakan/mongodb-json-files/raw/refs/heads/master/datasets/students.json",
+	"https://github.com/ozlerhakan/mongodb-json-files/raw/refs/heads/master/datasets/covers.json",
 	"https://github.com/neelabalan/mongodb-sample-dataset/raw/refs/heads/main/sample_airbnb/listingsAndReviews.json",
 	"https://github.com/neelabalan/mongodb-sample-dataset/raw/refs/heads/main/sample_analytics/accounts.json",
 	"https://github.com/neelabalan/mongodb-sample-dataset/raw/refs/heads/main/sample_analytics/customers.json",
@@ -31,7 +33,6 @@ var datasetLinks = []string{
 	"https://github.com/neelabalan/mongodb-sample-dataset/raw/refs/heads/main/sample_supplies/sales.json",
 	"https://github.com/neelabalan/mongodb-sample-dataset/raw/refs/heads/main/sample_training/grades.json",
 	"https://github.com/neelabalan/mongodb-sample-dataset/raw/refs/heads/main/sample_training/posts.json",
-	"https://github.com/neelabalan/mongodb-sample-dataset/raw/refs/heads/main/sample_training/stories.json",
 	"https://github.com/neelabalan/mongodb-sample-dataset/raw/refs/heads/main/sample_training/tweets.json",
 	"https://github.com/neelabalan/mongodb-sample-dataset/raw/refs/heads/main/sample_weatherdata/data.json",
 }
