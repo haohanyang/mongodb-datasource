@@ -101,6 +101,7 @@ func CreateTableFramesFromQuery(ctx context.Context, tableName string, cursor *m
 
 	frame := data.NewFrame(tableName)
 	for _, c := range columns {
+		c.Rectify()
 		frame.Fields = append(frame.Fields, c.Field)
 	}
 

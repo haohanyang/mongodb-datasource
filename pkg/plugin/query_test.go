@@ -343,7 +343,6 @@ func TestCreateTimeSeriesFramesFromQuery(t *testing.T) {
 		}
 
 		frame := frames[""]
-		PrintDataFrame(frame)
 		var nullDouble *float64
 		assertEq(t, frame.Fields[1].At(0), pointer(2.0))
 		assertEq(t, frame.Fields[1].At(1), nullDouble)
@@ -375,7 +374,6 @@ func TestCreateTimeSeriesFramesFromQuery(t *testing.T) {
 		}
 
 		frame := frames[""]
-		PrintDataFrame(frame)
 		var nullDouble *float64
 		assertEq(t, frame.Fields[1].At(0), pointer(2.0))
 		assertEq(t, frame.Fields[1].At(1), nullDouble)
@@ -406,7 +404,6 @@ func TestCreateTimeSeriesFramesFromQuery(t *testing.T) {
 		}
 
 		frame := frames[""]
-		PrintDataFrame(frame)
 		var nullDouble *float64
 		assertEq(t, frame.Fields[1].At(0), nullDouble)
 		assertEq(t, frame.Fields[1].At(1), pointer(2.0))
@@ -438,7 +435,6 @@ func TestCreateTimeSeriesFramesFromQuery(t *testing.T) {
 		}
 
 		frame := frames[""]
-		PrintDataFrame(frame)
 		var nullDouble *float64
 		assertEq(t, frame.Fields[1].At(0), nullDouble)
 		assertEq(t, frame.Fields[1].At(1), pointer(2.0))
@@ -469,7 +465,7 @@ func TestCreateTimeSeriesFramesFromQuery(t *testing.T) {
 		}
 
 		frame := frames[""]
-		PrintDataFrame(frame)
+
 		var nullDouble *float64
 		assertEq(t, frame.Fields[1].At(0), pointer(1.1))
 		assertEq(t, frame.Fields[1].At(1), pointer(2.0))
@@ -501,7 +497,6 @@ func TestCreateTimeSeriesFramesFromQuery(t *testing.T) {
 		}
 
 		frame := frames[""]
-		PrintDataFrame(frame)
 		var nullDouble *float64
 		assertEq(t, frame.Fields[1].At(0), pointer(1.1))
 		assertEq(t, frame.Fields[1].At(1), pointer(2.0))
@@ -532,7 +527,6 @@ func TestCreateTimeSeriesFramesFromQuery(t *testing.T) {
 		}
 
 		frame := frames[""]
-		PrintDataFrame(frame)
 		assertEq(t, len(frame.Fields), 2)
 		assertEq(t, frame.Fields[1].At(0), pointer(1.1))
 		assertEq(t, frame.Fields[1].At(1), pointer(1.2))
@@ -691,14 +685,6 @@ func TestCreateTableFramesFromQuery(t *testing.T) {
 			},
 		}
 
-		type Foo struct {
-			data int
-		}
-
-		type Bar struct {
-			data bool
-		}
-
 		var null *json.RawMessage
 
 		cursor, err := mongo.NewCursorFromDocuments(toInsert, nil, nil)
@@ -718,9 +704,10 @@ func TestCreateTableFramesFromQuery(t *testing.T) {
 		assertEq(t, foo.At(1), null)
 		v, _ := foo.ConcreteAt(0)
 
-		var f Foo
-		bson.UnmarshalExtJSON(v.(json.RawMessage), true, &f)
-		assertEq(t, f.data, 1)
+		var doc bson.M
+		bson.UnmarshalExtJSON(v.(json.RawMessage), true, &doc)
+
+		assertEq(t, doc["data"], int32(1))
 
 		bar, ok := frame.FieldByName("bar")
 		if ok == -1 {
@@ -728,9 +715,9 @@ func TestCreateTableFramesFromQuery(t *testing.T) {
 		}
 		assertEq(t, bar.At(0), null)
 		v, _ = bar.ConcreteAt(1)
-		var b Bar
-		bson.UnmarshalExtJSON(v.(json.RawMessage), true, &b)
-		assertEq(t, b.data, true)
+
+		bson.UnmarshalExtJSON(v.(json.RawMessage), true, &doc)
+		assertEq(t, doc["data"], true)
 	})
 
 	t.Run("should handle array field", func(t *testing.T) {
@@ -756,9 +743,14 @@ func TestCreateTableFramesFromQuery(t *testing.T) {
 		v, _ := frame.Fields[0].ConcreteAt(0)
 		var doc bson.M
 		bson.UnmarshalExtJSON(v.(json.RawMessage), true, &doc)
+		assertEq(t, doc["0"], int32(1))
+		assertEq(t, doc["1"], "bar")
+
+		docIn := doc["2"].(bson.M)
+		assertEq(t, docIn["baz"], int32(1))
 	})
 
-	t.Run("array and embed can exist in the same field", func(t *testing.T) {
+	t.Run("array and embedded docs can exist in the same field", func(t *testing.T) {
 		ctx := context.Background()
 		toInsert := []interface{}{
 			bson.M{

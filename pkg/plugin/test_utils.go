@@ -83,8 +83,7 @@ var datetimeComparer = cmp.Comparer(func(x, y time.Time) bool {
 
 func assertEq(t *testing.T, a interface{}, b interface{}) {
 	if !cmp.Equal(a, b, datetimeComparer, float32Comparer, float64Comparer) {
-		t.Errorf("(%v)%v != (%v)%v", reflect.TypeOf(a), reflect.ValueOf(a), reflect.TypeOf(b),
-			reflect.ValueOf(b))
+		t.Errorf("Received %v (type %v), expected %v (type %v)", reflect.ValueOf(a), reflect.TypeOf(a), reflect.TypeOf(b), reflect.TypeOf(b))
 	}
 }
 
