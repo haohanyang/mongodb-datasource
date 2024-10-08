@@ -2,13 +2,19 @@ package plugin
 
 import (
 	"fmt"
+	"io"
 	"math"
+	"net/http"
+	"os"
+	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
+	"github.com/mongodb/mongo-tools/mongoimport"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -80,4 +86,50 @@ func assertEq(t *testing.T, a interface{}, b interface{}) {
 		t.Errorf("(%v)%v != (%v)%v", reflect.TypeOf(a), reflect.ValueOf(a), reflect.TypeOf(b),
 			reflect.ValueOf(b))
 	}
+}
+
+func downloadAndImportMongoData(url string, dir string) error {
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+
+	fileName := filepath.Base(url)
+	filePath := filepath.Join(dir, fileName)
+
+	out, err := os.Create(filePath)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, resp.Body)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("File downloaded to %s\n", filePath)
+
+	opts, err := mongoimport.ParseOptions([]string{"--drop", "-c", strings.Split(fileName, ".")[0], "--uri", "mongodb://localhost:27018/test", filePath},
+		"built-without-version-string", "build-without-git-commit")
+
+	if err != nil {
+		return err
+	}
+
+	m, err := mongoimport.New(opts)
+	if err != nil {
+		return err
+	}
+	defer m.Close()
+
+	numDocs, numFailure, err := m.ImportDocuments()
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("%d doc(s) were inserted,  %d doc(s) failed to insert\n", numDocs, numFailure)
+	return nil
 }
