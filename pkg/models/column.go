@@ -24,8 +24,8 @@ func (c *Column) AppendValue(rv bson.RawValue) error {
 		c.Field.Append(nil)
 
 	case bson.TypeBoolean:
-		if c.Type() != data.FieldTypeBool {
-			return fmt.Errorf("field %s should have type %s", c.Name, c.Type().String())
+		if c.Type() != data.FieldTypeNullableBool {
+			return fmt.Errorf("field %s should have type %s, but got %s", c.Name, c.Type().ItemTypeString(), rv.Type.String())
 		}
 
 		v := new(bool)
@@ -44,7 +44,7 @@ func (c *Column) AppendValue(rv bson.RawValue) error {
 			c.Field.Append(pointer(float64(v)))
 
 		} else {
-			return fmt.Errorf("field %s should have type %s", c.Name, c.Type().String())
+			return fmt.Errorf("field %s should have type %s, but got %s", c.Name, c.Type().ItemTypeString(), rv.Type.String())
 		}
 	case bson.TypeInt64:
 		v := rv.Int64()
@@ -68,7 +68,7 @@ func (c *Column) AppendValue(rv bson.RawValue) error {
 			c.Field.Append(pointer(float64(v)))
 
 		} else {
-			return fmt.Errorf("field %s should have type %s", c.Name, c.Type().String())
+			return fmt.Errorf("field %s should have type %s, but got %s", c.Name, c.Type().ItemTypeString(), rv.Type.String())
 		}
 
 	case bson.TypeDouble:
@@ -102,45 +102,45 @@ func (c *Column) AppendValue(rv bson.RawValue) error {
 			float64Values[c.Field.Len()] = pointer(v)
 			c.Field = data.NewField(c.Name, nil, float64Values)
 		} else {
-			return fmt.Errorf("field %s should have type %s", c.Name, c.Type().String())
+			return fmt.Errorf("field %s should have type %s, but got %s", c.Name, c.Type().ItemTypeString(), rv.Type.String())
 		}
 
 	case bson.TypeString:
 		if c.Type() != data.FieldTypeNullableString {
-			return fmt.Errorf("field %s should have type %s", c.Name, c.Type().String())
+			return fmt.Errorf("field %s should have type %s, but got %s", c.Name, c.Type().ItemTypeString(), rv.Type.String())
 		}
 
 		c.Field.Append(pointer(rv.StringValue()))
 
 	case bson.TypeDateTime:
 		if c.Type() != data.FieldTypeNullableTime {
-			return fmt.Errorf("field %s should have type %s", c.Name, c.Type().String())
+			return fmt.Errorf("field %s should have type %s, but got %s", c.Name, c.Type().ItemTypeString(), rv.Type.String())
 		}
 
 		c.Field.Append(pointer(rv.Time()))
 
 	case bson.TypeObjectID:
 		if c.Type() != data.FieldTypeNullableString {
-			return fmt.Errorf("field %s should have type %s", c.Name, c.Type().String())
+			return fmt.Errorf("field %s should have type %s, but got %s", c.Name, c.Type().ItemTypeString(), rv.Type.String())
 		}
 		c.Field.Append(pointer(rv.ObjectID().String()))
 
 	case bson.TypeEmbeddedDocument:
 		if c.Type() != data.FieldTypeNullableString {
-			return fmt.Errorf("field %s should have type %s", c.Name, c.Type().String())
+			return fmt.Errorf("field %s should have type %s, but got %s", c.Name, c.Type().ItemTypeString(), rv.Type.String())
 		}
 
 		c.Field.Append(pointer(rv.Document().String()))
 	case bson.TypeArray:
 		if c.Type() != data.FieldTypeNullableString {
-			return fmt.Errorf("field %s should have type %s", c.Name, c.Type().String())
+			return fmt.Errorf("field %s should have type %s, but got %s", c.Name, c.Type().ItemTypeString(), rv.Type.String())
 		}
 
 		c.Field.Append(pointer(rv.Array().String()))
 
 	default:
 		if c.Type() != data.FieldTypeNullableString {
-			return fmt.Errorf("field %s should have type %s", c.Name, c.Type().String())
+			return fmt.Errorf("field %s should have type %s, but got %s", c.Name, c.Type().ItemTypeString(), rv.Type.String())
 		}
 
 		c.Field.Append(pointer(UNSUPPORTED_TYPE))
