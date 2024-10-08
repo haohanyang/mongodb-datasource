@@ -11,18 +11,15 @@ import (
 )
 
 type Column struct {
-	Name           string
-	ValueType      bsontype.Type
-	StoredAsString bool
-	Field          *data.Field
-	NullValueCount int
+	Name      string
+	ValueType bsontype.Type
+	Field     *data.Field
 }
 
 func (c *Column) AppendValue(rv bson.RawValue) error {
 	switch rv.Type {
 	case bson.TypeNull:
 		c.Field.Append(nil)
-		c.NullValueCount++
 
 	case bson.TypeBoolean:
 		if c.ValueType != bson.TypeBoolean {
@@ -160,7 +157,6 @@ func (c *Column) Size() int {
 func NewColumn(rowIndex int, element bson.RawElement) *Column {
 	key := element.Key()
 	value := element.Value()
-	storedAsString := false
 	var field *data.Field
 
 	switch value.Type {
@@ -194,8 +190,6 @@ func NewColumn(rowIndex int, element bson.RawElement) *Column {
 		*v = value.StringValue()
 		field.Set(rowIndex, v)
 
-		storedAsString = true
-
 	case bson.TypeDateTime:
 		field = data.NewField(key, nil, make([]*time.Time, rowIndex+1))
 		v := new(time.Time)
@@ -208,15 +202,11 @@ func NewColumn(rowIndex int, element bson.RawElement) *Column {
 		*v = value.ObjectID().String()
 		field.Set(rowIndex, v)
 
-		storedAsString = true
-
 	case bson.TypeEmbeddedDocument:
 		field = data.NewField(key, nil, make([]*json.RawMessage, rowIndex+1))
 		v := new(json.RawMessage)
 		*v = json.RawMessage([]byte(value.Document().String()))
 		field.Set(rowIndex, v)
-
-		storedAsString = false
 
 	case bson.TypeArray:
 		field = data.NewField(key, nil, make([]*json.RawMessage, rowIndex+1))
@@ -224,21 +214,17 @@ func NewColumn(rowIndex int, element bson.RawElement) *Column {
 		*v = json.RawMessage([]byte(value.Array().String()))
 		field.Set(rowIndex, v)
 
-		storedAsString = false
 	default:
 		field = data.NewField(key, nil, make([]*string, rowIndex+1))
 		v := new(string)
 		*v = value.String()
 		field.Set(rowIndex, v)
 
-		storedAsString = true
 	}
 
 	return &Column{
-		Name:           key,
-		ValueType:      value.Type,
-		StoredAsString: storedAsString,
-		Field:          field,
-		NullValueCount: rowIndex,
+		Name:      key,
+		ValueType: value.Type,
+		Field:     field,
 	}
 }
