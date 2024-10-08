@@ -23,7 +23,7 @@ func (c *Column) AppendValue(rv bson.RawValue) error {
 
 	case bson.TypeBoolean:
 		if c.ValueType != bson.TypeBoolean {
-			return fmt.Errorf("field \"%s\" should have %s type", c.Name, c.ValueType.String())
+			return fmt.Errorf("field %s should have type %s", c.Name, c.ValueType.String())
 		}
 
 		v := new(bool)
@@ -42,8 +42,7 @@ func (c *Column) AppendValue(rv bson.RawValue) error {
 			c.Field.Append(pointer(float64(v)))
 
 		} else {
-			return fmt.Errorf("field \"%s\" should have numeric type", c.Name)
-
+			return fmt.Errorf("field %s should have type %s", c.Name, c.ValueType.String())
 		}
 	case bson.TypeInt64:
 		v := rv.Int64()
@@ -52,7 +51,6 @@ func (c *Column) AppendValue(rv bson.RawValue) error {
 			c.Field.Append(pointer(v))
 		} else if c.ValueType == bson.TypeInt32 {
 			// Convert all previous *int32 values to *int64
-
 			int64Values := make([]*int64, c.Field.Len()+1)
 			for i := 0; i < c.Field.Len(); i++ {
 				cv, ok := c.Field.ConcreteAt(i)
@@ -69,7 +67,7 @@ func (c *Column) AppendValue(rv bson.RawValue) error {
 			c.Field.Append(pointer(float64(v)))
 
 		} else {
-			return fmt.Errorf("field \"%s\" should have numeric type", c.Name)
+			return fmt.Errorf("field %s should have type %s", c.Name, c.ValueType.String())
 		}
 
 	case bson.TypeDouble:
@@ -107,39 +105,39 @@ func (c *Column) AppendValue(rv bson.RawValue) error {
 		}
 
 		if c.ValueType != bson.TypeDouble {
-			return fmt.Errorf("field \"%s\" should have numeric", c.Name)
+			return fmt.Errorf("field %s should have type %s", c.Name, c.ValueType.String())
 		}
 
 	case bson.TypeString:
 		if c.ValueType != bson.TypeString {
-			return fmt.Errorf("field \"%s\" should have %s type", c.Name, c.ValueType.String())
+			return fmt.Errorf("field %s should have type %s", c.Name, c.ValueType.String())
 		}
 
 		c.Field.Append(pointer(rv.StringValue()))
 
 	case bson.TypeDateTime:
 		if c.ValueType != bson.TypeDateTime {
-			return fmt.Errorf("field \"%s\" should have %s type", c.Name, c.ValueType.String())
+			return fmt.Errorf("field %s should have type %s", c.Name, c.ValueType.String())
 		}
 
 		c.Field.Append(pointer(rv.Time()))
 
 	case bson.TypeObjectID:
 		if c.ValueType != bson.TypeObjectID {
-			return fmt.Errorf("field \"%s\" should have %s type", c.Name, c.ValueType.String())
+			return fmt.Errorf("field %s should have type %s", c.Name, c.ValueType.String())
 		}
 
 		c.Field.Append(pointer(rv.ObjectID().String()))
 
 	case bson.TypeEmbeddedDocument:
 		if c.ValueType != bson.TypeEmbeddedDocument && c.ValueType != bson.TypeArray {
-			return fmt.Errorf("field \"%s\" should have %s type", c.Name, c.ValueType.String())
+			return fmt.Errorf("field %s should have type %s", c.Name, c.ValueType.String())
 		}
 
 		c.Field.Append(pointer(json.RawMessage([]byte(rv.Document().String()))))
 	case bson.TypeArray:
 		if c.ValueType != bson.TypeArray && c.ValueType != bson.TypeEmbeddedDocument {
-			return fmt.Errorf("field \"%s\" should have %s type", c.Name, c.ValueType.String())
+			return fmt.Errorf("field %s should have type %s", c.Name, c.ValueType.String())
 		}
 
 		c.Field.Append(pointer(json.RawMessage([]byte(rv.Array().String()))))
