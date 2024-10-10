@@ -2,13 +2,19 @@ package plugin
 
 import (
 	"fmt"
+	"io"
 	"math"
+	"net/http"
+	"os"
+	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
+	"github.com/mongodb/mongo-tools/mongoimport"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -75,29 +81,54 @@ var datetimeComparer = cmp.Comparer(func(x, y time.Time) bool {
 	return x.Truncate(time.Millisecond).Compare(y.Truncate(time.Millisecond)) == 0
 })
 
-func newValue[T any](value T) Optional[T] {
-	return Optional[T]{
-		Value:   value,
-		Nothing: false,
-	}
-}
-
-func newNull[T any]() Optional[T] {
-	return Optional[T]{
-		Nothing: true,
-	}
-}
-
-func toPointerArray[T any](opts []Optional[T]) []*T {
-	res := make([]*T, len(opts))
-	for i, opt := range opts {
-		res[i] = opt.ToPointer()
-	}
-	return res
-}
-
 func assertEq(t *testing.T, a interface{}, b interface{}) {
 	if !cmp.Equal(a, b, datetimeComparer, float32Comparer, float64Comparer) {
-		t.Errorf("%v != %v", reflect.ValueOf(a), reflect.ValueOf(a))
+		t.Errorf("Received %v (type %v), expected %v (type %v)", reflect.ValueOf(a), reflect.TypeOf(a), reflect.TypeOf(b), reflect.TypeOf(b))
 	}
+}
+
+func downloadAndImportMongoData(url string, dir string) error {
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+
+	fileName := filepath.Base(url)
+	filePath := filepath.Join(dir, fileName)
+
+	out, err := os.Create(filePath)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, resp.Body)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("File downloaded to %s\n", filePath)
+
+	opts, err := mongoimport.ParseOptions([]string{"--drop", "-c", strings.Split(fileName, ".")[0], "--uri", "mongodb://localhost:27018/test", filePath},
+		"built-without-version-string", "build-without-git-commit")
+
+	if err != nil {
+		return err
+	}
+
+	m, err := mongoimport.New(opts)
+	if err != nil {
+		return err
+	}
+	defer m.Close()
+
+	numDocs, numFailure, err := m.ImportDocuments()
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("%d doc(s) were inserted,  %d doc(s) failed to insert\n", numDocs, numFailure)
+	return nil
 }

@@ -27,15 +27,3 @@ type TimeSeriesRow[T any] struct {
 	Name      string    `bson:"name"`
 	Value     T         `bson:"value"`
 }
-
-type Optional[T any] struct {
-	Value   T
-	Nothing bool
-}
-
-func (opt Optional[T]) ToPointer() *T {
-	if opt.Nothing {
-		return nil
-	}
-	return &opt.Value
-}

@@ -1,6 +1,7 @@
 package plugin
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -24,7 +25,23 @@ func PrintDataFrame(dataFrame *data.Frame) {
 			v, ok := field.ConcreteAt(i)
 
 			if ok {
-				fmt.Print(v)
+				if field.Type() == data.FieldTypeNullableJSON {
+					rm := v.(json.RawMessage)
+					rb, err := rm.MarshalJSON()
+					if err != nil {
+						panic(err)
+					}
+					fmt.Print(string(rb))
+				} else if field.Type() == data.FieldTypeNullableString {
+					s := v.(string)
+					if len(s) > 10 {
+						fmt.Print(s[:10] + "...")
+					} else {
+						fmt.Print(s)
+					}
+				} else {
+					fmt.Print(v)
+				}
 			} else {
 				fmt.Print("null")
 			}
@@ -39,4 +56,8 @@ func PrintDataFrame(dataFrame *data.Frame) {
 
 func pointer[K any](val K) *K {
 	return &val
+}
+func null[K any]() *K {
+	var nullValue *K
+	return nullValue
 }

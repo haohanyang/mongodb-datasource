@@ -28,6 +28,11 @@ jobs:
       artifact-url: ${{ steps.archive-build.outputs.artifact-url }}
     env:
       GRAFANA_ACCESS_POLICY_TOKEN: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
+    services:
+      mongo:
+        image: mongo
+        ports:
+          - 27018:27017
     steps:
       - uses: actions/checkout@v4
       - name: Setup Node.js environment
