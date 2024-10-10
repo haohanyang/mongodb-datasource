@@ -44,7 +44,7 @@ db.transactions.aggregate({
 });
 ```
 
-You can also use the `"$from"` and `"$to"` conventions originated from a legacy plugin
+You can also use the `"$from"`, `"$to"` and `"$dateBucketCount"`(number of intervals in the time range) conventions originated from a legacy plugin.
 ```json
 [
     {
@@ -56,6 +56,15 @@ You can also use the `"$from"` and `"$to"` conventions originated from a legacy 
         }
     }
 ]
+```
+```json
+{
+    "$bucketAuto": {
+        "groupBy": "$timestamp",
+        "buckets": "$dateBucketCount",
+        // 
+    }
+}
 ```
 ### Query type
 #### Time series

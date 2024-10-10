@@ -1,4 +1,4 @@
-import { DataSourceInstanceSettings, CoreApp, ScopedVars, DataQueryRequest, DataQueryResponse, DateTime } from "@grafana/data";
+import { DataSourceInstanceSettings, CoreApp, ScopedVars, DataQueryRequest, DataQueryResponse } from "@grafana/data";
 import { DataSourceWithBackend, getTemplateSrv } from "@grafana/runtime";
 import { parseJsQuery, datetimeToJson, getBucketCount } from "./utils";
 import { MongoQuery, MongoDataSourceOptions, DEFAULT_QUERY, QueryLanguage } from "./types";
