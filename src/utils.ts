@@ -1,3 +1,4 @@
+import { DateTime } from "@grafana/data";
 import { JsQueryResult } from "types";
 
 export function validateJsonQueryText(queryText?: string): string | null {
@@ -44,4 +45,24 @@ export function validateJsQueryText(queryText?: string): string | null {
     }
     const { error } = parseJsQuery(queryText);
     return error;
+}
+
+export function datetimeToJson(datetime: DateTime) {
+    return JSON.stringify({
+        $date: {
+            $numberLong: datetime.toDate().getTime().toString()
+        }
+    });
+}
+
+export function getBucketCount(from: DateTime, to: DateTime, intervalMs: number) {
+    let current = from.toDate().getTime();
+    const toMs = to.toDate().getTime();
+    let count = 0;
+    while (current < toMs) {
+        current += intervalMs;
+        count++;
+    }
+
+    return count;
 }
