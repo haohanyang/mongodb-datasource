@@ -1,16 +1,9 @@
-import { DataSourceInstanceSettings, CoreApp, ScopedVars, DataQueryRequest, DataQueryResponse, DateTime } from "@grafana/data";
+import { DataSourceInstanceSettings, CoreApp, ScopedVars, DataQueryRequest, DataQueryResponse } from "@grafana/data";
 import { DataSourceWithBackend, getTemplateSrv } from "@grafana/runtime";
-import { parseJsQuery } from "./utils";
+import { parseJsQuery, datetimeToJson, getBucketCount } from "./utils";
 import { MongoQuery, MongoDataSourceOptions, DEFAULT_QUERY, QueryLanguage } from "./types";
 import { Observable } from "rxjs";
 
-function datetimeToJson(datetime: DateTime) {
-  return JSON.stringify({
-    $date: {
-      $numberLong: datetime.toDate().getTime().toString()
-    }
-  });
-}
 
 export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourceOptions> {
   constructor(instanceSettings: DataSourceInstanceSettings<MongoDataSourceOptions>) {
@@ -44,6 +37,7 @@ export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourc
         ...query,
         queryText: queryText.replaceAll(/"\$from"/g, datetimeToJson(request.range.from))
           .replaceAll(/"\$to"/g, datetimeToJson(request.range.to))
+          .replaceAll(/"\$dateBucketCount"/g, getBucketCount(request.range.from, request.range.to, request.intervalMs).toString())
       };
     });
 
