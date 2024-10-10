@@ -4,12 +4,17 @@ on:
   push:
     branches:
       - '*'
+    paths-ignore:
+      - README.md
   pull_request:
     branches:
       - master
       - main
+    paths-ignore:
+      - README.md
 
-permissions: read-all
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -20,6 +25,7 @@ jobs:
       plugin-version: ${{ steps.metadata.outputs.plugin-version }}
       has-e2e: ${{ steps.check-for-e2e.outputs.has-e2e }}
       has-backend: ${{ steps.check-for-backend.outputs.has-backend }}
+      artifact-url: ${{ steps.archive-build.outputs.artifact-url }}
     env:
       GRAFANA_ACCESS_POLICY_TOKEN: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
     services:
@@ -108,6 +114,7 @@ jobs:
 
       - name: Archive Build
         uses: actions/upload-artifact@v4
+        id: archive-build
         with:
           name: ${{ steps.metadata.outputs.plugin-id }}-${{ steps.metadata.outputs.plugin-version }}
           path: ${{ steps.metadata.outputs.plugin-id }}
@@ -205,3 +212,19 @@ jobs:
       #     name: playwright-report-${{ matrix.GRAFANA_IMAGE.NAME }}-v${{ matrix.GRAFANA_IMAGE.VERSION }}-${{github.run_id}}
       #     path: playwright-report/
       #     retention-days: 5
+  
+  update-latest-artifact-link:
+    needs: [playwright-tests, build]
+    runs-on: ubuntu-latest
+    name: Update link to the latest artifact
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Update the latest workflow artifact URL
+        if: github.ref == 'refs/heads/master'
+        run: |
+          sed -i 's|\[Download the latest build\](.*)|\[Download the latest build\](${{ needs.build.outputs.artifact-url }})|' README.md
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git commit -am "Update link to the latest workflow artifact"
+          git push
