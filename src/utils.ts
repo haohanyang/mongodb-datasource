@@ -1,5 +1,7 @@
 import { DateTime } from "@grafana/data";
 import { JsQueryResult } from "types";
+import shadow from "shadowrealm-api";
+import {getTemplateSrv} from "@grafana/runtime";
 
 export function validateJsonQueryText(queryText?: string): string | null {
     if (!queryText) {
@@ -20,31 +22,27 @@ export function validateJsonQueryText(queryText?: string): string | null {
 }
 
 export function parseJsQuery(queryText: string): JsQueryResult {
-    const regex = /^db\.(.+)\.aggregate\((.+)\)$/;
-    const match = queryText.trim().replace(/(;$)/g, "").replace(/(\r\n|\n|\r)/gm, "")
-        .match(regex);
-
-    if (match) {
-        const collection = match[1];
-        const queryText = match[2];
+    // use shadow realm to evaluate the JavaScript query
+    const realm = new shadow();
+    try {
+        // replace the template variables in the query
+        const script = getTemplateSrv().replace(queryText);
+        // realm.evaluate will execute the JavaScript code and return the result
+        const result = realm.evaluate(`
+            const fn = ${script}
+            const result = fn()
+            JSON.stringify(result)
+        `) as string;
         return {
-            jsonQuery: queryText,
-            collection: collection,
-            error: validateJsonQueryText(queryText)
+            jsonQuery: result,
+            error: null
         };
-    } else {
+    }catch (e: Error | any) {
+        // if there is an error, return the error message
         return {
-            error: "Invalid query"
+            error: e?.message
         };
     }
-}
-
-export function validateJsQueryText(queryText?: string): string | null {
-    if (!queryText) {
-        return "Please enter the query";
-    }
-    const { error } = parseJsQuery(queryText);
-    return error;
 }
 
 export function datetimeToJson(datetime: DateTime) {

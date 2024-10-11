@@ -27,8 +27,10 @@ export function QueryEditor({ query, onChange, onRunQuery }: Props) {
 
   const onQueryTextChange = (queryText: string) => {
     if (query.queryLanguage === QueryLanguage.JAVASCRIPT) {
-      const { collection, error } = parseJsQuery(queryText);
-      onChange({ ...query, collection: collection, queryText: queryText });
+      // only for evaluation
+      const { error } = parseJsQuery(queryText);
+      // let the same query text as it is
+      onChange({ ...query, queryText: queryText });
       setQueryTextError(error);
       if (!error) {
         onRunQuery();
@@ -80,13 +82,13 @@ export function QueryEditor({ query, onChange, onRunQuery }: Props) {
         <InlineField label="Query Type">
           <Select id="query-editor-query-type" options={queryTypes} value={query.queryType || QueryType.TIMESERIES} onChange={onQueryTypeChange}></Select>
         </InlineField>
-        {query.queryLanguage === QueryLanguage.JSON && <InlineField label="Collection" tooltip="Enter the collection to query"
-          error="Please enter the collection" invalid={!query.collection}>
+        <InlineField label="Collection" tooltip="Enter the collection to query"
+                     error="Please enter the collection" invalid={!query.collection}>
           <Input id="query-editor-collection" onChange={onCollectionChange} value={query.collection} required />
-        </InlineField>}
+        </InlineField>
       </InlineFieldRow>
       <Divider />
-      <InlineField label="Use JavaScript Query">
+      <InlineField label="Use JavaScript Query" >
         <InlineSwitch id="query-editor-use-js-query" value={query.queryLanguage === QueryLanguage.JAVASCRIPT} onChange={onQueryLanguageChange} />
       </InlineField>
       <Field label="Query Text" description={`Enter the Mongo Aggregation Pipeline (${query.queryLanguage === QueryLanguage.JSON ? "JSON" : "JavaScript"})`}
