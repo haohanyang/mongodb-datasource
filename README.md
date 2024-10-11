@@ -21,7 +21,7 @@ The query text should be a valid MongoDB Aggregate pipeline - an array consistin
                     "$numberLong": "$__from"
                 },
                 "$lt": {
-                    "$numberLong": "$__from"
+                    "$numberLong": "$__to"
                 }
             }
         }
@@ -37,7 +37,7 @@ db.transactions.aggregate({
                 "$numberLong": "$__from"
             },
             "$lt": {
-                "$numberLong": "$__from"
+                "$numberLong": "$__to"
             }
         }
     }
