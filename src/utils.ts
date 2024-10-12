@@ -21,6 +21,26 @@ export function validateJsonQueryText(queryText?: string): string | null {
     }
 }
 
+export function parseJsQueryLegacy(queryText: string): JsQueryResult {
+    const regex = /^db\.(.+)\.aggregate\((.+)\)$/;
+    const match = queryText.trim().replace(/(;$)/g, "").replace(/(\r\n|\n|\r)/gm, "")
+        .match(regex);
+
+    if (match) {
+        const collection = match[1];
+        const queryText = match[2];
+        return {
+            jsonQuery: queryText,
+            collection: collection,
+            error: validateJsonQueryText(queryText)
+        };
+    } else {
+        return {
+            error: "Invalid query"
+        };
+    }
+}
+
 export function parseJsQuery(queryText: string): JsQueryResult {
     // use shadow realm to evaluate the JavaScript query
     const realm = new shadow();
@@ -44,6 +64,8 @@ export function parseJsQuery(queryText: string): JsQueryResult {
         };
     }
 }
+
+
 
 export function datetimeToJson(datetime: DateTime) {
     return JSON.stringify({

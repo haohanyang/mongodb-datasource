@@ -15,7 +15,8 @@ export const QueryType = {
 
 export const QueryLanguage = {
   JSON: "json",
-  JAVASCRIPT: "javascript"
+  JAVASCRIPT: "javascript",
+  JAVASCRIPT_SHADOW: "javascriptShadow"
 };
 
 
