@@ -164,8 +164,8 @@ test("data query should return correct temperature data with Javascript query", 
   await panelEditPage.datasource.set(ds.name);
   await panelEditPage.getQueryEditorRow("A").getByLabel("Collection").fill("test_temperatureData");
   const selectLanguage =  panelEditPage.getQueryEditorRow("A").getByRole("combobox").last();
-  await selectLanguage.click()
-  await page.getByText("JavaScript", { exact: true }).click()
+  await selectLanguage.click();
+  await page.getByText("JavaScript", { exact: true }).click();
   const editor = panelEditPage.getByGrafanaSelector(selectors.components.CodeEditor.container, {
     root: panelEditPage.getQueryEditorRow("A")
   }).getByRole("textbox");
@@ -221,8 +221,8 @@ test("data query should return correct temperature data with javascript function
     await panelEditPage.getQueryEditorRow("A").getByLabel("Collection").fill("test_temperatureData");
     // get toggle switch
     const selectLanguage =  panelEditPage.getQueryEditorRow("A").getByRole("combobox").last();
-    await selectLanguage.click()
-    await page.getByText("JavaScriptShadow", { exact: true }).click()
+    await selectLanguage.click();
+    await page.getByText("JavaScriptShadow", { exact: true }).click();
     const editor = panelEditPage.getByGrafanaSelector(selectors.components.CodeEditor.container, {
         root: panelEditPage.getQueryEditorRow("A")
     }).getByRole("textbox");
@@ -289,8 +289,8 @@ test("data query should return correct temperature data with javascript function
     await panelEditPage.datasource.set(ds.name);
     await panelEditPage.getQueryEditorRow("A").getByLabel("Collection").fill("test_temperatureData");
     const selectLanguage =  panelEditPage.getQueryEditorRow("A").getByRole("combobox").last();
-    await selectLanguage.click()
-    await page.getByText("JavaScriptShadow", { exact: true }).click()
+    await selectLanguage.click();
+    await page.getByText("JavaScriptShadow", { exact: true }).click();
     const editor = panelEditPage.getByGrafanaSelector(selectors.components.CodeEditor.container, {
         root: panelEditPage.getQueryEditorRow("A")
     }).getByRole("textbox");
@@ -298,7 +298,7 @@ test("data query should return correct temperature data with javascript function
     await panelEditPage.timeRange.set({
       from: "2023-10-24T00:00:00.000Z",
         to: "2023-10-26T00:00:00.000Z",
-    })
+    });
 
     await editor.scrollIntoViewIfNeeded();
 
