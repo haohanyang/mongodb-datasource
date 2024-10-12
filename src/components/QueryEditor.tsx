@@ -1,9 +1,20 @@
 import React, { ChangeEvent, useRef, useState } from "react";
-import { Button, CodeEditor, Divider, Field, InlineField, InlineFieldRow, InlineSwitch, Input, Select } from "@grafana/ui";
+import {
+  ActionMeta,
+  Button,
+  CodeEditor,
+  Divider,
+  Field,
+  InlineField,
+  InlineFieldRow,
+  Input,
+  Select,
+
+} from "@grafana/ui";
 import { QueryEditorProps, SelectableValue } from "@grafana/data";
 import { DataSource } from "../datasource";
 import { MongoDataSourceOptions, MongoQuery, QueryLanguage, QueryType, DEFAULT_QUERY } from "../types";
-import { parseJsQuery, validateJsonQueryText } from "../utils";
+import {parseJsQuery, parseJsQueryLegacy, validateJsonQueryText} from "../utils";
 import * as monacoType from "monaco-editor/esm/vs/editor/editor.api";
 
 type Props = QueryEditorProps<DataSource, MongoQuery, MongoDataSourceOptions>;
@@ -25,10 +36,18 @@ export function QueryEditor({ query, onChange, onRunQuery }: Props) {
   const codeEditorRef = useRef<monacoType.editor.IStandaloneCodeEditor | null>(null);
   const [queryTextError, setQueryTextError] = useState<string | null>(null);
 
+  const optionsLanguage = [
+    { label: "JSON", value: QueryLanguage.JSON},
+    { label: "JavaScript", value: QueryLanguage.JAVASCRIPT, description: "javascript legacy" },
+    { label: "JavaScriptShadow", value: QueryLanguage.JAVASCRIPT_SHADOW, description: "javascript with evaluation" }
+  ];
+
   const onQueryTextChange = (queryText: string) => {
-    if (query.queryLanguage === QueryLanguage.JAVASCRIPT) {
-      const { collection, error } = parseJsQuery(queryText);
-      onChange({ ...query, collection: collection, queryText: queryText });
+    if (query.queryLanguage === QueryLanguage.JAVASCRIPT || query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW) {
+      // parse the JavaScript query
+      const { error, collection } = query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW ? parseJsQuery(queryText) : parseJsQueryLegacy(queryText);
+      // let the same query text as it is
+      onChange({ ...query, queryText: queryText, ...(collection ? {collection} : {}) });
       setQueryTextError(error);
       if (!error) {
         onRunQuery();
@@ -43,13 +62,8 @@ export function QueryEditor({ query, onChange, onRunQuery }: Props) {
     }
   };
 
-  const onQueryLanguageChange = (e: React.FormEvent<HTMLInputElement>) => {
-    if (e.currentTarget.checked) {
-      onChange({ ...query, queryLanguage: QueryLanguage.JAVASCRIPT });
-
-    } else {
-      onChange({ ...query, queryLanguage: QueryLanguage.JSON });
-    }
+  const onQueryLanguageChange = (value: SelectableValue<string>, actionMeta: ActionMeta) => {
+    onChange({ ...query, queryLanguage: value.value });
   };
 
   const onQueryTypeChange = (sv: SelectableValue<string>) => {
@@ -80,18 +94,18 @@ export function QueryEditor({ query, onChange, onRunQuery }: Props) {
         <InlineField label="Query Type">
           <Select id="query-editor-query-type" options={queryTypes} value={query.queryType || QueryType.TIMESERIES} onChange={onQueryTypeChange}></Select>
         </InlineField>
-        {query.queryLanguage === QueryLanguage.JSON && <InlineField label="Collection" tooltip="Enter the collection to query"
-          error="Please enter the collection" invalid={!query.collection}>
+        <InlineField label="Collection" tooltip="Enter the collection to query"
+                     error="Please enter the collection" invalid={!query.collection}>
           <Input id="query-editor-collection" onChange={onCollectionChange} value={query.collection} required />
-        </InlineField>}
+        </InlineField>
       </InlineFieldRow>
       <Divider />
-      <InlineField label="Use JavaScript Query">
-        <InlineSwitch id="query-editor-use-js-query" value={query.queryLanguage === QueryLanguage.JAVASCRIPT} onChange={onQueryLanguageChange} />
+      <InlineField label="Query language">
+        <Select id="query-editor-use-js-query" onChange={onQueryLanguageChange} options={optionsLanguage} value={query.queryLanguage} />
       </InlineField>
-      <Field label="Query Text" description={`Enter the Mongo Aggregation Pipeline (${query.queryLanguage === QueryLanguage.JSON ? "JSON" : "JavaScript"})`}
+      <Field label="Query Text" description={`Enter the Mongo Aggregation Pipeline (${query.queryLanguage})`}
         error={queryTextError} invalid={queryTextError != null}>
-        <CodeEditor onEditorDidMount={onCodeEditorDidMount} width="100%" height={300} language={query.queryLanguage || ""}
+        <CodeEditor onEditorDidMount={onCodeEditorDidMount} width="100%" height={300} language={query.queryLanguage === QueryLanguage.JAVASCRIPT || query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW ? "javascript" : "json"}
           onBlur={onQueryTextChange} value={query.queryText || ""} showMiniMap={false} showLineNumbers={true} />
       </Field>
       <Button onClick={onFormatQueryText}>Format</Button>
