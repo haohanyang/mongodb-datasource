@@ -46,15 +46,22 @@ export const MongoDBAuthMethod = {
   USERNAME_PASSWORD: "auth-username-password"
 };
 
+export const ConnectionStringScheme = {
+  STANDARD: "standard",
+  DNS_SEED_LIST: "dns_seed_list"
+};
+
 
 /**
  * These are options configured for each DataSource instance
  */
 export interface MongoDataSourceOptions extends DataSourceJsonData {
+  connectionStringScheme?: string;
   host?: string;
   port?: number;
   database?: string;
   username?: string;
+  connectionParameters?: string;
 }
 
 /**

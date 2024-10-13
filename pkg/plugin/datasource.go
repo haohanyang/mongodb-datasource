@@ -3,7 +3,6 @@ package plugin
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -30,27 +29,15 @@ var (
 // NewDatasource creates a new MongoDB datasource instance.
 func NewDatasource(ctx context.Context, source backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
 
-	var uri string
-
 	config, err := models.LoadPluginSettings(source)
 	if err != nil {
 		backend.Logger.Error(fmt.Sprintf("Failed to load plugin settings: %s", err.Error()))
 		return nil, err
 	}
 
-	if config.Database == "" {
-		return nil, errors.New("missing MongoDB database")
-	}
-
-	if config.AuthMethod == "auth-none" {
-		uri = fmt.Sprintf("mongodb://%s:%d", config.Host, config.Port)
-	} else if config.AuthMethod == "auth-username-password" {
-		if config.Username == "" || config.Secrets.Password == "" {
-			return nil, errors.New("missing MongoDB username or password")
-		}
-		uri = fmt.Sprintf("mongodb://%s:%s@%s:%d", config.Username, config.Secrets.Password, config.Host, config.Port)
-	} else {
-		return nil, errors.New("authentication method not supported")
+	uri, err := MongoUri(config)
+	if err != nil {
+		return nil, err
 	}
 
 	opts := options.Client().ApplyURI(uri)
@@ -64,8 +51,7 @@ func NewDatasource(ctx context.Context, source backend.DataSourceInstanceSetting
 	return &Datasource{
 		client:   client,
 		database: config.Database,
-		host:     config.Host,
-		port:     config.Port}, nil
+	}, nil
 }
 
 // Dispose here tells plugin SDK that plugin wants to clean up resources when a new instance
@@ -83,7 +69,7 @@ func (d *Datasource) QueryData(ctx context.Context, req *backend.QueryDataReques
 	// create response struct
 	response := backend.NewQueryDataResponse()
 	// loop over queries and execute them individually.
-	backend.Logger.Debug("New queries", d.host, d.port, d.database)
+
 	for _, q := range req.Queries {
 
 		res := d.query(ctx, req.PluginContext, q)
@@ -157,49 +143,18 @@ func (d *Datasource) query(ctx context.Context, _ backend.PluginContext, query b
 func (d *Datasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
 	res := &backend.CheckHealthResult{}
 	backend.Logger.Debug("Checking health")
-	config, err := models.LoadPluginSettings(*req.PluginContext.DataSourceInstanceSettings)
 
+	config, err := models.LoadPluginSettings(*req.PluginContext.DataSourceInstanceSettings)
 	if err != nil {
 		res.Status = backend.HealthStatusError
 		res.Message = "Unable to load settings"
 		return res, nil
 	}
 
-	backend.Logger.Debug(fmt.Sprintf("Config: %v", config))
-
-	if config.AuthMethod == "" {
+	uri, err := MongoUri(config)
+	if err != nil {
 		res.Status = backend.HealthStatusError
-		res.Message = "Please specify the authentication type"
-		return res, nil
-	}
-
-	if config.Host == "" {
-		res.Status = backend.HealthStatusError
-		res.Message = "Please specify the host address"
-		return res, nil
-	}
-
-	if config.Database == "" {
-		res.Status = backend.HealthStatusError
-		res.Message = "Please specify the database"
-		return res, nil
-	}
-
-	var uri string
-
-	if config.AuthMethod == "auth-none" {
-		uri = fmt.Sprintf("mongodb://%s:%d", config.Host, config.Port)
-	} else if config.AuthMethod == "auth-username-password" {
-		if config.Username == "" || config.Secrets.Password == "" {
-			res.Status = backend.HealthStatusError
-			res.Message = "Please specify the username and password"
-			return res, nil
-		}
-		uri = fmt.Sprintf("mongodb://%s:%s@%s:%d", config.Username, config.Secrets.Password, config.Host, config.Port)
-	} else {
-		res.Status = backend.HealthStatusError
-		res.Message = "Please specify the authentication type"
-		return res, nil
+		res.Message = err.Error()
 	}
 
 	opts := options.Client().ApplyURI(uri).SetTimeout(5 * time.Second)

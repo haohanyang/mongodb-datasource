@@ -49,8 +49,6 @@ func TestQueryTableData(t *testing.T) {
 
 	ds := Datasource{
 		client:   client,
-		host:     "localhost",
-		port:     27018,
 		database: "test",
 	}
 
