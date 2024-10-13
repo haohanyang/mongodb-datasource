@@ -146,7 +146,7 @@ export function ConfigEditor(props: Props) {
             width={30}
           ></Input>
         </InlineField>
-        {jsonData.connectionStringScheme == ConnectionStringScheme.STANDARD && <InlineField label="Port" tooltip="MongoDB port">
+        {jsonData.connectionStringScheme === ConnectionStringScheme.STANDARD && <InlineField label="Port" tooltip="MongoDB port">
           <Input
             id="config-editor-port"
             value={jsonData.port}
