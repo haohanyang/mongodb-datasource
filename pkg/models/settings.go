@@ -8,12 +8,14 @@ import (
 )
 
 type PluginSettings struct {
-	Host       string                `json:"host"`
-	Port       int                   `json:"port"`
-	Database   string                `json:"database"`
-	AuthMethod string                `json:"authType"`
-	Username   string                `json:"username"`
-	Secrets    *SecretPluginSettings `json:"-"`
+	Host                   string                `json:"host"`
+	Port                   int                   `json:"port"`
+	Database               string                `json:"database"`
+	AuthMethod             string                `json:"authType"`
+	Username               string                `json:"username"`
+	ConnectionStringScheme string                `json:"connectionStringScheme"`
+	ConnectionParameters   string                `json:"connectionParameters"`
+	Secrets                *SecretPluginSettings `json:"-"`
 }
 
 type SecretPluginSettings struct {

@@ -9,8 +9,6 @@ import (
 // Datasource is a mongo datasource which can respond to data queries, reports
 // its health and has streaming skills.
 type Datasource struct {
-	host     string
-	port     int
 	database string
 	client   *mongo.Client
 }

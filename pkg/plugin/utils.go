@@ -2,9 +2,11 @@ package plugin
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
+	"github.com/haohanyang/mongodb-datasource/pkg/models"
 )
 
 func PrintDataFrame(dataFrame *data.Frame) {
@@ -60,4 +62,36 @@ func pointer[K any](val K) *K {
 func null[K any]() *K {
 	var nullValue *K
 	return nullValue
+}
+
+// Validate mongo connection configuration and return connection string
+func MongoUri(config *models.PluginSettings) (string, error) {
+	var uri string
+	var creds string
+	var params string
+
+	if config.Database == "" {
+		return uri, errors.New("missing MongoDB database")
+	}
+
+	if config.AuthMethod == "auth-username-password" {
+		if config.Username == "" || config.Secrets.Password == "" {
+			return uri, errors.New("missing MongoDB username or password")
+		}
+		creds = fmt.Sprintf("%s:%s@", config.Username, config.Secrets.Password)
+	} else if config.AuthMethod != "auth-none" {
+		return uri, errors.New("unsupported auth method")
+	}
+
+	if config.ConnectionParameters != "" {
+		params = "?" + config.ConnectionParameters
+	}
+
+	if config.ConnectionStringScheme == "dns_seed_list" {
+		uri = fmt.Sprintf("mongodb+srv://%s%s/%s", creds, config.Host, params)
+	} else {
+		uri = fmt.Sprintf("mongodb://%s%s:%d/%s", creds, config.Host, config.Port, params)
+	}
+
+	return uri, nil
 }
