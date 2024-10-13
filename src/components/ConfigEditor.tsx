@@ -168,7 +168,7 @@ export function ConfigEditor(props: Props) {
           ></Input>
         </InlineField>
       </InlineFieldRow>
-      <InlineField label="Connection parameters" tooltip="Connection parameters appended to the connection string">
+      <InlineField label="Connection parameters" tooltip="Connection parameters appended to the connection string. For example retryWrites=true&w=majority&appName=default-cluster">
         <Input
           required
           id="config-editor-connection-parameters"

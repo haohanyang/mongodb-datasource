@@ -78,7 +78,7 @@ func MongoUri(config *models.PluginSettings) (string, error) {
 		if config.Username == "" || config.Secrets.Password == "" {
 			return uri, errors.New("missing MongoDB username or password")
 		}
-		creds = fmt.Sprintf("%s:%s", config.Username, config.Secrets.Password)
+		creds = fmt.Sprintf("%s:%s@", config.Username, config.Secrets.Password)
 	} else if config.AuthMethod != "auth-none" {
 		return uri, errors.New("unsupported auth method")
 	}
@@ -88,11 +88,9 @@ func MongoUri(config *models.PluginSettings) (string, error) {
 	}
 
 	if config.ConnectionStringScheme == "dns_seed_list" {
-		uri = fmt.Sprintf("mongodb+srv://%s@%s/%s", creds, config.Host, params)
-	} else if config.ConnectionStringScheme == "standard" {
-		uri = fmt.Sprintf("mongodb://%s@%s:%d/%s", creds, config.Host, config.Port, params)
+		uri = fmt.Sprintf("mongodb+srv://%s%s/%s", creds, config.Host, params)
 	} else {
-		return uri, errors.New("unsupported connection string scheme")
+		uri = fmt.Sprintf("mongodb://%s%s:%d/%s", creds, config.Host, config.Port, params)
 	}
 
 	return uri, nil
