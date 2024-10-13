@@ -1,4 +1,4 @@
-## Grafana MongoDB Data Source
+# Grafana MongoDB Data Source
 
 **Visualize your MongoDB data in Grafana with powerful aggregation queries.**
 
