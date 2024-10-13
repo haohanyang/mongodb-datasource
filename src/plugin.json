@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/grafana/grafana/main/docs/sources/developers/plugins/plugin.schema.json",
   "type": "datasource",
-  "name": "Mongodb-Datasource",
+  "name": "MongoDB",
   "id": "haohanyang-mongodb-datasource",
   "metrics": true,
   "backend": true,
@@ -19,7 +19,12 @@
       "small": "img/logo.svg",
       "large": "img/logo.svg"
     },
-    "links": [],
+    "links": [
+      {
+        "name": "Source Code",
+        "url": "https://github.com/haohanyang/mongodb-datasource"
+      }
+    ],
     "screenshots": [],
     "version": "%VERSION%",
     "updated": "%TODAY%"
