@@ -212,19 +212,3 @@ jobs:
       #     name: playwright-report-${{ matrix.GRAFANA_IMAGE.NAME }}-v${{ matrix.GRAFANA_IMAGE.VERSION }}-${{github.run_id}}
       #     path: playwright-report/
       #     retention-days: 5
-  
-  update-latest-artifact-link:
-    needs: [playwright-tests, build]
-    runs-on: ubuntu-latest
-    name: Update link to the latest artifact
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Update the latest workflow artifact URL
-        if: github.ref == 'refs/heads/master'
-        run: |
-          sed -i 's|\[Download the latest build\](.*)|\[Download the latest build\](${{ needs.build.outputs.artifact-url }})|' README.md
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git commit -am "Update link to the latest workflow artifact"
-          git push
