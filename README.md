@@ -18,10 +18,14 @@ The query text should be a valid MongoDB Aggregate pipeline - an array consistin
         "$match": {
             "createdTime": {
                 "$gt": {
-                    "$numberLong": "$__from"
+                    "$date": {
+                        "$numberLong": "$__from"
+                    }
                 },
                 "$lt": {
-                    "$numberLong": "$__to"
+                    "$date": {
+                        "$numberLong": "$__to"
+                    }
                 }
             }
         }
@@ -30,18 +34,24 @@ The query text should be a valid MongoDB Aggregate pipeline - an array consistin
 ```
 In JavaScript query, you need to follow the format `db.<collection-name>.aggregate([<json-query>])`. As shows in the following example.
 ```js
-db.transactions.aggregate({
-    "$match": {
-        "createdTime": {
-            "$gt": {
-                "$numberLong": "$__from"
-            },
-            "$lt": {
-                "$numberLong": "$__to"
+db.transactions.aggregate([
+    {
+        "$match": {
+            "createdTime": {
+                "$gt": {
+                    "$date": {
+                        "$numberLong": "$__from"
+                    }
+                },
+                "$lt": {
+                    "$date": {
+                        "$numberLong": "$__to"
+                    }
+                }
             }
         }
     }
-});
+]);
 ```
 
 You can also use the `"$from"`, `"$to"` and `"$dateBucketCount"`(number of intervals in the time range) conventions originated from a legacy plugin.
