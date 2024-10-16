@@ -21,15 +21,18 @@ export const QueryLanguage = {
 
 
 export const DEFAULT_QUERY: Partial<MongoQuery> = {
-  queryText: "[]",
+  queryText: `[
+  {
+    "$match": {}
+  },
+  {
+    "$limit": 10
+  }
+]`,
   queryType: QueryType.TIMESERIES,
   queryLanguage: QueryLanguage.JSON
 };
 
-export interface DataPoint {
-  Time: number;
-  Value: number;
-}
 
 export interface JsQueryResult {
   jsonQuery?: string;
@@ -37,9 +40,6 @@ export interface JsQueryResult {
   error: string | null;
 }
 
-export interface DataSourceResponse {
-  datapoints: DataPoint[];
-}
 
 export const MongoDBAuthMethod = {
   NONE: "auth-none",
@@ -51,6 +51,10 @@ export const ConnectionStringScheme = {
   DNS_SEED_LIST: "dns_seed_list"
 };
 
+export interface VariableQuery {
+  collection?: string;
+  queryText?: string;
+}
 
 /**
  * These are options configured for each DataSource instance
@@ -70,3 +74,4 @@ export interface MongoDataSourceOptions extends DataSourceJsonData {
 export interface MySecureJsonData {
   password?: string;
 }
+
