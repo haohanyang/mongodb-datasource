@@ -1,7 +1,7 @@
 import { DateTime } from "@grafana/data";
 import { JsQueryResult } from "types";
 import shadow from "shadowrealm-api";
-import {getTemplateSrv} from "@grafana/runtime";
+import { getTemplateSrv } from "@grafana/runtime";
 
 export function validateJsonQueryText(queryText?: string): string | null {
     if (!queryText) {
@@ -57,7 +57,7 @@ export function parseJsQuery(queryText: string): JsQueryResult {
             jsonQuery: result,
             error: null
         };
-    }catch (e: Error | any) {
+    } catch (e: Error | any) {
         // if there is an error, return the error message
         return {
             error: e?.message
@@ -85,4 +85,16 @@ export function getBucketCount(from: DateTime, to: DateTime, intervalMs: number)
     }
 
     return count;
+}
+
+export function randomId(length: number) {
+    let result = "";
+    const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    const charactersLength = characters.length;
+    let counter = 0;
+    while (counter < length) {
+        result += characters.charAt(Math.floor(Math.random() * charactersLength));
+        counter += 1;
+    }
+    return result;
 }
