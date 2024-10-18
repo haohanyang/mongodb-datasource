@@ -1,4 +1,4 @@
-import { DateTime } from "@grafana/data";
+import { DataFrameSchema, DataQueryResponse, DateTime, FieldType, MetricFindValue } from "@grafana/data";
 import { JsQueryResult } from "types";
 import shadow from "shadowrealm-api";
 import { getTemplateSrv } from "@grafana/runtime";
@@ -97,4 +97,33 @@ export function randomId(length: number) {
         counter += 1;
     }
     return result;
+}
+
+
+export function getMetricValues(response: DataQueryResponse): MetricFindValue[] {
+    const dataframe = response.data[0] as DataFrameSchema;
+    const fields = dataframe.
+        fields.filter(f => f.type === FieldType.string || f.type === FieldType.number)
+        // @ts-ignore
+        .filter(f => f.values && f.values.length > 0);
+
+    // @ts-ignore
+    return fields.map(function (field) {
+        // @ts-ignore
+        const values: Array<string | number> = field.values;
+        let text: string;
+
+        if (values.length === 1) {
+            text = `${field.name}:${values[0]}`;
+        } else {
+            text = `${field.name}:[${values[0]}, ...]`;
+        }
+
+        return {
+            text: text,
+            // @ts-ignore
+            value: values.length === 1 ? values[0] : values,
+            expandable: true
+        };
+    });
 }

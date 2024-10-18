@@ -23,9 +23,6 @@ export const QueryLanguage = {
 export const DEFAULT_QUERY: Partial<MongoQuery> = {
   queryText: `[
   {
-    "$match": {}
-  },
-  {
     "$limit": 10
   }
 ]`,
