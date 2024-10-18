@@ -11,10 +11,10 @@ import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
 import path from 'path';
 import ReplaceInFileWebpackPlugin from 'replace-in-file-webpack-plugin';
 import TerserPlugin from 'terser-webpack-plugin';
-import { type Configuration, BannerPlugin } from 'webpack';
+import { type Configuration, BannerPlugin, DefinePlugin } from 'webpack';
 import LiveReloadPlugin from 'webpack-livereload-plugin';
 import VirtualModulesPlugin from 'webpack-virtual-modules';
-
+import { execSync } from 'child_process';
 import { DIST_DIR, SOURCE_DIR } from './constants';
 import { getCPConfigVersion, getEntries, getPackageJson, getPluginJson, hasReadme, isWSL } from './utils';
 
@@ -31,6 +31,8 @@ __webpack_public_path__ =
     : 'public/plugins/${pluginJson.id}/';
 `,
 });
+
+const commitHash = execSync('git rev-parse --short HEAD').toString();
 
 const config = async (env): Promise<Configuration> => {
   const baseConfig: Configuration = {
@@ -229,21 +231,24 @@ const config = async (env): Promise<Configuration> => {
           ],
         },
       ]),
+      new DefinePlugin({
+        'process.env.COMMIT_HASH': JSON.stringify(commitHash),
+      }),
       ...(env.development
         ? [
-            new LiveReloadPlugin(),
-            new ForkTsCheckerWebpackPlugin({
-              async: Boolean(env.development),
-              issue: {
-                include: [{ file: '**/*.{ts,tsx}' }],
-              },
-              typescript: { configFile: path.join(process.cwd(), 'tsconfig.json') },
-            }),
-            new ESLintPlugin({
-              extensions: ['.ts', '.tsx'],
-              lintDirtyModulesOnly: Boolean(env.development), // don't lint on start, only lint changed files
-            }),
-          ]
+          new LiveReloadPlugin(),
+          new ForkTsCheckerWebpackPlugin({
+            async: Boolean(env.development),
+            issue: {
+              include: [{ file: '**/*.{ts,tsx}' }],
+            },
+            typescript: { configFile: path.join(process.cwd(), 'tsconfig.json') },
+          }),
+          new ESLintPlugin({
+            extensions: ['.ts', '.tsx'],
+            lintDirtyModulesOnly: Boolean(env.development), // don't lint on start, only lint changed files
+          }),
+        ]
         : []),
     ],
 
