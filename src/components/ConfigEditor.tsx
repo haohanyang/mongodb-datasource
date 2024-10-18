@@ -1,5 +1,5 @@
 import React, { ChangeEvent } from "react";
-import { Divider, Field, FieldSet, InlineField, InlineFieldRow, Input, RadioButtonGroup, SecretInput, TextLink } from "@grafana/ui";
+import { Divider, Field, FieldSet, InlineField, InlineFieldRow, Input, RadioButtonGroup, SecretInput } from "@grafana/ui";
 import { DataSourcePluginOptionsEditorProps, SelectableValue } from "@grafana/data";
 import { MongoDataSourceOptions, MySecureJsonData, MongoDBAuthMethod, ConnectionStringScheme } from "../types";
 ;
@@ -211,12 +211,6 @@ export function ConfigEditor(props: Props) {
             />
           </InlineField></>
       }
-
-      {process.env.COMMIT_HASH && <div>
-        Last commit <TextLink href={`https://github.com/haohanyang/mongodb-datasource/commit/${process.env.COMMIT_HASH}`}>
-          {process.env.COMMIT_HASH}
-        </TextLink>
-      </div>}
     </>
   );
 }
