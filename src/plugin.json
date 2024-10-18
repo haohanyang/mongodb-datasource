@@ -19,12 +19,7 @@
       "small": "img/logo.svg",
       "large": "img/logo.svg"
     },
-    "links": [
-      {
-        "name": "Source Code",
-        "url": "https://github.com/haohanyang/mongodb-datasource"
-      }
-    ],
+    "links": [],
     "screenshots": [],
     "version": "%VERSION%",
     "updated": "%TODAY%"

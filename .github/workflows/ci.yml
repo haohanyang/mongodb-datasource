@@ -35,6 +35,17 @@ jobs:
           - 27018:27017
     steps:
       - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Update plugin.json
+        run: python3 scripts/update_plugin_metadata.py
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
       - name: Setup Node.js environment
         uses: actions/setup-node@v4
         with:

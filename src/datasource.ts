@@ -1,8 +1,8 @@
-import { DataSourceInstanceSettings, CoreApp, ScopedVars, DataQueryRequest, DataQueryResponse } from "@grafana/data";
+import { DataSourceInstanceSettings, CoreApp, ScopedVars, DataQueryRequest, DataQueryResponse, LegacyMetricFindQueryOptions, MetricFindValue, dateTime } from "@grafana/data";
 import { DataSourceWithBackend, getTemplateSrv } from "@grafana/runtime";
-import {parseJsQuery, datetimeToJson, getBucketCount, parseJsQueryLegacy} from "./utils";
-import { MongoQuery, MongoDataSourceOptions, DEFAULT_QUERY, QueryLanguage } from "./types";
-import { Observable } from "rxjs";
+import { parseJsQuery, datetimeToJson, getBucketCount, parseJsQueryLegacy, randomId, getMetricValues } from "./utils";
+import { MongoQuery, MongoDataSourceOptions, DEFAULT_QUERY, QueryLanguage, VariableQuery } from "./types";
+import { Observable, firstValueFrom } from "rxjs";
 
 
 export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourceOptions> {
@@ -19,6 +19,40 @@ export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourc
       ...query,
       queryText: getTemplateSrv().replace(query.queryText, scopedVars),
     };
+  }
+
+  async metricFindQuery(query: VariableQuery, options?: LegacyMetricFindQueryOptions): Promise<MetricFindValue[]> {
+    const request: DataQueryRequest<MongoQuery> = {
+      requestId: "variable-query-" + randomId(3),
+      targets: [{
+        refId: "A",
+        queryLanguage: QueryLanguage.JSON,
+        collection: query.collection,
+        queryText: getTemplateSrv().replace(query.queryText),
+        queryType: "table"
+      }],
+      scopedVars: options?.scopedVars || {},
+      interval: "5s",
+      timezone: "browser",
+      intervalMs: 5000,
+      range: options?.range || {
+        from: dateTime(),
+        to: dateTime(),
+        raw: {
+          from: "now",
+          to: "now"
+        }
+      },
+      app: "variable-query",
+      startTime: (options?.range?.from || dateTime()).toDate().getUTCMilliseconds()
+    };
+
+    const resp = await firstValueFrom(this.query(request));
+    if (resp.errors?.length && resp.errors.length > 0) {
+      throw new Error(resp.errors[0].message || "Unknown error");
+    }
+
+    return getMetricValues(resp);
   }
 
   filterQuery(query: MongoQuery): boolean {
