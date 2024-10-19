@@ -3,6 +3,7 @@
 **Visualize your MongoDB data in Grafana with powerful aggregation queries.**
 
 ![ci](https://github.com/haohanyang/mongodb-datasource/actions/workflows/ci.yml/badge.svg?branch=master)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fhaohanyang%2Fmongodb-datasource.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fhaohanyang%2Fmongodb-datasource?ref=badge_shield)
 
 This plugin enables you to query and visualize data from your MongoDB databases directly within Grafana. Leverage the flexibility of MongoDB's aggregation pipeline to create insightful dashboards and panels.
 
@@ -193,3 +194,5 @@ Provide the collection name and your MongoDB aggregation pipeline in standard JS
 
 ## License
 Apache-2.0
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fhaohanyang%2Fmongodb-datasource.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fhaohanyang%2Fmongodb-datasource?ref=badge_large)
