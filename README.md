@@ -1,6 +1,6 @@
 # Grafana MongoDB Data Source
 
-**Visualize your MongoDB data in Grafana with powerful aggregation queries.**
+Integrate MongoDB to Grafana
 
 ![ci](https://github.com/haohanyang/mongodb-datasource/actions/workflows/ci.yml/badge.svg?branch=master)
 
@@ -10,21 +10,27 @@ This plugin enables you to query and visualize data from your MongoDB databases 
 
 ## Features
 
-- **Flexible Querying:** Craft precise queries using MongoDB's aggregation pipeline syntax in JSON or JavaScript.
+- **Flexible Querying:** Query data using MongoDB's aggregation pipeline syntax in JSON or JavaScript. Support query variables to create dynamic dashboards.
 - **Time Series & Table Data:** Visualize time-based data or display results in tabular format for various Grafana panels.
-- **Secure Execution:** Execute JavaScript queries within a secure ShadowRealm sandbox to control access.
+- **MongoDB Atlas Support** Connect to MongoDB Atlas Services.
 - **Legacy Plugin Compatibility:** Seamlessly migrate from the legacy plugin with support for its query syntax.
-- **Up-to-date:** Use the latest Grafana Plugin SDKs and follow best practices.
+
+## Authentication methods
+* No authentication
+* Username/Password authentication
 
 ## Getting Started
+### Quick start
+Run the script `scripts/start_docker.py` to start a MongoDB and Grafana container with the plugin
+```
+python3 scripts/start_docker.py
+```
+### Full steps
 1. **Download:** Obtain the latest plugin build from the [Release page](https://github.com/haohanyang/mongodb-datasource/releases) or [workflow artifacts](https://github.com/haohanyang/mongodb-datasource/actions?query=branch%3Amaster).
 
 2. **Install:** 
    - Extract the downloaded archive (`haohanyang-mongodb-datasource-<version>.zip`) into your Grafana plugins directory (`/var/lib/grafana/plugins` or similar).
    - Ensure the plugin binaries (`mongodb-datasource/gpx_mongodb_datasource_*`) have execute permissions (`chmod +x`).
-       ```bash
-       chmod 0755 mongodb-datasource/gpx_mongodb_datasource_*
-       ```
    - Configure the plugin as a data source within Grafana, providing your MongoDB connection details.
 
 Refer to the [example docker-compose.prod.yaml](/docker-compose.prod.yaml) file for a production-ready setup. 
