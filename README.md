@@ -21,7 +21,7 @@ This plugin enables you to query and visualize data from your MongoDB databases 
 
 ## Getting Started
 ### Quick start
-Run the script `scripts/quick_start.py` to start a MongoDB and Grafana container with the plugin
+Run the script [quick_start.py](scripts/quick_start.py) in the root directory to start MongoDB and Grafana containers with the plugin
 ```
 python3 scripts/quick_start.py
 ```
