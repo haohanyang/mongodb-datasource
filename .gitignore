@@ -41,3 +41,4 @@ ci/
 .env
 venv/
 mongodb-datasource/
+grafana-storage/

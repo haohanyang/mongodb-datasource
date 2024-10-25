@@ -21,9 +21,9 @@ This plugin enables you to query and visualize data from your MongoDB databases 
 
 ## Getting Started
 ### Quick start
-Run the script `scripts/start_docker.py` to start a MongoDB and Grafana container with the plugin
+Run the script `scripts/quick_start.py` to start a MongoDB and Grafana container with the plugin
 ```
-python3 scripts/start_docker.py
+python3 scripts/quick_start.py
 ```
 ### Full steps
 1. **Download:** Obtain the latest plugin build from the [Release page](https://github.com/haohanyang/mongodb-datasource/releases) or [workflow artifacts](https://github.com/haohanyang/mongodb-datasource/actions?query=branch%3Amaster).

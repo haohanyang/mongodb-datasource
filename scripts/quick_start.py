@@ -6,6 +6,7 @@ import os
 import glob
 import subprocess
 import shutil
+from sys import platform
 
 dist_dir = "mongodb-datasource"
 if os.path.isdir(dist_dir):
@@ -31,8 +32,12 @@ with urllib.request.urlopen(
 
 # Grant execute permission go binaries
 for bin in glob.glob("mongodb-datasource/gpx_mongodb_datasource_*"):
-    os.chmod(bin, 755)
+    os.chmod(bin, os.stat(bin).st_mode | 755)
 
-subprocess.call(
-    ["sudo", "docker", "compose", "-f", "docker-compose.prod.yaml", "up", "-d"]
-)
+if platform == "linux" or platform == "linux2":
+    # "sudo" only for linux
+    subprocess.call(
+        ["sudo", "docker", "compose", "-f", "docker-compose.prod.yaml", "up", "-d"]
+    )
+else:
+    subprocess.call(["docker", "compose", "-f", "docker-compose.prod.yaml", "up", "-d"])
