@@ -2,18 +2,19 @@ package models
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
 
 func rawArrayToJson(value bson.RawValue) (string, error) {
-	var bsonArray bson.A
-	err := bson.UnmarshalExtJSON([]byte(value.String()), true, &bsonArray)
+	var bsonDoc bson.M
+	err := bson.UnmarshalExtJSON([]byte(fmt.Sprintf(`{"data":%s}`, value.String())), true, &bsonDoc)
 	if err != nil {
 		return "", err
 	}
 
-	rawBytes, err := json.Marshal(bsonArray)
+	rawBytes, err := json.Marshal(bsonDoc["data"])
 	if err != nil {
 		return "", err
 	}
