@@ -740,14 +740,22 @@ func TestCreateTableFramesFromQuery(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		v, _ := frame.Fields[0].ConcreteAt(0)
-		var doc bson.M
-		bson.UnmarshalExtJSON(v.(json.RawMessage), true, &doc)
-		assertEq(t, doc["0"], int32(1))
-		assertEq(t, doc["1"], "bar")
+		v, notNull := frame.Fields[0].ConcreteAt(0)
+		if !notNull {
+			t.Fatal("null value")
+		}
 
-		docIn := doc["2"].(bson.M)
-		assertEq(t, docIn["baz"], int32(1))
+		var doc bson.A
+		err = bson.UnmarshalExtJSON(v.(json.RawMessage), true, &doc)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		assertEq(t, doc[0], int32(1))
+		assertEq(t, doc[1], "bar")
+
+		docIn := doc[2].(bson.D)
+		assertEq(t, docIn.Map()["baz"], int32(1))
 	})
 
 	t.Run("array and embedded docs can exist in the same field", func(t *testing.T) {
