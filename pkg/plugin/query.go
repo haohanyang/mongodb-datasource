@@ -101,9 +101,16 @@ func CreateTableFramesFromQuery(ctx context.Context, tableName string, cursor *m
 	}
 
 	frame := data.NewFrame(tableName)
-	for _, c := range columns {
-		c.Rectify()
+
+	if c, ok := columns["_id"]; ok {
 		frame.Fields = append(frame.Fields, c.Field)
+	}
+
+	for _, c := range columns {
+		if c.Name != "_id" {
+			c.Rectify()
+			frame.Fields = append(frame.Fields, c.Field)
+		}
 	}
 
 	return frame, nil

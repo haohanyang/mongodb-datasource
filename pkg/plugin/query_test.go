@@ -784,4 +784,35 @@ func TestCreateTableFramesFromQuery(t *testing.T) {
 			t.Fatal(err)
 		}
 	})
+
+	t.Run("_id is the first field if exists", func(t *testing.T) {
+		ctx := context.Background()
+		toInsert := []interface{}{
+			bson.M{
+				"_id": primitive.NewObjectID(),
+				"_g":  1,
+			},
+			bson.M{
+				"_id": primitive.NewObjectID(),
+				"_h":  2,
+			},
+			bson.M{
+				"_id": primitive.NewObjectID(),
+				"_j":  3,
+			},
+		}
+
+		cursor, err := mongo.NewCursorFromDocuments(toInsert, nil, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		frames, err := CreateTableFramesFromQuery(ctx, "test", cursor)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		assertEq(t, frames.Fields[0].Name, "_id")
+	})
+
 }
