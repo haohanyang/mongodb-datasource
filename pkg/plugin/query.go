@@ -81,7 +81,11 @@ func CreateTableFramesFromQuery(ctx context.Context, tableName string, cursor *m
 				if element.Value().Type == bson.TypeNull {
 					continue
 				}
-				columns[name] = models.NewColumn(rowIndex, element)
+				nc, err := models.NewColumn(rowIndex, element)
+				if err != nil {
+					return nil, err
+				}
+				columns[name] = nc
 			}
 		}
 
