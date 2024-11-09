@@ -14,7 +14,7 @@ import {
 import { QueryEditorProps, SelectableValue } from "@grafana/data";
 import { DataSource } from "../datasource";
 import { MongoDataSourceOptions, MongoQuery, QueryLanguage, QueryType, DEFAULT_QUERY } from "../types";
-import {parseJsQuery, parseJsQueryLegacy, validateJsonQueryText} from "../utils";
+import { parseJsQuery, parseJsQueryLegacy, validateJsonQueryText } from "../utils";
 import * as monacoType from "monaco-editor/esm/vs/editor/editor.api";
 
 type Props = QueryEditorProps<DataSource, MongoQuery, MongoDataSourceOptions>;
@@ -37,7 +37,7 @@ export function QueryEditor({ query, onChange, onRunQuery }: Props) {
   const [queryTextError, setQueryTextError] = useState<string | null>(null);
 
   const optionsLanguage = [
-    { label: "JSON", value: QueryLanguage.JSON},
+    { label: "JSON", value: QueryLanguage.JSON },
     { label: "JavaScript", value: QueryLanguage.JAVASCRIPT, description: "javascript legacy" },
     { label: "JavaScriptShadow", value: QueryLanguage.JAVASCRIPT_SHADOW, description: "javascript with evaluation" }
   ];
@@ -47,7 +47,7 @@ export function QueryEditor({ query, onChange, onRunQuery }: Props) {
       // parse the JavaScript query
       const { error, collection } = query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW ? parseJsQuery(queryText) : parseJsQueryLegacy(queryText);
       // let the same query text as it is
-      onChange({ ...query, queryText: queryText, ...(collection ? {collection} : {}) });
+      onChange({ ...query, queryText: queryText, ...(collection ? { collection } : {}) });
       setQueryTextError(error);
       if (!error) {
         onRunQuery();
@@ -95,7 +95,7 @@ export function QueryEditor({ query, onChange, onRunQuery }: Props) {
           <Select id="query-editor-query-type" options={queryTypes} value={query.queryType || QueryType.TIMESERIES} onChange={onQueryTypeChange}></Select>
         </InlineField>
         <InlineField label="Collection" tooltip="Enter the collection to query"
-                     error="Please enter the collection" invalid={!query.collection}>
+          error="Please enter the collection" invalid={!query.collection}>
           <Input id="query-editor-collection" onChange={onCollectionChange} value={query.collection} required />
         </InlineField>
       </InlineFieldRow>
@@ -106,7 +106,7 @@ export function QueryEditor({ query, onChange, onRunQuery }: Props) {
       <Field label="Query Text" description={`Enter the Mongo Aggregation Pipeline (${query.queryLanguage})`}
         error={queryTextError} invalid={queryTextError != null}>
         <CodeEditor onEditorDidMount={onCodeEditorDidMount} width="100%" height={300} language={query.queryLanguage === QueryLanguage.JAVASCRIPT || query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW ? "javascript" : "json"}
-          onBlur={onQueryTextChange} value={query.queryText || ""} showMiniMap={false} showLineNumbers={true} />
+          onBlur={onQueryTextChange} value={query.queryText || ""} showMiniMap={false} showLineNumbers={true} monacoOptions={{ fontSize: 14 }} />
       </Field>
       <Button onClick={onFormatQueryText}>Format</Button>
     </>
