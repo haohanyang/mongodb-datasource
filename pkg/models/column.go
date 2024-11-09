@@ -130,13 +130,22 @@ func (c *Column) AppendValue(rv bson.RawValue) error {
 			return fmt.Errorf("field %s should have type %s, but got %s", c.Name, c.Type().ItemTypeString(), rv.Type.String())
 		}
 
-		c.Field.Append(pointer(rv.Document().String()))
+		v, err := rawDocToJson(rv)
+		if err != nil {
+			return err
+		}
+
+		c.Field.Append(&v)
 	case bson.TypeArray:
 		if c.Type() != data.FieldTypeNullableString {
 			return fmt.Errorf("field %s should have type %s, but got %s", c.Name, c.Type().ItemTypeString(), rv.Type.String())
 		}
 
-		c.Field.Append(pointer(rv.Array().String()))
+		v, err := rawArrayToJson(rv)
+		if err != nil {
+			return err
+		}
+		c.Field.Append(&v)
 
 	default:
 		if c.Type() != data.FieldTypeNullableString {
@@ -158,7 +167,7 @@ func (c *Column) Type() data.FieldType {
 	return c.Field.Type()
 }
 
-func NewColumn(rowIndex int, element bson.RawElement) *Column {
+func NewColumn(rowIndex int, element bson.RawElement) (*Column, error) {
 	key := element.Key()
 	value := element.Value()
 	var field *data.Field
@@ -194,11 +203,21 @@ func NewColumn(rowIndex int, element bson.RawElement) *Column {
 
 	case bson.TypeEmbeddedDocument:
 		field = data.NewField(key, nil, make([]*string, rowIndex+1))
-		field.Set(rowIndex, pointer(value.Document().String()))
+
+		v, err := rawDocToJson(value)
+		if err != nil {
+			return nil, err
+		}
+		field.Set(rowIndex, &v)
 
 	case bson.TypeArray:
 		field = data.NewField(key, nil, make([]*string, rowIndex+1))
-		field.Set(rowIndex, pointer(value.Array().String()))
+
+		v, err := rawArrayToJson(value)
+		if err != nil {
+			return nil, err
+		}
+		field.Set(rowIndex, &v)
 
 	default:
 		field = data.NewField(key, nil, make([]*string, rowIndex+1))
@@ -209,7 +228,7 @@ func NewColumn(rowIndex int, element bson.RawElement) *Column {
 		Name:      key,
 		Field:     field,
 		BsonTypes: []bsontype.Type{value.Type},
-	}
+	}, nil
 }
 
 // Convert array and embedded document type values to json.RawMessage if allowed
