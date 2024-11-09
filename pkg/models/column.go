@@ -130,13 +130,13 @@ func (c *Column) AppendValue(rv bson.RawValue) error {
 			return fmt.Errorf("field %s should have type %s, but got %s", c.Name, c.Type().ItemTypeString(), rv.Type.String())
 		}
 
-		c.Field.Append(pointer(rv.Document().String()))
+		c.Field.Append(pointer(rv.String()))
 	case bson.TypeArray:
 		if c.Type() != data.FieldTypeNullableString {
 			return fmt.Errorf("field %s should have type %s, but got %s", c.Name, c.Type().ItemTypeString(), rv.Type.String())
 		}
 
-		c.Field.Append(pointer(rv.Array().String()))
+		c.Field.Append(pointer(rv.String()))
 
 	default:
 		if c.Type() != data.FieldTypeNullableString {
@@ -194,11 +194,11 @@ func NewColumn(rowIndex int, element bson.RawElement) *Column {
 
 	case bson.TypeEmbeddedDocument:
 		field = data.NewField(key, nil, make([]*string, rowIndex+1))
-		field.Set(rowIndex, pointer(value.Document().String()))
+		field.Set(rowIndex, pointer(value.String()))
 
 	case bson.TypeArray:
 		field = data.NewField(key, nil, make([]*string, rowIndex+1))
-		field.Set(rowIndex, pointer(value.Array().String()))
+		field.Set(rowIndex, pointer(value.String()))
 
 	default:
 		field = data.NewField(key, nil, make([]*string, rowIndex+1))
