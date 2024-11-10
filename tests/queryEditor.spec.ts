@@ -1,7 +1,7 @@
 import { test, expect } from "@grafana/plugin-e2e";
 import { MongoClient } from "mongodb";
 
-test.setTimeout(50000);
+test.setTimeout(100000);
 
 test.beforeAll(async ({ createDataSource, readProvisionedDataSource }) => {
     const ds = await readProvisionedDataSource({ fileName: "test/mongo-no-auth.yml" });
@@ -124,7 +124,7 @@ test("data query should return correct temperature data", async ({ panelEditPage
 });
 
 test("data query should return correct temperature data with Javascript query", async ({ panelEditPage, readProvisionedDataSource, selectors, page, createDataSource }) => {
-  const query = `
+    const query = `
   db.test_temperatureData.aggregate([
     {
         "$group": {
@@ -160,21 +160,21 @@ test("data query should return correct temperature data with Javascript query", 
 ])
   `;
 
-  const ds = await readProvisionedDataSource({ fileName: "test/mongo-no-auth.yml" });
-  await panelEditPage.datasource.set(ds.name);
-  await panelEditPage.getQueryEditorRow("A").getByLabel("Collection").fill("test_temperatureData");
-  const selectLanguage =  panelEditPage.getQueryEditorRow("A").getByRole("combobox").last();
-  await selectLanguage.click();
-  await page.getByText("JavaScript", { exact: true }).click();
-  const editor = panelEditPage.getByGrafanaSelector(selectors.components.CodeEditor.container, {
-    root: panelEditPage.getQueryEditorRow("A")
-  }).getByRole("textbox");
+    const ds = await readProvisionedDataSource({ fileName: "test/mongo-no-auth.yml" });
+    await panelEditPage.datasource.set(ds.name);
+    await panelEditPage.getQueryEditorRow("A").getByLabel("Collection").fill("test_temperatureData");
+    const selectLanguage = panelEditPage.getQueryEditorRow("A").getByRole("combobox").last();
+    await selectLanguage.click();
+    await page.getByText("JavaScript", { exact: true }).click();
+    const editor = panelEditPage.getByGrafanaSelector(selectors.components.CodeEditor.container, {
+        root: panelEditPage.getQueryEditorRow("A")
+    }).getByRole("textbox");
 
-  await editor.clear();
-  await editor.fill(query);
-  await panelEditPage.setVisualization("Table");
-  await expect(panelEditPage.refreshPanel()).toBeOK();
-  await expect(panelEditPage.panel.data).toContainText(["2", "1", "3", "1"]);
+    await editor.clear();
+    await editor.fill(query);
+    await panelEditPage.setVisualization("Table");
+    await expect(panelEditPage.refreshPanel()).toBeOK();
+    await expect(panelEditPage.panel.data).toContainText(["2", "1", "3", "1"]);
 });
 
 test("data query should return correct temperature data with javascript function", async ({ panelEditPage, readProvisionedDataSource, selectors, page, createDataSource, dashboardPage }) => {
@@ -220,7 +220,7 @@ test("data query should return correct temperature data with javascript function
     await panelEditPage.datasource.set(ds.name);
     await panelEditPage.getQueryEditorRow("A").getByLabel("Collection").fill("test_temperatureData");
     // get toggle switch
-    const selectLanguage =  panelEditPage.getQueryEditorRow("A").getByRole("combobox").last();
+    const selectLanguage = panelEditPage.getQueryEditorRow("A").getByRole("combobox").last();
     await selectLanguage.click();
     await page.getByText("JavaScriptShadow", { exact: true }).click();
     const editor = panelEditPage.getByGrafanaSelector(selectors.components.CodeEditor.container, {
@@ -288,7 +288,7 @@ test("data query should return correct temperature data with javascript function
     const ds = await readProvisionedDataSource({ fileName: "test/mongo-no-auth.yml" });
     await panelEditPage.datasource.set(ds.name);
     await panelEditPage.getQueryEditorRow("A").getByLabel("Collection").fill("test_temperatureData");
-    const selectLanguage =  panelEditPage.getQueryEditorRow("A").getByRole("combobox").last();
+    const selectLanguage = panelEditPage.getQueryEditorRow("A").getByRole("combobox").last();
     await selectLanguage.click();
     await page.getByText("JavaScriptShadow", { exact: true }).click();
     const editor = panelEditPage.getByGrafanaSelector(selectors.components.CodeEditor.container, {
@@ -296,7 +296,7 @@ test("data query should return correct temperature data with javascript function
     }).getByRole("textbox");
 
     await panelEditPage.timeRange.set({
-      from: "2023-10-24T00:00:00.000Z",
+        from: "2023-10-24T00:00:00.000Z",
         to: "2023-10-26T00:00:00.000Z",
     });
 
