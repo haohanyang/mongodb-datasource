@@ -1,4 +1,10 @@
 # Changelog
+## 0.1.2 - 2024-11-10
+### Changed
+* Increased code editor's font size([84c7de5d](https://github.com/haohanyang/mongodb-datasource/commit/84c7de5df5035bd4c3214908eb6a389b53732cde))
+* Make `_id` the first column in the table if exists([#26](https://github.com/haohanyang/mongodb-datasource/pull/26))
+* Fix BSON array conversion to JSON([#25](https://github.com/haohanyang/mongodb-datasource/pull/25))
+
 ## 0.1.1 - 2024-10-25
 ### Added 
 - [Query Variable](https://grafana.com/docs/grafana/latest/dashboards/variables/add-template-variables/#add-a-query-variable) support
