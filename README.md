@@ -13,6 +13,7 @@ This plugin enables you to query and visualize data from your MongoDB databases 
 - **Flexible Querying:** Query data using MongoDB's aggregation pipeline syntax in JSON or JavaScript. Support query variables to create dynamic dashboards.
 - **Time Series & Table Data:** Visualize time-based data or display results in tabular format for various Grafana panels.
 - **MongoDB Atlas Support** Connect to MongoDB Atlas Services.
+- **Grafana Alerting Support** Set up alerting rules based on query result
 - **Legacy Plugin Compatibility:** Easy migrate from the legacy plugin with support for its query syntax.
 
 ## Authentication methods
