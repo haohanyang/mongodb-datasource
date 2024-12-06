@@ -102,27 +102,21 @@ export function randomId(length: number) {
 
 export function getMetricValues(response: DataQueryResponse): MetricFindValue[] {
     const dataframe = response.data[0] as DataFrameSchema;
-    const fields = dataframe.
-        fields.filter(f => f.type === FieldType.string || f.type === FieldType.number)
-        // @ts-ignore
-        .filter(f => f.values && f.values.length > 0);
+    const field = dataframe.fields.find(f => f.name === "value");
+
+    if (!field) {
+        throw new Error("Field \"value\" not found");
+    }
+
+    if (field.type !== FieldType.string && field.type !== FieldType.number) {
+        throw new Error("Each element should be string or number");
+    }
 
     // @ts-ignore
-    return fields.map(function (field) {
-        // @ts-ignore
-        const values: Array<string | number> = field.values;
-        let text: string;
-
-        if (values.length === 1) {
-            text = `${field.name}:${values[0]}`;
-        } else {
-            text = `${field.name}:[${values[0]}, ...]`;
-        }
-
+    return field.values.map((value: string | number) => {
         return {
-            text: text,
-            // @ts-ignore
-            value: values.length === 1 ? values[0] : values,
+            text: value.toString(),
+            value: value,
             expandable: true
         };
     });

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { DEFAULT_QUERY, VariableQuery } from "../types";
-import { CodeEditor, Field, InlineField, Input } from "@grafana/ui";
+import { VariableQuery } from "../types";
+import { CodeEditor, Field, InlineField, Input, Button, Alert } from "@grafana/ui";
 
 interface VariableQueryProps {
     query: VariableQuery;
@@ -32,17 +32,21 @@ export const VariableQueryEditor = ({ onChange, query }: VariableQueryProps) => 
                 error="Please enter the collection" invalid={!query.collection}>
                 <Input
                     name="collection"
-                    onBlur={saveQuery}
                     onChange={handleCollectionChange}
                     value={state.collection}>
                 </Input>
             </InlineField>
             <Field label="Query Text" description="MongoDB aggregate (JSON)">
                 <CodeEditor width="100%" height={300} language="json" onBlur={saveQuery}
-                    value={query.queryText || DEFAULT_QUERY.queryText!} showMiniMap={false} showLineNumbers={true}
+                    value={query.queryText || ""} showMiniMap={false} showLineNumbers={true}
                     onChange={handleQueryTextChange}
+                    monacoOptions={{ fontSize: 14 }}
                 />
             </Field>
+            <Alert title="Query info" severity="info">
+                The query result is expected to contain <code>value</code> field which has elements of type <code>string</code> or <code>number</code>
+            </Alert>
+            <Button onClick={saveQuery} variant="primary">Query</Button>
         </>
     );
 };
