@@ -14,7 +14,7 @@ import {
 import { QueryEditorProps, SelectableValue } from "@grafana/data";
 import { DataSource } from "../datasource";
 import { MongoDataSourceOptions, MongoQuery, QueryLanguage, QueryType, DEFAULT_QUERY } from "../types";
-import { parseJsQuery, parseJsQueryLegacy, validateJsonQueryText } from "../utils";
+import { parseJsQuery, parseJsQueryLegacy, validateJsonQueryText, validateTimeout } from "../utils";
 import * as monacoType from "monaco-editor/esm/vs/editor/editor.api";
 
 type Props = QueryEditorProps<DataSource, MongoQuery, MongoDataSourceOptions>;
@@ -35,6 +35,7 @@ export function QueryEditor({ query, onChange, onRunQuery }: Props) {
 
   const codeEditorRef = useRef<monacoType.editor.IStandaloneCodeEditor | null>(null);
   const [queryTextError, setQueryTextError] = useState<string | null>(null);
+  const [timeoutText, setTimeoutText] = useState<string>(query.timeout ? query.timeout.toString() : "");
 
   const optionsLanguage = [
     { label: "JSON", value: QueryLanguage.JSON },
@@ -74,6 +75,16 @@ export function QueryEditor({ query, onChange, onRunQuery }: Props) {
     onChange({ ...query, collection: event.target.value });
   };
 
+  const onTimeoutChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setTimeoutText(event.target.value);
+    console.log(event.target.value);
+    if (!event.target.value) {
+      onChange({ ...query, timeout: undefined });
+    } else if (validateTimeout(event.target.value)) {
+      onChange({ ...query, timeout: parseInt(event.target.value, 10) });
+    }
+  };
+
   const onCodeEditorDidMount = (e: monacoType.editor.IStandaloneCodeEditor) => {
     codeEditorRef.current = e;
   };
@@ -97,6 +108,10 @@ export function QueryEditor({ query, onChange, onRunQuery }: Props) {
         <InlineField label="Collection" tooltip="Enter the collection to query"
           error="Please enter the collection" invalid={!query.collection}>
           <Input id="query-editor-collection" onChange={onCollectionChange} value={query.collection} required />
+        </InlineField>
+        <InlineField label="Timeout" tooltip="(Optional) The maximum amount of time (in milisecond) that the query can run on the server."
+          error="Invalid timeout" invalid={timeoutText !== "" && !validateTimeout(timeoutText)}>
+          <Input id="query-editor-timeout" onChange={onTimeoutChange} value={timeoutText} />
         </InlineField>
       </InlineFieldRow>
       <Divider />

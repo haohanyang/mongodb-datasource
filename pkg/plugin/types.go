@@ -18,6 +18,7 @@ type queryModel struct {
 	Collection    string `json:"collection"`
 	QueryType     string `json:"queryType"`
 	QueryLanguage string `json:"queryLanguage"`
+	Timeout       int    `json:"timeout"`
 }
 
 type TimeSeriesRow[T any] struct {

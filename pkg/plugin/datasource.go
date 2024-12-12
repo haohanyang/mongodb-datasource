@@ -105,7 +105,13 @@ func (d *Datasource) query(ctx context.Context, _ backend.PluginContext, query b
 		return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Failed to unmarshal JsonExt: %v", err.Error()))
 	}
 
-	cursor, err := db.Collection(qm.Collection).Aggregate(ctx, pipeline)
+	aggregateOpts := options.AggregateOptions{}
+	if qm.Timeout > 0 {
+		aggregateOpts.MaxTime = pointer(time.Hour * time.Duration(qm.Timeout))
+		backend.Logger.Debug("Aggregate timeout was set", "timeout", qm.Timeout)
+	}
+
+	cursor, err := db.Collection(qm.Collection).Aggregate(ctx, pipeline, &aggregateOpts)
 	if err != nil {
 		return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Failed to query: %v", err.Error()))
 
