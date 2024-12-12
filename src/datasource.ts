@@ -1,8 +1,8 @@
-import { DataSourceInstanceSettings, CoreApp, ScopedVars, DataQueryRequest, DataQueryResponse, LegacyMetricFindQueryOptions, MetricFindValue, dateTime } from "@grafana/data";
-import { DataSourceWithBackend, getTemplateSrv } from "@grafana/runtime";
+import { DataSourceInstanceSettings, CoreApp, ScopedVars, DataQueryRequest, DataQueryResponse, LegacyMetricFindQueryOptions, MetricFindValue, dateTime, LiveChannelScope } from "@grafana/data";
+import { DataSourceWithBackend, getGrafanaLiveSrv, getTemplateSrv } from "@grafana/runtime";
 import { parseJsQuery, datetimeToJson, getBucketCount, parseJsQueryLegacy, randomId, getMetricValues } from "./utils";
 import { MongoQuery, MongoDataSourceOptions, DEFAULT_QUERY, QueryLanguage, VariableQuery } from "./types";
-import { Observable, firstValueFrom } from "rxjs";
+import { Observable, firstValueFrom, merge } from "rxjs";
 
 
 export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourceOptions> {
@@ -60,6 +60,7 @@ export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourc
   }
 
   query(request: DataQueryRequest<MongoQuery>): Observable<DataQueryResponse> {
+
     const queries = request.targets.map((query) => {
       let queryText = query.queryText!;
       if (query.queryLanguage === QueryLanguage.JAVASCRIPT || query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW) {
@@ -81,6 +82,26 @@ export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourc
           ),
       };
     });
+
+    const isStreaming = true;
+
+    if (isStreaming) {
+      const observables = queries.map(query => {
+
+        return getGrafanaLiveSrv().getDataStream({
+          addr: {
+            scope: LiveChannelScope.DataSource,
+            namespace: this.uid,
+            path: "mongodb-datasource/stream", // TODO: name
+            data: {
+              ...query,
+            },
+          },
+        });
+      });
+  
+      return merge(...observables);
+    }
 
     return super.query({ ...request, targets: queries });
   }
