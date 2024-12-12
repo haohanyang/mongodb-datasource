@@ -29,23 +29,20 @@ services:
       GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: haohanyang-mongodb-datasource
     networks:
       - mongodb-datasource
-      
-  mongo-no-auth:
-    image: mongo
-    container_name: mongodb-datasource-mongo-no-auth
-    ports:
-      - 27018:27017
-    networks:
-      - mongodb-datasource
 
-  mongo-username-password-auth:
+  mongo:
     image: mongo
-    container_name: mongodb-datasource-mongo-username-password-auth
+    container_name: mongodb-datasource-mongo
+    command: [--replSet, rs0]
     ports:
-      - 27019:27017
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: username
-      MONGO_INITDB_ROOT_PASSWORD: password
+      - 27017:27017
+    healthcheck:
+      test: echo "try { rs.status() } catch (err) { rs.initiate({_id:'rs0',members:[{_id:0, host:'mongo:27017'}]}) }" | mongosh --port 27017 --quiet
+      interval: 10s
+      timeout: 20s
+      start_period: 0s
+      start_interval: 1s
+      retries: 10
     networks:
       - mongodb-datasource
 

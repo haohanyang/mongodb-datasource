@@ -9,6 +9,7 @@ import (
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
+	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/haohanyang/mongodb-datasource/pkg/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -190,4 +191,69 @@ func (d *Datasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRe
 		Status:  backend.HealthStatusOk,
 		Message: "Successfully connects to MongoDB",
 	}, nil
+}
+
+func (d *Datasource) SubscribeStream(ctx context.Context, req *backend.SubscribeStreamRequest) (*backend.SubscribeStreamResponse, error) {
+	backend.Logger.Info("User subscribed to channel", "path", req.Path)
+
+	return &backend.SubscribeStreamResponse{
+		Status: backend.SubscribeStreamStatusOK,
+	}, nil
+}
+
+func (d *Datasource) PublishStream(ctx context.Context, req *backend.PublishStreamRequest) (*backend.PublishStreamResponse, error) {
+	backend.Logger.Info("User published to channel", "path", req.Path)
+
+	return &backend.PublishStreamResponse{
+		Status: backend.PublishStreamStatusPermissionDenied,
+	}, nil
+}
+
+func (d *Datasource) RunStream(ctx context.Context, req *backend.RunStreamRequest, sender *backend.StreamSender) error {
+	backend.Logger.Info("User was running the stream on channel", "path", req.Path)
+
+	qm := queryModel{}
+	json.Unmarshal(req.Data, &qm)
+
+	var pipeline []bson.D
+
+	err := bson.UnmarshalExtJSON([]byte(qm.QueryText), false, &pipeline)
+	if err != nil {
+		backend.Logger.Error("Failed to unmarshal JsonExt", "error", err)
+		return err
+	}
+
+	mongoStream, err := d.client.Database(d.database).Watch(ctx, pipeline)
+	if err != nil {
+		backend.Logger.Error("Failed to listen to Mongo change streams", "error", err)
+		return err
+	}
+
+	go watchChangeStream(ctx, mongoStream, sender)
+
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
+}
+
+func watchChangeStream(ctx context.Context, stream *mongo.ChangeStream, sender *backend.StreamSender) {
+	defer stream.Close(ctx)
+
+	for stream.Next(ctx) {
+		var doc bson.M
+		if err := stream.Decode(&doc); err != nil {
+			backend.Logger.Error("Failed to decode bson", "error", err)
+		} else {
+			sender.SendFrame(
+				data.NewFrame(
+					"Operation type",
+					data.NewField("time", nil, []time.Time{time.Now()}),
+					data.NewField("type", nil, []string{doc["operationType"].(string)})),
+				data.IncludeAll,
+			)
+		}
+	}
 }
