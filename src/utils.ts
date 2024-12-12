@@ -121,3 +121,13 @@ export function getMetricValues(response: DataQueryResponse): MetricFindValue[] 
         };
     });
 }
+
+export function validateTimeout(timeout: string) {
+
+    if (!/^\d+$/.test(timeout.trim())) {
+        return false;
+    }
+
+    const parsed = parseInt(timeout, 10);
+    return parsed > 0;
+}

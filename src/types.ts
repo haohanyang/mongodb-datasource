@@ -6,6 +6,7 @@ export interface MongoQuery extends DataQuery {
   collection?: string;
   queryType?: string;
   queryLanguage?: string;
+  timeout?: number;
 }
 
 export const QueryType = {
