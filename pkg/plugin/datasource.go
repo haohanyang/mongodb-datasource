@@ -11,6 +11,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/haohanyang/mongodb-datasource/pkg/models"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -229,7 +230,7 @@ func (d *Datasource) RunStream(ctx context.Context, req *backend.RunStreamReques
 		return err
 	}
 
-	go watchChangeStream(ctx, mongoStream, sender)
+	go watchChangeStream(ctx, &qm, mongoStream, sender)
 
 	for {
 		select {
@@ -239,21 +240,27 @@ func (d *Datasource) RunStream(ctx context.Context, req *backend.RunStreamReques
 	}
 }
 
-func watchChangeStream(ctx context.Context, stream *mongo.ChangeStream, sender *backend.StreamSender) {
+func watchChangeStream(ctx context.Context, qm *queryModel, stream *mongo.ChangeStream, sender *backend.StreamSender) {
 	defer stream.Close(ctx)
 
 	for stream.Next(ctx) {
-		var doc bson.M
-		if err := stream.Decode(&doc); err != nil {
-			backend.Logger.Error("Failed to decode bson", "error", err)
+		var err error
+		var frame *data.Frame
+
+		if qm.QueryType == "table" {
+			frame, err = CreateTableFramesFromStream(ctx, "stream", stream)
 		} else {
-			sender.SendFrame(
-				data.NewFrame(
-					"Operation type",
-					data.NewField("time", nil, []time.Time{time.Now()}),
-					data.NewField("type", nil, []string{doc["operationType"].(string)})),
-				data.IncludeAll,
-			)
+			frame, err = CreateTableFramesFromStream(ctx, "stream", stream)
 		}
+
+		if err != nil {
+			backend.Logger.Error("Failed to create data frame from stream", "error", err)
+		} else {
+			err = sender.SendFrame(frame, data.IncludeAll)
+			if err != nil {
+				backend.Logger.Error("Failed to send frame", "error", err)
+			}
+		}
+
 	}
 }
