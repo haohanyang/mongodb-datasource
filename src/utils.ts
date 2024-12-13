@@ -122,12 +122,12 @@ export function getMetricValues(response: DataQueryResponse): MetricFindValue[] 
     });
 }
 
-export function validateTimeout(timeout: string) {
+export function validatePositiveNumber(num: string) {
 
-    if (!/^\d+$/.test(timeout.trim())) {
+    if (!/^\d+$/.test(num.trim())) {
         return false;
     }
 
-    const parsed = parseInt(timeout, 10);
+    const parsed = parseInt(num, 10);
     return parsed > 0;
 }

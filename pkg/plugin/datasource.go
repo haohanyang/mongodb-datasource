@@ -84,8 +84,9 @@ func (d *Datasource) QueryData(ctx context.Context, req *backend.QueryDataReques
 }
 
 func (d *Datasource) query(ctx context.Context, _ backend.PluginContext, query backend.DataQuery) backend.DataResponse {
+	backend.Logger.Debug("Executing query", "refId", query.RefID, "json", query.JSON)
+
 	var response backend.DataResponse
-	backend.Logger.Debug("Raw query", query.JSON)
 	var qm queryModel
 	db := d.client.Database(d.database)
 
@@ -105,17 +106,39 @@ func (d *Datasource) query(ctx context.Context, _ backend.PluginContext, query b
 		return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Failed to unmarshal JsonExt: %v", err.Error()))
 	}
 
+	// Set aggregate options
 	aggregateOpts := options.AggregateOptions{}
-	if qm.Timeout > 0 {
-		aggregateOpts.MaxTime = pointer(time.Hour * time.Duration(qm.Timeout))
-		backend.Logger.Debug("Aggregate timeout was set", "timeout", qm.Timeout)
+
+	if qm.AggregateMaxTimeMS > 0 {
+		aggregateOpts.SetMaxTime(time.Hour * time.Duration(qm.AggregateMaxTimeMS))
+		backend.Logger.Debug("Aggregate timeout was set", "timeout", qm.AggregateMaxTimeMS)
+	}
+
+	if qm.AggregateComment != "" {
+		aggregateOpts.SetComment(qm.AggregateComment)
+		backend.Logger.Debug("Aggregate comment was set", "comment", qm.AggregateComment)
+	}
+
+	if qm.AggregateBatchSize > 0 {
+		aggregateOpts.SetBatchSize(qm.AggregateBatchSize)
+		backend.Logger.Debug("Aggregate batch size was set", "batchSize", qm.AggregateBatchSize)
+	}
+
+	if qm.AggregateAllowDiskUse {
+		aggregateOpts.SetAllowDiskUse(qm.AggregateAllowDiskUse)
+		backend.Logger.Debug("Aggregate allow disk use was set", "allowDiskUse", qm.AggregateAllowDiskUse)
+	}
+
+	if qm.AggregateMaxAwaitTime > 0 {
+		aggregateOpts.SetMaxAwaitTime(time.Hour * time.Duration(qm.AggregateMaxAwaitTime))
+		backend.Logger.Debug("Aggregate max await time was set", "maxAwaitTime", qm.AggregateMaxAwaitTime)
 	}
 
 	cursor, err := db.Collection(qm.Collection).Aggregate(ctx, pipeline, &aggregateOpts)
 	if err != nil {
 		return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Failed to query: %v", err.Error()))
-
 	}
+
 	defer cursor.Close(ctx)
 
 	if qm.QueryType == "table" {
