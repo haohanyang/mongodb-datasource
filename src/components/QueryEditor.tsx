@@ -27,7 +27,7 @@ const queryTypes: Array<SelectableValue<string>> = [
     icon: "chart-line"
   },
   {
-    label: "Data Table\t",
+    label: "Data Table",
     value: QueryType.TABLE,
     icon: "table"
   }
