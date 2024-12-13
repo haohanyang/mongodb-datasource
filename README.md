@@ -1,6 +1,6 @@
 # Grafana MongoDB Data Source
 
-Integrate MongoDB to Grafana
+Integrate MongoDB to Grafana. A free, open source, community-driven alternative to Grafana Lab's MongoDB enterprise plugin and MongoDB Atlas Charts.
 
 ![ci](https://github.com/haohanyang/mongodb-datasource/actions/workflows/ci.yml/badge.svg?branch=master)
 
