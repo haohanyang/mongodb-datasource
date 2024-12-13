@@ -111,27 +111,38 @@ func (d *Datasource) query(ctx context.Context, _ backend.PluginContext, query b
 
 	if qm.AggregateMaxTimeMS > 0 {
 		aggregateOpts.SetMaxTime(time.Hour * time.Duration(qm.AggregateMaxTimeMS))
-		backend.Logger.Debug("Aggregate timeout was set", "timeout", qm.AggregateMaxTimeMS)
+
+		backend.Logger.Debug("Aggregate max time was set", "timeout", qm.AggregateMaxTimeMS)
 	}
 
 	if qm.AggregateComment != "" {
 		aggregateOpts.SetComment(qm.AggregateComment)
+
 		backend.Logger.Debug("Aggregate comment was set", "comment", qm.AggregateComment)
 	}
 
 	if qm.AggregateBatchSize > 0 {
 		aggregateOpts.SetBatchSize(qm.AggregateBatchSize)
+
 		backend.Logger.Debug("Aggregate batch size was set", "batchSize", qm.AggregateBatchSize)
 	}
 
 	if qm.AggregateAllowDiskUse {
 		aggregateOpts.SetAllowDiskUse(qm.AggregateAllowDiskUse)
+
 		backend.Logger.Debug("Aggregate allow disk use was set", "allowDiskUse", qm.AggregateAllowDiskUse)
 	}
 
 	if qm.AggregateMaxAwaitTime > 0 {
 		aggregateOpts.SetMaxAwaitTime(time.Hour * time.Duration(qm.AggregateMaxAwaitTime))
+
 		backend.Logger.Debug("Aggregate max await time was set", "maxAwaitTime", qm.AggregateMaxAwaitTime)
+	}
+
+	if qm.AggregateBypassDocumentValidation {
+		aggregateOpts.SetBypassDocumentValidation(qm.AggregateBypassDocumentValidation)
+
+		backend.Logger.Debug("Aggregate bypass document validation was set", "bypassDocumentValidation", qm.AggregateBypassDocumentValidation)
 	}
 
 	cursor, err := db.Collection(qm.Collection).Aggregate(ctx, pipeline, &aggregateOpts)
