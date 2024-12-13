@@ -6,7 +6,7 @@ Integrate MongoDB to Grafana
 
 This plugin enables you to query and visualize data from your MongoDB databases directly within Grafana. Leverage the flexibility of MongoDB's aggregation pipeline to create insightful dashboards and panels.
 
-![screenshot](/static/screenshot.png)
+![screenshot](/static/screenshot-2.png)
 
 ## Features
 
