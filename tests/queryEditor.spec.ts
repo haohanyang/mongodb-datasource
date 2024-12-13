@@ -222,7 +222,7 @@ test("data query should return correct temperature data with javascript function
     // get toggle switch
     const selectLanguage = panelEditPage.getQueryEditorRow("A").getByRole("combobox").last();
     await selectLanguage.click();
-    await page.getByText("JavaScriptShadow", { exact: true }).click();
+    await page.getByText("JavaScript Shadow", { exact: true }).click();
     const editor = panelEditPage.getByGrafanaSelector(selectors.components.CodeEditor.container, {
         root: panelEditPage.getQueryEditorRow("A")
     }).getByRole("textbox");
@@ -290,7 +290,7 @@ test("data query should return correct temperature data with javascript function
     await panelEditPage.getQueryEditorRow("A").getByLabel("Collection").fill("test_temperatureData");
     const selectLanguage = panelEditPage.getQueryEditorRow("A").getByRole("combobox").last();
     await selectLanguage.click();
-    await page.getByText("JavaScriptShadow", { exact: true }).click();
+    await page.getByText("JavaScript Shadow", { exact: true }).click();
     const editor = panelEditPage.getByGrafanaSelector(selectors.components.CodeEditor.container, {
         root: panelEditPage.getQueryEditorRow("A")
     }).getByRole("textbox");
