@@ -10,7 +10,7 @@ import {
   Select,
   ControlledCollapse,
   InlineSwitch,
-  RadioButtonGroup,
+  RadioButtonGroup
 } from "@grafana/ui";
 import { QueryEditorProps, SelectableValue } from "@grafana/data";
 import { DataSource } from "../datasource";
@@ -33,6 +33,12 @@ const queryTypes: Array<SelectableValue<string>> = [
   }
 ];
 
+const languageOptions: Array<SelectableValue<string>> = [
+  { label: "JSON", value: QueryLanguage.JSON },
+  { label: "JavaScript", value: QueryLanguage.JAVASCRIPT, description: "JavaScript Legacy" },
+  { label: "JavaScript Shadow", value: QueryLanguage.JAVASCRIPT_SHADOW, description: "JavaScript with Evaluation" }
+];
+
 
 export function QueryEditor({ query, onChange, onRunQuery }: Props) {
 
@@ -43,12 +49,6 @@ export function QueryEditor({ query, onChange, onRunQuery }: Props) {
   const [maxTimeMSText, setMaxTimeMSText] = useState<string>(query.aggregateMaxTimeMS ? query.aggregateMaxTimeMS.toString() : "");
   const [maxAwaitTimeMSText, setMaxAwaitTimeMSText] = useState<string>(query.aggregateMaxAwaitTime ? query.aggregateMaxAwaitTime.toString() : "");
   const [batchSizeText, setBatchSizeText] = useState<string>(query.aggregateBatchSize ? query.aggregateBatchSize.toString() : "");
-
-  const optionsLanguage = [
-    { label: "JSON", value: QueryLanguage.JSON },
-    { label: "JavaScript", value: QueryLanguage.JAVASCRIPT, description: "javascript legacy" },
-    { label: "JavaScriptShadow", value: QueryLanguage.JAVASCRIPT_SHADOW, description: "javascript with evaluation" }
-  ];
 
   const onQueryTextChange = (queryText: string) => {
     if (query.queryLanguage === QueryLanguage.JAVASCRIPT || query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW) {
@@ -181,7 +181,7 @@ export function QueryEditor({ query, onChange, onRunQuery }: Props) {
         </InlineFieldRow>
       </ControlledCollapse>
       <InlineField label="Query language">
-        <Select id="query-editor-use-js-query" onChange={onQueryLanguageChange} options={optionsLanguage} value={query.queryLanguage} />
+        <Select id="query-editor-query-language" onChange={onQueryLanguageChange} options={languageOptions} value={query.queryLanguage} width={25} />
       </InlineField>
       <Field label="Query Text" description={`Enter the Mongo Aggregation Pipeline (${query.queryLanguage})`}
         error={queryTextError} invalid={queryTextError != null}>
