@@ -143,9 +143,14 @@ export function QueryEditor({ query, onChange, onRunQuery }: Props) {
       <Field label="Query Type" description="Choose to query time series or table">
         <RadioButtonGroup id="query-editor-query-type" options={queryTypes} onChange={onQueryTypeChange} value={query.queryType || QueryType.TIMESERIES} />
       </Field>
-      <Field label="Collection" error="Collection is required" invalid={query.queryLanguage !== QueryLanguage.JAVASCRIPT && !query.collection} description="Name of the MongoDB collection to query">
-        <Input width={25} id="query-editor-collection" onChange={onCollectionChange} value={query.collection} disabled={query.queryLanguage === QueryLanguage.JAVASCRIPT} />
-      </Field>
+      <InlineFieldRow>
+        <InlineField label="Collection" error="Collection is required" invalid={query.queryLanguage !== QueryLanguage.JAVASCRIPT && !query.collection} tooltip="Name of the MongoDB collection to query">
+          <Input width={25} id="query-editor-collection" onChange={onCollectionChange} value={query.collection} disabled={query.queryLanguage === QueryLanguage.JAVASCRIPT} />
+        </InlineField>
+        <InlineField label="Query language">
+          <Select id="query-editor-query-language" onChange={onQueryLanguageChange} options={languageOptions} value={query.queryLanguage} width={25} />
+        </InlineField>
+      </InlineFieldRow>
       <ControlledCollapse label="Aggregate Options" isOpen={isOpen} onToggle={() => setIsOpen(!isOpen)}>
         <InlineFieldRow>
           <InlineField label="Max time(ms)" tooltip="The maximum amount of time that the query can run on the server. The default value is nil, meaning that there is no time limit for query execution."
@@ -180,9 +185,6 @@ export function QueryEditor({ query, onChange, onRunQuery }: Props) {
           </InlineField>
         </InlineFieldRow>
       </ControlledCollapse>
-      <InlineField label="Query language">
-        <Select id="query-editor-query-language" onChange={onQueryLanguageChange} options={languageOptions} value={query.queryLanguage} width={25} />
-      </InlineField>
       <Field label="Query Text" description={`Enter the Mongo Aggregation Pipeline (${query.queryLanguage})`}
         error={queryTextError} invalid={queryTextError != null}>
         <CodeEditor onEditorDidMount={onCodeEditorDidMount} width="100%" height={300} language={query.queryLanguage === QueryLanguage.JAVASCRIPT || query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW ? "javascript" : "json"}
