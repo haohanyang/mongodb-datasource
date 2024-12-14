@@ -1,4 +1,13 @@
 # Changelog
+
+## 0.2.1 - 2024-12-14
+### Added
+* Optional Mongo aggregate options(https://github.com/haohanyang/mongodb-datasource/pull/33)
+* Query Button(https://github.com/haohanyang/mongodb-datasource/pull/35)
+### Changed
+* Query won't be executed automatically after focus changes. User needs to manually click buttons(https://github.com/haohanyang/mongodb-datasource/pull/35)
+* UI improvement(https://github.com/haohanyang/mongodb-datasource/pull/33)
+
 ## 0.2.0 - 2024-12-06
 ### Added
 * Enabled Grafana Alerting([67358d5c](https://github.com/haohanyang/mongodb-datasource/commit/67358d5cb1ada5571697de21016f2acf5dbc1234))
