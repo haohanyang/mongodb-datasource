@@ -1,8 +1,8 @@
-import { DataSourceInstanceSettings, CoreApp, ScopedVars, DataQueryRequest, DataQueryResponse, LegacyMetricFindQueryOptions, MetricFindValue, dateTime } from "@grafana/data";
+import { DataSourceInstanceSettings, CoreApp, ScopedVars, DataQueryRequest, LegacyMetricFindQueryOptions, MetricFindValue, dateTime, AdHocVariableFilter } from "@grafana/data";
 import { DataSourceWithBackend, getTemplateSrv } from "@grafana/runtime";
 import { parseJsQuery, datetimeToJson, getBucketCount, parseJsQueryLegacy, randomId, getMetricValues } from "./utils";
 import { MongoQuery, MongoDataSourceOptions, DEFAULT_QUERY, QueryLanguage, VariableQuery } from "./types";
-import { Observable, firstValueFrom } from "rxjs";
+import { firstValueFrom } from "rxjs";
 
 
 export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourceOptions> {
@@ -14,10 +14,47 @@ export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourc
     return DEFAULT_QUERY;
   }
 
+  interpolateVariablesInQueries(queries: MongoQuery[], scopedVars: ScopedVars, filters?: AdHocVariableFilter[]): MongoQuery[] {
+    console.log("interpolateVariablesInQueries");
+    return [];
+  }
+
   applyTemplateVariables(query: MongoQuery, scopedVars: ScopedVars) {
+    console.log(scopedVars["__interval_ms"]?.value);
+    let queryText = query.queryText!;
+
+    if (query.queryLanguage === QueryLanguage.JAVASCRIPT || query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW) {
+      const { jsonQuery } =
+        query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW
+          ? parseJsQuery(queryText)
+          : parseJsQueryLegacy(queryText);
+      queryText = jsonQuery!;
+    }
+
+    const from = getTemplateSrv().replace("$__from", {});
+    const to = getTemplateSrv().replace("$__to", {});
+
+    let text = getTemplateSrv().replace(queryText, scopedVars);
+    if (from !== "$__from") {
+      text = text.replaceAll(/"\$from"/g, datetimeToJson(from));
+    }
+
+    if (to !== "$__to") {
+      text = text.replaceAll(/"\$to"/g, datetimeToJson(to));
+    }
+
+    const interval = scopedVars["__interval_ms"]?.value;
+
+    if (interval) {
+      text = text.replaceAll(
+        /"\$dateBucketCount"/g,
+        getBucketCount(from, to, interval).toString()
+      );
+    }
+
     return {
       ...query,
-      queryText: getTemplateSrv().replace(query.queryText, scopedVars),
+      queryText: text
     };
   }
 
@@ -59,29 +96,4 @@ export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourc
     return !!query.queryText && !!query.collection;
   }
 
-  query(request: DataQueryRequest<MongoQuery>): Observable<DataQueryResponse> {
-    const queries = request.targets.map((query) => {
-      let queryText = query.queryText!;
-      if (query.queryLanguage === QueryLanguage.JAVASCRIPT || query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW) {
-        const { jsonQuery } =
-          query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW
-            ? parseJsQuery(queryText)
-            : parseJsQueryLegacy(queryText);
-        queryText = jsonQuery!;
-      }
-
-      return {
-        ...query,
-        queryText: queryText
-          .replaceAll(/"\$from"/g, datetimeToJson(request.range.from))
-          .replaceAll(/"\$to"/g, datetimeToJson(request.range.to))
-          .replaceAll(
-            /"\$dateBucketCount"/g,
-            getBucketCount(request.range.from, request.range.to, request.intervalMs).toString()
-          ),
-      };
-    });
-
-    return super.query({ ...request, targets: queries });
-  }
 }
