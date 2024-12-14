@@ -1,6 +1,6 @@
-import { DataSourceInstanceSettings, CoreApp, ScopedVars, DataQueryRequest, LegacyMetricFindQueryOptions, MetricFindValue, dateTime, AdHocVariableFilter } from "@grafana/data";
+import { DataSourceInstanceSettings, CoreApp, ScopedVars, DataQueryRequest, LegacyMetricFindQueryOptions, MetricFindValue, dateTime } from "@grafana/data";
 import { DataSourceWithBackend, getTemplateSrv } from "@grafana/runtime";
-import { parseJsQuery, datetimeToJson, getBucketCount, parseJsQueryLegacy, randomId, getMetricValues } from "./utils";
+import { parseJsQuery, getBucketCount, parseJsQueryLegacy, randomId, getMetricValues, datetimeToJson } from "./utils";
 import { MongoQuery, MongoDataSourceOptions, DEFAULT_QUERY, QueryLanguage, VariableQuery } from "./types";
 import { firstValueFrom } from "rxjs";
 
@@ -14,13 +14,8 @@ export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourc
     return DEFAULT_QUERY;
   }
 
-  interpolateVariablesInQueries(queries: MongoQuery[], scopedVars: ScopedVars, filters?: AdHocVariableFilter[]): MongoQuery[] {
-    console.log("interpolateVariablesInQueries");
-    return [];
-  }
 
   applyTemplateVariables(query: MongoQuery, scopedVars: ScopedVars) {
-    console.log(scopedVars["__interval_ms"]?.value);
     let queryText = query.queryText!;
 
     if (query.queryLanguage === QueryLanguage.JAVASCRIPT || query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW) {
@@ -34,24 +29,29 @@ export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourc
     const from = getTemplateSrv().replace("$__from", {});
     const to = getTemplateSrv().replace("$__to", {});
 
-    let text = getTemplateSrv().replace(queryText, scopedVars);
+    // Compatible with legacy plugin $from
     if (from !== "$__from") {
-      text = text.replaceAll(/"\$from"/g, datetimeToJson(from));
+      queryText = queryText.replaceAll(/"\$from"/g, datetimeToJson(from));
     }
 
+    // Compatible with legacy plugin $to
     if (to !== "$__to") {
-      text = text.replaceAll(/"\$to"/g, datetimeToJson(to));
+      queryText = queryText.replaceAll(/"\$to"/g, datetimeToJson(to));
     }
 
     const interval = scopedVars["__interval_ms"]?.value;
 
-    if (interval) {
-      text = text.replaceAll(
+    // Compatible with legacy plugin $dateBucketCount
+    if (interval && from && to) {
+      queryText = queryText.replaceAll(
         /"\$dateBucketCount"/g,
         getBucketCount(from, to, interval).toString()
       );
     }
 
+    const text = getTemplateSrv().replace(queryText, scopedVars);
+
+    console.log(text);
     return {
       ...query,
       queryText: text
