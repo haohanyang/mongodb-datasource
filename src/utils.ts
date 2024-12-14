@@ -65,8 +65,6 @@ export function parseJsQuery(queryText: string): JsQueryResult {
     }
 }
 
-
-
 export function datetimeToJson(datetime: string) {
     return JSON.stringify({
         $date: {
