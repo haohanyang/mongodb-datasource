@@ -2,6 +2,7 @@ import { DataFrameSchema, DataQueryResponse, DateTime, FieldType, MetricFindValu
 import { JsQueryResult } from "types";
 import shadow from "shadowrealm-api";
 import { getTemplateSrv } from "@grafana/runtime";
+import { EJSON, BSONError } from "bson";
 
 export function validateJsonQueryText(queryText?: string): string | null {
     if (!queryText) {
@@ -65,8 +66,6 @@ export function parseJsQuery(queryText: string): JsQueryResult {
     }
 }
 
-
-
 export function datetimeToJson(datetime: DateTime) {
     return JSON.stringify({
         $date: {
@@ -123,11 +122,30 @@ export function getMetricValues(response: DataQueryResponse): MetricFindValue[] 
 }
 
 export function validatePositiveNumber(num: string) {
-
     if (!/^\d+$/.test(num.trim())) {
         return false;
     }
 
     const parsed = parseInt(num, 10);
     return parsed > 0;
+}
+
+
+export function validateExtendedJsonQueryText(queryText: string): string | null {
+    try {
+        const queryJson = EJSON.parse(queryText);
+        if (!Array.isArray(queryJson)) {
+            return "Invalid query. The aggregation pipeline should be an array";
+        } 
+        
+        return null;
+    } catch (err) {
+        if (BSONError.isBSONError(err)) {
+            return err.message;
+        } else {
+            console.error(err);
+        }
+
+        return "Invalid query";
+    }
 }

@@ -2,8 +2,8 @@
   "name": "mongodb-datasource",
   "version": "0.2.1",
   "scripts": {
-    "build": "webpack -c ./.config/webpack/webpack.config.ts --env production",
-    "dev": "webpack -w -c ./.config/webpack/webpack.config.ts --env development",
+    "build": "webpack -c ./webpack.config.ts --env production",
+    "dev": "webpack -w -c ./webpack.config.ts --env development",
     "test": "jest --watch --onlyChanged",
     "test:ci": "jest --passWithNoTests --maxWorkers 4",
     "typecheck": "tsc --noEmit",
@@ -52,9 +52,10 @@
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript": "5.5.4",
-    "webpack": "^5.94.0",
+    "webpack": "^5.97.1",
     "webpack-cli": "^5.1.4",
     "webpack-livereload-plugin": "^3.0.2",
+    "webpack-merge": "^6.0.1",
     "webpack-virtual-modules": "^0.6.2"
   },
   "engines": {
@@ -66,10 +67,15 @@
     "@grafana/runtime": "^11.2.0",
     "@grafana/schema": "^10.4.0",
     "@grafana/ui": "^11.2.0",
+    "bson": "^6.10.1",
+    "buffer": "^6.0.3",
+    "crypto-browserify": "^3.12.1",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "shadowrealm-api": "^0.8.3",
-    "tslib": "2.5.3"
+    "stream-browserify": "^3.0.0",
+    "tslib": "2.5.3",
+    "vm-browserify": "^1.1.2"
   },
   "packageManager": "npm@9.6.7"
 }

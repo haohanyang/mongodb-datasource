@@ -1,8 +1,8 @@
 import { DataSourceInstanceSettings, CoreApp, ScopedVars, DataQueryRequest, DataQueryResponse, LegacyMetricFindQueryOptions, MetricFindValue, dateTime } from "@grafana/data";
 import { DataSourceWithBackend, getTemplateSrv } from "@grafana/runtime";
-import { parseJsQuery, datetimeToJson, getBucketCount, parseJsQueryLegacy, randomId, getMetricValues } from "./utils";
+import { parseJsQuery, datetimeToJson, getBucketCount, parseJsQueryLegacy, randomId, getMetricValues, validateExtendedJsonQueryText } from "./utils";
 import { MongoQuery, MongoDataSourceOptions, DEFAULT_QUERY, QueryLanguage, VariableQuery } from "./types";
-import { Observable, firstValueFrom } from "rxjs";
+import { Observable, firstValueFrom, of } from "rxjs";
 
 
 export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourceOptions> {
@@ -69,7 +69,7 @@ export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourc
             : parseJsQueryLegacy(queryText);
         queryText = jsonQuery!;
       }
-
+    
       return {
         ...query,
         queryText: queryText
@@ -81,6 +81,25 @@ export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourc
           ),
       };
     });
+
+    // Validate Extended JSON
+    console.log(queries[0].queryText);
+    const errors = queries
+    .map(q => this.applyTemplateVariables(q, request.scopedVars))
+    .map(q => ({ 
+      refId: q.refId,
+      error: validateExtendedJsonQueryText(q.queryText) }
+    )).filter(e => !!e.error);
+
+    if (errors.length > 0) {
+      return of<DataQueryResponse>({
+        data: [],
+        errors: errors.map(e => ({
+          message: e["error"]!,
+          refId: e["refId"]
+        }))
+      });
+    }
 
     return super.query({ ...request, targets: queries });
   }
