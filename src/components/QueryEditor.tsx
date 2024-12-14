@@ -1,6 +1,5 @@
 import React, { ChangeEvent, useRef, useState } from "react";
 import {
-  ActionMeta,
   Button,
   CodeEditor,
   Field,
@@ -10,7 +9,8 @@ import {
   Select,
   ControlledCollapse,
   InlineSwitch,
-  RadioButtonGroup
+  RadioButtonGroup,
+  Stack
 } from "@grafana/ui";
 import { QueryEditorProps, SelectableValue } from "@grafana/data";
 import { DataSource } from "../datasource";
@@ -40,7 +40,7 @@ const languageOptions: Array<SelectableValue<string>> = [
 ];
 
 
-export function QueryEditor({ query, onChange, onRunQuery }: Props) {
+export function QueryEditor({ query, onChange, onRunQuery, data }: Props) {
 
   const codeEditorRef = useRef<monacoType.editor.IStandaloneCodeEditor | null>(null);
   const [queryTextError, setQueryTextError] = useState<string | null>(null);
@@ -57,20 +57,14 @@ export function QueryEditor({ query, onChange, onRunQuery }: Props) {
       // let the same query text as it is
       onChange({ ...query, queryText: queryText, ...(collection ? { collection } : {}) });
       setQueryTextError(error);
-      if (!error) {
-        onRunQuery();
-      }
     } else {
       onChange({ ...query, queryText: queryText });
       const error = validateJsonQueryText(queryText);
-      if (!error) {
-        onRunQuery();
-      }
       setQueryTextError(error);
     }
   };
 
-  const onQueryLanguageChange = (value: SelectableValue<string>, actionMeta: ActionMeta) => {
+  const onQueryLanguageChange = (value: SelectableValue<string>) => {
     onChange({ ...query, queryLanguage: value.value });
   };
 
@@ -185,12 +179,15 @@ export function QueryEditor({ query, onChange, onRunQuery }: Props) {
           </InlineField>
         </InlineFieldRow>
       </ControlledCollapse>
-      <Field label="Query Text" description={`Enter the Mongo Aggregation Pipeline (${query.queryLanguage})`}
+      <Field label="Query Text" description={`Enter the Mongo Aggregation Pipeline (${query.queryLanguage === QueryLanguage.JSON ? "JSON" : "JavaScript"})`}
         error={queryTextError} invalid={queryTextError != null}>
         <CodeEditor onEditorDidMount={onCodeEditorDidMount} width="100%" height={300} language={query.queryLanguage === QueryLanguage.JAVASCRIPT || query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW ? "javascript" : "json"}
           onBlur={onQueryTextChange} value={query.queryText || ""} showMiniMap={false} showLineNumbers={true} monacoOptions={{ fontSize: 14 }} />
       </Field>
-      <Button onClick={onFormatQueryText}>Format</Button>
+      <Stack direction="row" wrap alignItems="flex-start" justifyContent="start" gap={1}>
+        <Button onClick={onFormatQueryText} variant="secondary">Format</Button>
+        <Button onClick={onRunQuery} variant="primary" disabled={data?.state === "Loading"} icon={data?.state === "Loading" ? "spinner" : undefined}>Query</Button>
+      </Stack>
     </>
   );
 };
