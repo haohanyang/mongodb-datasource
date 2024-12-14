@@ -1,8 +1,10 @@
 # Grafana MongoDB Data Source
 
+![ci](https://github.com/haohanyang/mongodb-datasource/actions/workflows/ci.yml/badge.svg?branch=master)
+
 Integrate MongoDB to Grafana. A free, open source, community-driven alternative to Grafana Lab's MongoDB enterprise plugin and MongoDB Atlas Charts.
 
-![ci](https://github.com/haohanyang/mongodb-datasource/actions/workflows/ci.yml/badge.svg?branch=master)
+一个开源的可视化MongoDB数据库的Grafana插件。
 
 This plugin enables you to query and visualize data from your MongoDB databases directly within Grafana. Leverage the flexibility of MongoDB's aggregation pipeline to create insightful dashboards and panels.
 
@@ -199,4 +201,4 @@ Provide the collection name and your MongoDB aggregation pipeline in standard JS
  **Note:** Unsupported BSON types are not included in the table and will display as `"[Unsupported type]"`.
 
 ## License
-Apache-2.0
+[Apache-2.0](/LICENSE)
