@@ -14,7 +14,7 @@ export interface MongoQuery extends DataQuery {
   aggregateAllowDiskUse?: boolean;
   aggregateMaxAwaitTime?: number;
   aggregateBypassDocumentValidation?: boolean;
-  
+
 }
 
 export const QueryType = {
