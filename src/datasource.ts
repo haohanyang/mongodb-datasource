@@ -1,9 +1,8 @@
-import { DataSourceInstanceSettings, CoreApp, ScopedVars, DataQueryRequest, LegacyMetricFindQueryOptions, MetricFindValue, dateTime } from "@grafana/data";
-import { DataSourceWithBackend, getTemplateSrv } from "@grafana/runtime";
+import { DataSourceInstanceSettings, CoreApp, ScopedVars, DataQueryRequest, LegacyMetricFindQueryOptions, MetricFindValue, dateTime, LiveChannelScope, DataQueryResponse } from "@grafana/data";
+import { DataSourceWithBackend, getGrafanaLiveSrv, getTemplateSrv } from "@grafana/runtime";
 import { parseJsQuery, getBucketCount, parseJsQueryLegacy, randomId, getMetricValues, datetimeToJson } from "./utils";
 import { MongoQuery, MongoDataSourceOptions, DEFAULT_QUERY, QueryLanguage, VariableQuery } from "./types";
-import { firstValueFrom } from "rxjs";
-
+import { firstValueFrom, merge, Observable } from "rxjs";
 
 export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourceOptions> {
   constructor(instanceSettings: DataSourceInstanceSettings<MongoDataSourceOptions>) {
@@ -94,6 +93,54 @@ export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourc
 
   filterQuery(query: MongoQuery): boolean {
     return !!query.queryText && !!query.collection;
+  }
+
+
+  query(request: DataQueryRequest<MongoQuery>): Observable<DataQueryResponse> {
+
+    const queries = request.targets.map((query) => {
+      let queryText = query.queryText!;
+      if (query.queryLanguage === QueryLanguage.JAVASCRIPT || query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW) {
+        const { jsonQuery } =
+          query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW
+            ? parseJsQuery(queryText)
+            : parseJsQueryLegacy(queryText);
+        queryText = jsonQuery!;
+      }
+
+      return {
+        ...query,
+        queryText: queryText
+          .replaceAll(/"\$from"/g, datetimeToJson(request.range.from))
+          .replaceAll(/"\$to"/g, datetimeToJson(request.range.to))
+          .replaceAll(
+            /"\$dateBucketCount"/g,
+            getBucketCount(request.range.from, request.range.to, request.intervalMs).toString()
+          ),
+      };
+    });
+
+    const isStreaming = true;
+
+    if (isStreaming) {
+      const observables = queries.map(query => {
+
+        return getGrafanaLiveSrv().getDataStream({
+          addr: {
+            scope: LiveChannelScope.DataSource,
+            namespace: this.uid,
+            path: "mongodb-datasource/stream", // TODO: name
+            data: {
+              ...query,
+            },
+          },
+        });
+      });
+  
+      return merge(...observables);
+    }
+
+    return super.query({ ...request, targets: queries });
   }
 
 }

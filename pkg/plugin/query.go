@@ -115,3 +115,51 @@ func CreateTableFramesFromQuery(ctx context.Context, tableName string, cursor *m
 
 	return frame, nil
 }
+
+func CreateTableFramesFromStream(ctx context.Context, tableName string, stream *mongo.ChangeStream) (*data.Frame, error) {
+
+	frame := data.NewFrame(tableName)
+
+	elements, err := stream.Current.Elements()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, element := range elements {
+		if element.Value().Type == bson.TypeNull {
+			continue
+		}
+		nc, err := models.NewColumn(0, element)
+		if err != nil {
+			return nil, err
+		}
+
+		nc.Rectify()
+		frame.Fields = append(frame.Fields, nc.Field)
+
+	}
+
+	return frame, nil
+}
+
+func CreateTimeSeriesFramesFromStream(ctx context.Context, tableName string, stream *mongo.ChangeStream) (*data.Frame, error) {
+
+	name := ""
+	rawName := stream.Current.Lookup("name")
+	if !rawName.IsZero() && rawName.Type == bson.TypeString {
+		name = rawName.StringValue()
+	}
+
+	elements, err := stream.Current.Elements()
+	if err != nil {
+		return nil, err
+	}
+
+	table := models.NewTimeSeriesTable(name)
+	err = table.AppendRow(elements)
+	if err != nil {
+		return nil, err
+	}
+
+	return table.MakeDataFrame(), nil
+}
