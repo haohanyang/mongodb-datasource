@@ -1,12 +1,14 @@
 # Grafana MongoDB Data Source
 
-Integrate MongoDB to Grafana
-
 ![ci](https://github.com/haohanyang/mongodb-datasource/actions/workflows/ci.yml/badge.svg?branch=master)
+
+Integrate MongoDB to Grafana. A free, open source, community-driven alternative to Grafana Lab's MongoDB enterprise plugin and MongoDB Atlas Charts.
+
+一个开源的可视化MongoDB数据库的Grafana插件。
 
 This plugin enables you to query and visualize data from your MongoDB databases directly within Grafana. Leverage the flexibility of MongoDB's aggregation pipeline to create insightful dashboards and panels.
 
-![screenshot](/static/screenshot.png)
+![screenshot](/static/screenshot-2.png)
 
 ## Features
 
@@ -14,7 +16,7 @@ This plugin enables you to query and visualize data from your MongoDB databases 
 - **Time Series & Table Data:** Visualize time-based data or display results in tabular format for various Grafana panels.
 - **MongoDB Atlas Support** Connect to MongoDB Atlas Services.
 - **Grafana Alerting Support** Set up alerting rules based on query result
-- **Legacy Plugin Compatibility:** Easy migrate from the legacy plugin with support for its query syntax.
+- **[Legacy Plugin](https://github.com/JamesOsgood/mongodb-grafana) Compatibility:** Easy migrate from the [legacy plugin](https://github.com/JamesOsgood/mongodb-grafana) with support for its query syntax.
 
 ## Authentication methods
 * No authentication
@@ -73,7 +75,7 @@ Provide the collection name and your MongoDB aggregation pipeline in standard JS
 
 ### JavaScript (Legacy & ShadowRealm)
 
-- **Legacy:** Maintain compatibility with the older plugin's syntax: 
+- **Legacy:** Maintain compatibility with the [legacy plugin](https://github.com/JamesOsgood/mongodb-grafana)'s syntax: 
     ```javascript
     db.listingsAndReviews.aggregate([ /* Your aggregation pipeline (JSON) */ ]); 
     ```
@@ -199,4 +201,4 @@ Provide the collection name and your MongoDB aggregation pipeline in standard JS
  **Note:** Unsupported BSON types are not included in the table and will display as `"[Unsupported type]"`.
 
 ## License
-Apache-2.0
+[Apache-2.0](/LICENSE)

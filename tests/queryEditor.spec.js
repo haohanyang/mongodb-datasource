@@ -72,7 +72,7 @@ test.beforeAll(async ({ createDataSource, readProvisionedDataSource }) => {
     await client.close();
 });
 
-test("data query should return correct temperature data", async ({ panelEditPage, readProvisionedDataSource, selectors, page, createDataSource }) => {
+test("data query should return correct temperature data", async ({ panelEditPage, readProvisionedDataSource, selectors }) => {
     const query = `
   [
     {
@@ -123,7 +123,7 @@ test("data query should return correct temperature data", async ({ panelEditPage
     await expect(panelEditPage.panel.data).toContainText(["2", "1", "3", "1"]);
 });
 
-test("data query should return correct temperature data with Javascript query", async ({ panelEditPage, readProvisionedDataSource, selectors, page, createDataSource }) => {
+test("data query should return correct temperature data with Javascript query", async ({ panelEditPage, readProvisionedDataSource, selectors, page }) => {
     const query = `
   db.test_temperatureData.aggregate([
     {
@@ -177,7 +177,7 @@ test("data query should return correct temperature data with Javascript query", 
     await expect(panelEditPage.panel.data).toContainText(["2", "1", "3", "1"]);
 });
 
-test("data query should return correct temperature data with javascript function", async ({ panelEditPage, readProvisionedDataSource, selectors, page, createDataSource, dashboardPage }) => {
+test("data query should return correct temperature data with javascript function", async ({ panelEditPage, readProvisionedDataSource, selectors, page }) => {
     const query = `
     function query() {
       return [
@@ -222,7 +222,7 @@ test("data query should return correct temperature data with javascript function
     // get toggle switch
     const selectLanguage = panelEditPage.getQueryEditorRow("A").getByRole("combobox").last();
     await selectLanguage.click();
-    await page.getByText("JavaScriptShadow", { exact: true }).click();
+    await page.getByText("JavaScript Shadow", { exact: true }).click();
     const editor = panelEditPage.getByGrafanaSelector(selectors.components.CodeEditor.container, {
         root: panelEditPage.getQueryEditorRow("A")
     }).getByRole("textbox");
@@ -290,7 +290,7 @@ test("data query should return correct temperature data with javascript function
     await panelEditPage.getQueryEditorRow("A").getByLabel("Collection").fill("test_temperatureData");
     const selectLanguage = panelEditPage.getQueryEditorRow("A").getByRole("combobox").last();
     await selectLanguage.click();
-    await page.getByText("JavaScriptShadow", { exact: true }).click();
+    await page.getByText("JavaScript Shadow", { exact: true }).click();
     const editor = panelEditPage.getByGrafanaSelector(selectors.components.CodeEditor.container, {
         root: panelEditPage.getQueryEditorRow("A")
     }).getByRole("textbox");

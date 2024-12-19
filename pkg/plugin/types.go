@@ -18,8 +18,15 @@ type queryModel struct {
 	Collection    string `json:"collection"`
 	QueryType     string `json:"queryType"`
 	QueryLanguage string `json:"queryLanguage"`
-}
 
+	// Aggregate options
+	AggregateComment                  string `json:"aggregateComment"`
+	AggregateMaxTimeMS                int    `json:"aggregateMaxTimeMS"`
+	AggregateBatchSize                int32  `json:"aggregateBatchSize"`
+	AggregateAllowDiskUse             bool   `json:"aggregateAllowDiskUse"`
+	AggregateMaxAwaitTime             int    `json:"aggregateMaxAwaitTime"`
+	AggregateBypassDocumentValidation bool   `json:"aggregateBypassDocumentValidation"`
+}
 type TimeSeriesRow[T any] struct {
 	Timestamp time.Time `bson:"ts"`
 	Name      string    `bson:"name"`

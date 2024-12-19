@@ -1,6 +1,6 @@
 import React from "react";
 import { QueryEditorHelpProps } from "@grafana/data";
-import {Divider, Text} from "@grafana/ui";
+import { Divider, Text } from "@grafana/ui";
 
 export function QueryHelper(_props: QueryEditorHelpProps) {
   return (

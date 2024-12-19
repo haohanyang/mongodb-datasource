@@ -1,9 +1,8 @@
-import { DataSourceInstanceSettings, CoreApp, ScopedVars, DataQueryRequest, DataQueryResponse, LegacyMetricFindQueryOptions, MetricFindValue, dateTime, LiveChannelScope } from "@grafana/data";
+import { DataSourceInstanceSettings, CoreApp, ScopedVars, DataQueryRequest, LegacyMetricFindQueryOptions, MetricFindValue, dateTime, LiveChannelScope, DataQueryResponse } from "@grafana/data";
 import { DataSourceWithBackend, getGrafanaLiveSrv, getTemplateSrv } from "@grafana/runtime";
-import { parseJsQuery, datetimeToJson, getBucketCount, parseJsQueryLegacy, randomId, getMetricValues } from "./utils";
+import { parseJsQuery, getBucketCount, parseJsQueryLegacy, randomId, getMetricValues, datetimeToJson } from "./utils";
 import { MongoQuery, MongoDataSourceOptions, DEFAULT_QUERY, QueryLanguage, VariableQuery } from "./types";
-import { Observable, firstValueFrom, merge } from "rxjs";
-
+import { firstValueFrom, merge, Observable } from "rxjs";
 
 export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourceOptions> {
   constructor(instanceSettings: DataSourceInstanceSettings<MongoDataSourceOptions>) {
@@ -14,10 +13,47 @@ export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourc
     return DEFAULT_QUERY;
   }
 
+
   applyTemplateVariables(query: MongoQuery, scopedVars: ScopedVars) {
+    let queryText = query.queryText!;
+
+    if (query.queryLanguage === QueryLanguage.JAVASCRIPT || query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW) {
+      const { jsonQuery } =
+        query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW
+          ? parseJsQuery(queryText)
+          : parseJsQueryLegacy(queryText);
+      queryText = jsonQuery!;
+    }
+
+    const from = getTemplateSrv().replace("$__from", {});
+    const to = getTemplateSrv().replace("$__to", {});
+
+    // Compatible with legacy plugin $from
+    if (from !== "$__from") {
+      queryText = queryText.replaceAll(/"\$from"/g, datetimeToJson(from));
+    }
+
+    // Compatible with legacy plugin $to
+    if (to !== "$__to") {
+      queryText = queryText.replaceAll(/"\$to"/g, datetimeToJson(to));
+    }
+
+    const interval = scopedVars["__interval_ms"]?.value;
+
+    // Compatible with legacy plugin $dateBucketCount
+    if (interval && from && to) {
+      queryText = queryText.replaceAll(
+        /"\$dateBucketCount"/g,
+        getBucketCount(from, to, interval).toString()
+      );
+    }
+
+    const text = getTemplateSrv().replace(queryText, scopedVars);
+
+    console.log(text);
     return {
       ...query,
-      queryText: getTemplateSrv().replace(query.queryText, scopedVars),
+      queryText: text
     };
   }
 
@@ -58,6 +94,7 @@ export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourc
   filterQuery(query: MongoQuery): boolean {
     return !!query.queryText && !!query.collection;
   }
+
 
   query(request: DataQueryRequest<MongoQuery>): Observable<DataQueryResponse> {
 
@@ -105,4 +142,5 @@ export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourc
 
     return super.query({ ...request, targets: queries });
   }
+
 }

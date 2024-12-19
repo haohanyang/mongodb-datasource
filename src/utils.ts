@@ -1,4 +1,4 @@
-import { DataFrameSchema, DataQueryResponse, DateTime, FieldType, MetricFindValue } from "@grafana/data";
+import { DataFrameSchema, DataQueryResponse, FieldType, MetricFindValue } from "@grafana/data";
 import { JsQueryResult } from "types";
 import shadow from "shadowrealm-api";
 import { getTemplateSrv } from "@grafana/runtime";
@@ -65,19 +65,17 @@ export function parseJsQuery(queryText: string): JsQueryResult {
     }
 }
 
-
-
-export function datetimeToJson(datetime: DateTime) {
+export function datetimeToJson(datetime: string) {
     return JSON.stringify({
         $date: {
-            $numberLong: datetime.toDate().getTime().toString()
+            $numberLong: datetime
         }
     });
 }
 
-export function getBucketCount(from: DateTime, to: DateTime, intervalMs: number) {
-    let current = from.toDate().getTime();
-    const toMs = to.toDate().getTime();
+export function getBucketCount(from: string, to: string, intervalMs: number) {
+    let current = parseInt(from, 10);
+    const toMs = parseInt(to, 10);
     let count = 0;
     while (current < toMs) {
         current += intervalMs;
@@ -120,4 +118,14 @@ export function getMetricValues(response: DataQueryResponse): MetricFindValue[] 
             expandable: true
         };
     });
+}
+
+export function validatePositiveNumber(num: string) {
+
+    if (!/^\d+$/.test(num.trim())) {
+        return false;
+    }
+
+    const parsed = parseInt(num, 10);
+    return parsed > 0;
 }

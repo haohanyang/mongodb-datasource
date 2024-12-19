@@ -6,6 +6,15 @@ export interface MongoQuery extends DataQuery {
   collection?: string;
   queryType?: string;
   queryLanguage?: string;
+
+  // Aggregate options
+  aggregateMaxTimeMS?: number;
+  aggregateComment?: string;
+  aggregateBatchSize?: number;
+  aggregateAllowDiskUse?: boolean;
+  aggregateMaxAwaitTime?: number;
+  aggregateBypassDocumentValidation?: boolean;
+
 }
 
 export const QueryType = {

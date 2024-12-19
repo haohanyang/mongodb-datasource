@@ -33,7 +33,7 @@ func NewDatasource(ctx context.Context, source backend.DataSourceInstanceSetting
 
 	config, err := models.LoadPluginSettings(source)
 	if err != nil {
-		backend.Logger.Error(fmt.Sprintf("Failed to load plugin settings: %s", err.Error()))
+		backend.Logger.Error("Failed to load plugin settings", "error", err)
 		return nil, err
 	}
 
@@ -86,8 +86,9 @@ func (d *Datasource) QueryData(ctx context.Context, req *backend.QueryDataReques
 }
 
 func (d *Datasource) query(ctx context.Context, _ backend.PluginContext, query backend.DataQuery) backend.DataResponse {
+	backend.Logger.Debug("Executing query", "refId", query.RefID, "json", query.JSON)
+
 	var response backend.DataResponse
-	backend.Logger.Debug("Raw query", query.JSON)
 	var qm queryModel
 	db := d.client.Database(d.database)
 
@@ -107,17 +108,58 @@ func (d *Datasource) query(ctx context.Context, _ backend.PluginContext, query b
 		return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Failed to unmarshal JsonExt: %v", err.Error()))
 	}
 
-	cursor, err := db.Collection(qm.Collection).Aggregate(ctx, pipeline)
-	if err != nil {
-		return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Failed to query: %v", err.Error()))
+	// Set aggregate options
+	aggregateOpts := options.AggregateOptions{}
 
+	if qm.AggregateMaxTimeMS > 0 {
+		aggregateOpts.SetMaxTime(time.Hour * time.Duration(qm.AggregateMaxTimeMS))
+
+		backend.Logger.Debug("Aggregate option was set", "maxTime", qm.AggregateMaxTimeMS)
 	}
+
+	if qm.AggregateComment != "" {
+		aggregateOpts.SetComment(qm.AggregateComment)
+
+		backend.Logger.Debug("Aggregate option was set", "comment", qm.AggregateComment)
+	}
+
+	if qm.AggregateBatchSize > 0 {
+		aggregateOpts.SetBatchSize(qm.AggregateBatchSize)
+
+		backend.Logger.Debug("Aggregate option was set", "batchSize", qm.AggregateBatchSize)
+	}
+
+	if qm.AggregateAllowDiskUse {
+		aggregateOpts.SetAllowDiskUse(qm.AggregateAllowDiskUse)
+
+		backend.Logger.Debug("Aggregate option was set", "allowDiskUse", qm.AggregateAllowDiskUse)
+	}
+
+	if qm.AggregateMaxAwaitTime > 0 {
+		aggregateOpts.SetMaxAwaitTime(time.Hour * time.Duration(qm.AggregateMaxAwaitTime))
+
+		backend.Logger.Debug("Aggregate option was set", "maxAwaitTime", qm.AggregateMaxAwaitTime)
+	}
+
+	if qm.AggregateBypassDocumentValidation {
+		aggregateOpts.SetBypassDocumentValidation(qm.AggregateBypassDocumentValidation)
+
+		backend.Logger.Debug("Aggregate option was set", "bypassDocumentValidation", qm.AggregateBypassDocumentValidation)
+	}
+
+	cursor, err := db.Collection(qm.Collection).Aggregate(ctx, pipeline, &aggregateOpts)
+	if err != nil {
+		backend.Logger.Error("Failed to execute aggregate", "error", err)
+
+		return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Failed to query: %v", err.Error()))
+	}
+
 	defer cursor.Close(ctx)
 
 	if qm.QueryType == "table" {
 		frame, err := CreateTableFramesFromQuery(ctx, query.RefID, cursor)
 		if err != nil {
-			backend.Logger.Error(err.Error())
+			backend.Logger.Error("Failed to create data frame from query", "error", err)
 			return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Failed to query: %v", err.Error()))
 		}
 
@@ -126,7 +168,8 @@ func (d *Datasource) query(ctx context.Context, _ backend.PluginContext, query b
 	} else {
 		frames, err := CreateTimeSeriesFramesFromQuery(ctx, cursor)
 		if err != nil {
-			backend.Logger.Error(err.Error())
+			backend.Logger.Error("Failed to create time series frames from query", "error", err)
+
 			return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Failed to query: %v", err.Error()))
 		}
 
@@ -144,10 +187,13 @@ func (d *Datasource) query(ctx context.Context, _ backend.PluginContext, query b
 // a datasource is working as expected.
 func (d *Datasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
 	res := &backend.CheckHealthResult{}
+
 	backend.Logger.Debug("Checking health")
 
 	config, err := models.LoadPluginSettings(*req.PluginContext.DataSourceInstanceSettings)
 	if err != nil {
+		backend.Logger.Error("Failed to load settings", "error", err)
+
 		res.Status = backend.HealthStatusError
 		res.Message = "Unable to load settings"
 		return res, nil
@@ -164,12 +210,13 @@ func (d *Datasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRe
 	if err != nil {
 		res.Status = backend.HealthStatusError
 		res.Message = err.Error()
-		backend.Logger.Error(err.Error())
+
+		backend.Logger.Error("Failed to connect to db", "error", err)
 		return res, nil
 	}
 	defer func() {
 		if err = client.Disconnect(ctx); err != nil {
-			backend.Logger.Error(fmt.Sprintf("Failed to disconnect db: %s", err.Error()))
+			backend.Logger.Error("Failed to disconnect to db", "error", err)
 		}
 	}()
 
