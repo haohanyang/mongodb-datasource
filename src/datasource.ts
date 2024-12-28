@@ -1,4 +1,7 @@
-import { DataSourceInstanceSettings, CoreApp, ScopedVars, DataQueryRequest, LegacyMetricFindQueryOptions, MetricFindValue, dateTime, LiveChannelScope, DataQueryResponse } from "@grafana/data";
+import {
+  DataSourceInstanceSettings, CoreApp, ScopedVars, DataQueryRequest, LegacyMetricFindQueryOptions,
+  MetricFindValue, dateTime, LiveChannelScope, DataQueryResponse
+} from "@grafana/data";
 import { DataSourceWithBackend, getGrafanaLiveSrv, getTemplateSrv } from "@grafana/runtime";
 import { parseJsQuery, getBucketCount, parseJsQueryLegacy, randomId, getMetricValues, datetimeToJson } from "./utils";
 import { MongoQuery, MongoDataSourceOptions, DEFAULT_QUERY, QueryLanguage, VariableQuery } from "./types";
@@ -98,32 +101,8 @@ export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourc
 
   query(request: DataQueryRequest<MongoQuery>): Observable<DataQueryResponse> {
 
-    const queries = request.targets.map((query) => {
-      let queryText = query.queryText!;
-      if (query.queryLanguage === QueryLanguage.JAVASCRIPT || query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW) {
-        const { jsonQuery } =
-          query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW
-            ? parseJsQuery(queryText)
-            : parseJsQueryLegacy(queryText);
-        queryText = jsonQuery!;
-      }
-
-      return {
-        ...query,
-        queryText: queryText
-          .replaceAll(/"\$from"/g, datetimeToJson(request.range.from))
-          .replaceAll(/"\$to"/g, datetimeToJson(request.range.to))
-          .replaceAll(
-            /"\$dateBucketCount"/g,
-            getBucketCount(request.range.from, request.range.to, request.intervalMs).toString()
-          ),
-      };
-    });
-
-    const isStreaming = true;
-
-    if (isStreaming) {
-      const observables = queries.map(query => {
+    if (request.liveStreaming) {
+      const observables = request.targets.map(query => {
 
         return getGrafanaLiveSrv().getDataStream({
           addr: {
@@ -136,11 +115,10 @@ export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourc
           },
         });
       });
-  
+
       return merge(...observables);
     }
 
-    return super.query({ ...request, targets: queries });
+    return super.query(request);
   }
-
 }
