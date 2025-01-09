@@ -1,11 +1,13 @@
 import {
   DataSourceInstanceSettings, CoreApp, ScopedVars, DataQueryRequest, LegacyMetricFindQueryOptions,
-  MetricFindValue, dateTime, LiveChannelScope, DataQueryResponse
+  MetricFindValue, dateTime, LiveChannelScope, DataQueryResponse,
+  LoadingState
 } from "@grafana/data";
 import { DataSourceWithBackend, getGrafanaLiveSrv, getTemplateSrv } from "@grafana/runtime";
 import { parseJsQuery, getBucketCount, parseJsQueryLegacy, randomId, getMetricValues, datetimeToJson } from "./utils";
 import { MongoQuery, MongoDataSourceOptions, DEFAULT_QUERY, QueryLanguage, VariableQuery } from "./types";
-import { firstValueFrom, merge, Observable } from "rxjs";
+import { firstValueFrom, merge, Observable, of } from "rxjs";
+
 
 export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourceOptions> {
   constructor(instanceSettings: DataSourceInstanceSettings<MongoDataSourceOptions>) {
@@ -15,7 +17,6 @@ export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourc
   getDefaultQuery(_: CoreApp): Partial<MongoQuery> {
     return DEFAULT_QUERY;
   }
-
 
   applyTemplateVariables(query: MongoQuery, scopedVars: ScopedVars) {
     let queryText = query.queryText!;
@@ -52,8 +53,6 @@ export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourc
     }
 
     const text = getTemplateSrv().replace(queryText, scopedVars);
-
-    console.log(text);
     return {
       ...query,
       queryText: text
@@ -68,7 +67,8 @@ export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourc
         queryLanguage: QueryLanguage.JSON,
         collection: query.collection,
         queryText: getTemplateSrv().replace(query.queryText),
-        queryType: "table"
+        queryType: "table",
+        isStreaming: false
       }],
       scopedVars: options?.scopedVars || {},
       interval: "5s",
@@ -100,15 +100,13 @@ export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourc
 
 
   query(request: DataQueryRequest<MongoQuery>): Observable<DataQueryResponse> {
-
     if (request.liveStreaming) {
       const observables = request.targets.map(query => {
-
         return getGrafanaLiveSrv().getDataStream({
           addr: {
             scope: LiveChannelScope.DataSource,
             namespace: this.uid,
-            path: "mongodb-datasource/stream", // TODO: name
+            path: `mongodb-datasource/${query.refId}`,
             data: {
               ...query,
             },
@@ -119,6 +117,35 @@ export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourc
       return merge(...observables);
     }
 
-    return super.query(request);
+    const streamQueries = request.targets.filter(query => query.isStreaming);
+
+    if (streamQueries.length === 0) {
+      return super.query(request);
+
+    } else if (streamQueries.length === request.targets.length) {
+      const observables = request.targets.map(query => {
+        return getGrafanaLiveSrv().getDataStream({
+          addr: {
+            scope: LiveChannelScope.DataSource,
+            namespace: this.uid,
+            path: `mongodb-datasource/${request.dashboardUID}-${query.refId}`,
+            data: {
+              ...query,
+            },
+          },
+        });
+      });
+
+      return merge(...observables);
+    } else {
+      // Mix of streaming requests and normal requests is not supported
+      return of({
+        data: [],
+        error: {
+          message: "Mix of streaming requests and normal requests is not supported",
+        },
+        state: LoadingState.Error,
+      });
+    }
   }
 }
