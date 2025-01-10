@@ -19,6 +19,7 @@ import { DataSource } from "../datasource";
 import { MongoDataSourceOptions, MongoQuery, QueryLanguage, QueryType, DEFAULT_QUERY } from "../types";
 import { parseJsQuery, parseJsQueryLegacy, validateJsonQueryText, validatePositiveNumber } from "../utils";
 import * as monacoType from "monaco-editor/esm/vs/editor/editor.api";
+import "./QueryEditor.css";
 
 type Props = QueryEditorProps<DataSource, MongoQuery, MongoDataSourceOptions>;
 
@@ -143,15 +144,16 @@ export function QueryEditor({ query, onChange, app }: Props) {
       <Field label="Query Type" description="Choose to query time series or table">
         <RadioButtonGroup id="query-editor-query-type" options={queryTypes} onChange={onQueryTypeChange} value={query.queryType || QueryType.TIMESERIES} />
       </Field>
-      {app !== CoreApp.Explore && <>
-        <Field label={
-          <Stack direction="row" gap={1} alignItems="center">
-            <div>Streaming</div>
+      {app !== CoreApp.Explore && <div className="query-editor-collection-streaming-container">
+        <Field className="query-editor-collection-streaming-field" label={<><Stack direction="row" gap={1} alignItems="center">
+            <div className="field-label">Streaming</div>
             <FeatureBadge featureState={FeatureState.experimental} />
           </Stack>
-        } description="Watch MongoDB Change Streams">
+          </>} horizontal={true}>
           <Switch id="query-editor-collection-streaming" value={query.isStreaming === true} onChange={onIsStreamingChange} />
-        </Field> </>}
+        </Field>
+        <div className="field-description">Watch MongoDB Change Streams</div>
+         </div>}
 
       <InlineFieldRow>
         <InlineField label="Collection" error="Collection is required" invalid={query.queryLanguage !== QueryLanguage.JAVASCRIPT && !query.collection} tooltip="Name of the MongoDB collection to query">
