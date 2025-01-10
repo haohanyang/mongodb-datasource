@@ -4,7 +4,7 @@ import {
   LoadingState
 } from "@grafana/data";
 import { DataSourceWithBackend, getGrafanaLiveSrv, getTemplateSrv } from "@grafana/runtime";
-import { parseJsQuery, getBucketCount, parseJsQueryLegacy, randomId, getMetricValues, datetimeToJson } from "./utils";
+import { parseJsQuery, getBucketCount, parseJsQueryLegacy, randomId, getMetricValues, datetimeToJson, base64UrlEncode } from "./utils";
 import { MongoQuery, MongoDataSourceOptions, DEFAULT_QUERY, QueryLanguage, VariableQuery } from "./types";
 import { firstValueFrom, merge, Observable, of } from "rxjs";
 
@@ -128,7 +128,7 @@ export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourc
           addr: {
             scope: LiveChannelScope.DataSource,
             namespace: this.uid,
-            path: `mongodb-datasource/${request.dashboardUID}-${query.refId}`,
+            path: `mongodb-datasource/${base64UrlEncode(query.collection)}-${base64UrlEncode(query.queryText)}`,
             data: {
               ...query,
             },

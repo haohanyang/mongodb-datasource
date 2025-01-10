@@ -46,8 +46,14 @@ services:
     networks:
       - mongodb-datasource
 
+  compass:
+    image: haohanyang/compass-web
+    container_name: mongodb-datasource-compass
+    ports:
+      - 8080:8080
+    networks:
+      - mongodb-datasource
+
 networks:
   mongodb-datasource:
     driver: bridge
-    
-  
