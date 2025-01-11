@@ -45,6 +45,8 @@ Run the script [quick_start.py](scripts/quick_start.py) in the root directory to
 python3 scripts/quick_start.py
 ```
 
+Visit Grafana on http://localhost:3000. Add a new MongoDB data source with host `mongo`, port `27017`, and enter the collection name. If you want to use [MongoDB Compass Web](https://github.com/haohanyang/compass-web) GUI to manage the database, uncomment `compass` service in [docker-compose.prod.yaml](/docker-compose.prod.yaml)
+
 ### Full steps
 
 1. **Download:** Obtain the latest plugin build from the [Release page](https://github.com/haohanyang/mongodb-datasource/releases) or [workflow artifacts](https://github.com/haohanyang/mongodb-datasource/actions?query=branch%3Amaster).
