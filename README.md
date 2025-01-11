@@ -25,6 +25,9 @@ This plugin enables you to query and visualize data from your MongoDB databases 
 - **Grafana Alerting Support** Set up alerting rules based on query result
 - **[Legacy Plugin](https://github.com/JamesOsgood/mongodb-grafana) Compatibility:** Easy migrate from the [legacy plugin](https://github.com/JamesOsgood/mongodb-grafana) with support for its query syntax.
 
+## Requirements:
+* Grafana >= 10.4.0
+* MongoDB >= 3.6
 ## Authentication methods
 
 - No authentication
@@ -261,5 +264,4 @@ If the a new document was inserted which contains `value` field, the query will 
 **Note:** Unsupported BSON types are not included in the table and will display as `"[Unsupported type]"`.
 
 ## License
-
 [Apache-2.0](/LICENSE)
