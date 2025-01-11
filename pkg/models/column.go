@@ -16,7 +16,7 @@ type Column struct {
 	BsonTypes []bsontype.Type
 }
 
-var UNSUPPORTED_TYPE = "[Unsupported type]"
+var UNSUPPORTED_TYPE = "[Unsupported type %s]"
 
 func (c *Column) AppendValue(rv bson.RawValue) error {
 	switch rv.Type {
@@ -119,6 +119,14 @@ func (c *Column) AppendValue(rv bson.RawValue) error {
 
 		c.Field.Append(pointer(rv.Time()))
 
+	case bson.TypeTimestamp:
+		if c.Type() != data.FieldTypeNullableTime {
+			return fmt.Errorf("field %s should have type %s, but got %s", c.Name, c.Type().ItemTypeString(), rv.Type.String())
+		}
+
+		t, _ := rv.Timestamp()
+		c.Field.Append(pointer(time.Unix(int64(t), 0)))
+
 	case bson.TypeObjectID:
 		if c.Type() != data.FieldTypeNullableString {
 			return fmt.Errorf("field %s should have type %s, but got %s", c.Name, c.Type().ItemTypeString(), rv.Type.String())
@@ -152,7 +160,7 @@ func (c *Column) AppendValue(rv bson.RawValue) error {
 			return fmt.Errorf("field %s should have type %s, but got %s", c.Name, c.Type().ItemTypeString(), rv.Type.String())
 		}
 
-		c.Field.Append(pointer(UNSUPPORTED_TYPE))
+		c.Field.Append(pointer(fmt.Sprintf(UNSUPPORTED_TYPE, rv.Type.String())))
 	}
 
 	c.BsonTypes = append(c.BsonTypes, rv.Type)
@@ -197,6 +205,11 @@ func NewColumn(rowIndex int, element bson.RawElement) (*Column, error) {
 		field = data.NewField(key, nil, make([]*time.Time, rowIndex+1))
 		field.Set(rowIndex, pointer(value.Time()))
 
+	case bson.TypeTimestamp:
+		t, _ := value.Timestamp()
+		field = data.NewField(key, nil, make([]*time.Time, rowIndex+1))
+		field.Set(rowIndex, pointer(time.Unix(int64(t), 0)))
+
 	case bson.TypeObjectID:
 		field = data.NewField(key, nil, make([]*string, rowIndex+1))
 		field.Set(rowIndex, pointer(value.ObjectID().String()))
@@ -221,7 +234,7 @@ func NewColumn(rowIndex int, element bson.RawElement) (*Column, error) {
 
 	default:
 		field = data.NewField(key, nil, make([]*string, rowIndex+1))
-		field.Set(rowIndex, pointer(UNSUPPORTED_TYPE))
+		field.Set(rowIndex, pointer(fmt.Sprintf(UNSUPPORTED_TYPE, value.Type.String())))
 	}
 
 	return &Column{

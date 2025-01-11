@@ -7,6 +7,8 @@ export interface MongoQuery extends DataQuery {
   queryType?: string;
   queryLanguage?: string;
 
+  isStreaming?: boolean;
+
   // Aggregate options
   aggregateMaxTimeMS?: number;
   aggregateComment?: string;
@@ -30,13 +32,10 @@ export const QueryLanguage = {
 
 
 export const DEFAULT_QUERY: Partial<MongoQuery> = {
-  queryText: `[
-  {
-    "$limit": 10
-  }
-]`,
-  queryType: QueryType.TIMESERIES,
-  queryLanguage: QueryLanguage.JSON
+  queryText: "",
+  queryType: QueryType.TABLE,
+  queryLanguage: QueryLanguage.JSON,
+  isStreaming: false
 };
 
 

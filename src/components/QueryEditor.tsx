@@ -1,4 +1,4 @@
-import React, { ChangeEvent, useRef, useState } from "react";
+import React, { ChangeEvent, FormEventHandler, useRef, useState } from "react";
 import {
   Button,
   CodeEditor,
@@ -10,13 +10,16 @@ import {
   ControlledCollapse,
   InlineSwitch,
   RadioButtonGroup,
-  Stack
+  Stack,
+  FeatureBadge,
+  Switch
 } from "@grafana/ui";
-import { QueryEditorProps, SelectableValue } from "@grafana/data";
+import { CoreApp, FeatureState, QueryEditorProps, SelectableValue } from "@grafana/data";
 import { DataSource } from "../datasource";
 import { MongoDataSourceOptions, MongoQuery, QueryLanguage, QueryType, DEFAULT_QUERY } from "../types";
 import { parseJsQuery, parseJsQueryLegacy, validateJsonQueryText, validatePositiveNumber } from "../utils";
 import * as monacoType from "monaco-editor/esm/vs/editor/editor.api";
+import "./QueryEditor.css";
 
 type Props = QueryEditorProps<DataSource, MongoQuery, MongoDataSourceOptions>;
 
@@ -40,7 +43,7 @@ const languageOptions: Array<SelectableValue<string>> = [
 ];
 
 
-export function QueryEditor({ query, onChange, onRunQuery, data }: Props) {
+export function QueryEditor({ query, onChange, app }: Props) {
 
   const codeEditorRef = useRef<monacoType.editor.IStandaloneCodeEditor | null>(null);
   const [queryTextError, setQueryTextError] = useState<string | null>(null);
@@ -78,7 +81,7 @@ export function QueryEditor({ query, onChange, onRunQuery, data }: Props) {
 
   const onMaxTimeMSChange = (event: ChangeEvent<HTMLInputElement>) => {
     setMaxTimeMSText(event.target.value);
-    console.log(event.target.value);
+
     if (!event.target.value) {
       onChange({ ...query, aggregateMaxTimeMS: undefined });
     } else if (validatePositiveNumber(event.target.value)) {
@@ -128,6 +131,10 @@ export function QueryEditor({ query, onChange, onRunQuery, data }: Props) {
     }
   };
 
+  const onIsStreamingChange: FormEventHandler<HTMLInputElement> = e => {
+    onChange({ ...query, isStreaming: e.currentTarget.checked });
+  };
+
   if (!query.queryLanguage) {
     query.queryLanguage = DEFAULT_QUERY.queryLanguage;
   }
@@ -137,6 +144,17 @@ export function QueryEditor({ query, onChange, onRunQuery, data }: Props) {
       <Field label="Query Type" description="Choose to query time series or table">
         <RadioButtonGroup id="query-editor-query-type" options={queryTypes} onChange={onQueryTypeChange} value={query.queryType || QueryType.TIMESERIES} />
       </Field>
+      {app !== CoreApp.Explore && <div className="query-editor-collection-streaming-container">
+        <Field className="query-editor-collection-streaming-field" label={<><Stack direction="row" gap={1} alignItems="center">
+            <div className="field-label">Streaming</div>
+            <FeatureBadge featureState={FeatureState.experimental} />
+          </Stack>
+          </>} horizontal={true}>
+          <Switch id="query-editor-collection-streaming" value={query.isStreaming === true} onChange={onIsStreamingChange} />
+        </Field>
+        <div className="field-description">Watch MongoDB Change Streams</div>
+         </div>}
+
       <InlineFieldRow>
         <InlineField label="Collection" error="Collection is required" invalid={query.queryLanguage !== QueryLanguage.JAVASCRIPT && !query.collection} tooltip="Name of the MongoDB collection to query">
           <Input width={25} id="query-editor-collection" onChange={onCollectionChange} value={query.collection} disabled={query.queryLanguage === QueryLanguage.JAVASCRIPT} />
@@ -186,7 +204,6 @@ export function QueryEditor({ query, onChange, onRunQuery, data }: Props) {
       </Field>
       <Stack direction="row" wrap alignItems="flex-start" justifyContent="start" gap={1}>
         <Button onClick={onFormatQueryText} variant="secondary">Format</Button>
-        <Button onClick={onRunQuery} variant="primary" disabled={data?.state === "Loading"} icon={data?.state === "Loading" ? "spinner" : undefined}>Query</Button>
       </Stack>
     </>
   );

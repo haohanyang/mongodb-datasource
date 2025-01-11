@@ -3,7 +3,7 @@ name: CI
 on:
   push:
     branches:
-      - '*'
+      - "*"
     paths-ignore:
       - README.md
   pull_request:
@@ -38,7 +38,7 @@ jobs:
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
       - name: Update plugin.json
         run: python3 scripts/update_plugin_metadata.py
         env:
@@ -49,8 +49,8 @@ jobs:
       - name: Setup Node.js environment
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci
@@ -76,7 +76,7 @@ jobs:
         if: steps.check-for-backend.outputs.has-backend == 'true'
         uses: actions/setup-go@v5
         with:
-          go-version: '1.21'
+          go-version: "1.21"
 
       - name: Test backend
         if: steps.check-for-backend.outputs.has-backend == 'true'
@@ -172,21 +172,21 @@ jobs:
       - name: Setup Node.js environment
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
 
       - name: Install dev dependencies
         run: npm ci
 
       - name: Start Grafana
         run: |
-          docker compose pull
-          DEVELOPMENT=false GRAFANA_VERSION=${{ matrix.GRAFANA_IMAGE.VERSION }} GRAFANA_IMAGE=${{ matrix.GRAFANA_IMAGE.NAME }} docker compose up -d
+          docker compose -f docker-compose.test.yaml pull
+          DEVELOPMENT=false GRAFANA_VERSION=${{ matrix.GRAFANA_IMAGE.VERSION }} GRAFANA_IMAGE=${{ matrix.GRAFANA_IMAGE.NAME }} docker compose -f docker-compose.test.yaml up -d
 
       - name: Wait for Grafana to start
         uses: nev7n/wait_for_response@v1
         with:
-          url: 'http://localhost:3000/'
+          url: "http://localhost:3000/"
           responseCode: 200
           timeout: 60000
           interval: 500
@@ -204,7 +204,7 @@ jobs:
           docker logs mongodb-datasource-grafana >& grafana-server.log
 
       - name: Stop grafana docker
-        run: docker compose down
+        run: docker compose -f docker-compose.test.yaml down
 
       - name: Upload server log
         uses: actions/upload-artifact@v4
