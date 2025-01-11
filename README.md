@@ -210,7 +210,7 @@ Provide the collection name and your MongoDB aggregation pipeline in standard JS
 
 ### Live Streaming (Experimental)
 
-Switch on "Streaming" to enable Live Streaming. The plugin will listen to [change events](https://www.mongodb.com/docs/manual/reference/change-events/) from the collection entered. You can query the change event and show the result in the dashboard. Here are example queries.
+Switch on "Streaming" in the Dashboard panel or click "Live" in Explore to enable Live Streaming. The plugin will listen to [change events](https://www.mongodb.com/docs/manual/reference/change-events/) from the collection entered. You can query the change event and show the result in the dashboard. Here are example queries.
 
 #### Show MongoDB Operation and Timestamp
 
@@ -247,6 +247,8 @@ If the a new document was inserted which contains `value` field, the query will 
   }
 ]
 ```
+
+**Note**: Change streams are only available for [replica sets](https://www.mongodb.com/docs/manual/replication/#std-label-replication) and [sharded clusters](https://www.mongodb.com/docs/manual/sharding/#std-label-sharding-background).
 
 ## Supported Data Types
 
