@@ -26,8 +26,10 @@ This plugin enables you to query and visualize data from your MongoDB databases 
 - **[Legacy Plugin](https://github.com/JamesOsgood/mongodb-grafana) Compatibility:** Easy migrate from the [legacy plugin](https://github.com/JamesOsgood/mongodb-grafana) with support for its query syntax.
 
 ## Requirements:
-* Grafana >= 10.4.0
-* MongoDB >= 3.6
+
+- Grafana >= 10.4.0
+- MongoDB >= 3.6
+
 ## Authentication methods
 
 - No authentication
@@ -260,8 +262,10 @@ If the a new document was inserted which contains `value` field, the query will 
 | Null           | ✅      | nil             |                                         |
 | 32-bit integer | ✅      | int32           | May be converted to int64/float64       |
 | 64-bit integer | ✅      | int64           | May be converted to float64             |
+| Timestamps     | ✅      | time.Time       | The `ordinal` part is truncated         |
 
 **Note:** Unsupported BSON types are not included in the table and will display as `"[Unsupported type]"`.
 
 ## License
+
 [Apache-2.0](/LICENSE)
