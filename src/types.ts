@@ -1,5 +1,5 @@
-import { DataSourceJsonData } from "@grafana/data";
-import { DataQuery } from "@grafana/schema";
+import { DataSourceJsonData } from '@grafana/data';
+import { DataQuery } from '@grafana/schema';
 
 export interface MongoQuery extends DataQuery {
   queryText?: string;
@@ -16,28 +16,25 @@ export interface MongoQuery extends DataQuery {
   aggregateAllowDiskUse?: boolean;
   aggregateMaxAwaitTime?: number;
   aggregateBypassDocumentValidation?: boolean;
-
 }
 
 export const QueryType = {
-  TIMESERIES: "timeseries",
-  TABLE: "table"
+  TIMESERIES: 'timeseries',
+  TABLE: 'table',
 };
 
 export const QueryLanguage = {
-  JSON: "json",
-  JAVASCRIPT: "javascript",
-  JAVASCRIPT_SHADOW: "javascriptShadow"
+  JSON: 'json',
+  JAVASCRIPT: 'javascript',
+  JAVASCRIPT_SHADOW: 'javascriptShadow',
 };
-
 
 export const DEFAULT_QUERY: Partial<MongoQuery> = {
-  queryText: "",
+  queryText: '',
   queryType: QueryType.TABLE,
   queryLanguage: QueryLanguage.JSON,
-  isStreaming: false
+  isStreaming: false,
 };
-
 
 export interface JsQueryResult {
   jsonQuery?: string;
@@ -45,15 +42,14 @@ export interface JsQueryResult {
   error: string | null;
 }
 
-
 export const MongoDBAuthMethod = {
-  NONE: "auth-none",
-  USERNAME_PASSWORD: "auth-username-password"
+  NONE: 'auth-none',
+  USERNAME_PASSWORD: 'auth-username-password',
 };
 
 export const ConnectionStringScheme = {
-  STANDARD: "standard",
-  DNS_SEED_LIST: "dns_seed_list"
+  STANDARD: 'standard',
+  DNS_SEED_LIST: 'dns_seed_list',
 };
 
 export interface VariableQuery {
@@ -79,4 +75,3 @@ export interface MongoDataSourceOptions extends DataSourceJsonData {
 export interface MySecureJsonData {
   password?: string;
 }
-

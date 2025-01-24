@@ -29,7 +29,7 @@ services:
       GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: haohanyang-mongodb-datasource
     networks:
       - mongodb-datasource
-      
+
   mongo-no-auth:
     image: mongo
     container_name: mongodb-datasource-mongo-no-auth
@@ -52,5 +52,3 @@ services:
 networks:
   mongodb-datasource:
     driver: bridge
-    
-  

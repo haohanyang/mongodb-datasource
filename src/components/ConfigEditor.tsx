@@ -1,18 +1,27 @@
-import React, { ChangeEvent } from "react";
-import { Divider, Field, FieldSet, InlineField, InlineFieldRow, Input, RadioButtonGroup, SecretInput } from "@grafana/ui";
-import { DataSourcePluginOptionsEditorProps, SelectableValue } from "@grafana/data";
-import { MongoDataSourceOptions, MySecureJsonData, MongoDBAuthMethod, ConnectionStringScheme } from "../types";
+import React, { ChangeEvent } from 'react';
+import {
+  Divider,
+  Field,
+  FieldSet,
+  InlineField,
+  InlineFieldRow,
+  Input,
+  RadioButtonGroup,
+  SecretInput,
+} from '@grafana/ui';
+import { DataSourcePluginOptionsEditorProps, SelectableValue } from '@grafana/data';
+import { MongoDataSourceOptions, MySecureJsonData, MongoDBAuthMethod, ConnectionStringScheme } from '../types';
 
-interface Props extends DataSourcePluginOptionsEditorProps<MongoDataSourceOptions, MySecureJsonData> { }
+interface Props extends DataSourcePluginOptionsEditorProps<MongoDataSourceOptions, MySecureJsonData> {}
 
 const mongoDBAuthMethods: SelectableValue[] = [
-  { label: "None", value: MongoDBAuthMethod.NONE },
-  { label: "Username/Password", value: MongoDBAuthMethod.USERNAME_PASSWORD }
+  { label: 'None', value: MongoDBAuthMethod.NONE },
+  { label: 'Username/Password', value: MongoDBAuthMethod.USERNAME_PASSWORD },
 ];
 
 const mongoConnectionStringSchemes: SelectableValue[] = [
-  { label: "mongodb", value: ConnectionStringScheme.STANDARD, description: "Standard Connection String Format" },
-  { label: "mongodb+srv", value: ConnectionStringScheme.DNS_SEED_LIST, description: "DNS Seed List Connection Format" }
+  { label: 'mongodb', value: ConnectionStringScheme.STANDARD, description: 'Standard Connection String Format' },
+  { label: 'mongodb+srv', value: ConnectionStringScheme.DNS_SEED_LIST, description: 'DNS Seed List Connection Format' },
 ];
 
 export function ConfigEditor(props: Props) {
@@ -30,7 +39,6 @@ export function ConfigEditor(props: Props) {
   if (!jsonData.connectionStringScheme) {
     jsonData.connectionStringScheme = ConnectionStringScheme.STANDARD;
   }
-
 
   const onHostChange = (event: ChangeEvent<HTMLInputElement>) => {
     onOptionsChange({
@@ -71,7 +79,6 @@ export function ConfigEditor(props: Props) {
       },
     });
   };
-
 
   const onDatabaseChange = (event: ChangeEvent<HTMLInputElement>) => {
     onOptionsChange({
@@ -121,7 +128,7 @@ export function ConfigEditor(props: Props) {
       },
       secureJsonData: {
         ...options.secureJsonData,
-        password: ""
+        password: '',
       },
     });
   };
@@ -137,24 +144,20 @@ export function ConfigEditor(props: Props) {
       </Field>
       <InlineFieldRow label="Connection">
         <InlineField label="Host" tooltip="MongoDB host address">
-          <Input
-            required
-            id="config-editor-host"
-            value={jsonData.host}
-            onChange={onHostChange}
-            width={30}
-          ></Input>
+          <Input required id="config-editor-host" value={jsonData.host} onChange={onHostChange} width={30}></Input>
         </InlineField>
-        {jsonData.connectionStringScheme === ConnectionStringScheme.STANDARD && <InlineField label="Port" tooltip="MongoDB port">
-          <Input
-            id="config-editor-port"
-            value={jsonData.port}
-            type="number"
-            onChange={onPortChange}
-            width={15}
-            defaultValue={27017}
-          ></Input>
-        </InlineField>}
+        {jsonData.connectionStringScheme === ConnectionStringScheme.STANDARD && (
+          <InlineField label="Port" tooltip="MongoDB port">
+            <Input
+              id="config-editor-port"
+              value={jsonData.port}
+              type="number"
+              onChange={onPortChange}
+              width={15}
+              defaultValue={27017}
+            ></Input>
+          </InlineField>
+        )}
       </InlineFieldRow>
       <InlineFieldRow>
         <InlineField label="Database" tooltip="MongoDB database">
@@ -167,7 +170,10 @@ export function ConfigEditor(props: Props) {
           ></Input>
         </InlineField>
       </InlineFieldRow>
-      <InlineField label="Connection parameters" tooltip="(Optional) Connection parameters appended to the connection string. For example retryWrites=true&w=majority&appName=default-cluster">
+      <InlineField
+        label="Connection parameters"
+        tooltip="(Optional) Connection parameters appended to the connection string. For example retryWrites=true&w=majority&appName=default-cluster"
+      >
         <Input
           required
           id="config-editor-connection-parameters"
@@ -187,7 +193,7 @@ export function ConfigEditor(props: Props) {
         </Field>
       </FieldSet>
 
-      {jsonData.authType === MongoDBAuthMethod.USERNAME_PASSWORD &&
+      {jsonData.authType === MongoDBAuthMethod.USERNAME_PASSWORD && (
         <>
           <InlineField label="Username" tooltip="MongoDB username">
             <Input
@@ -203,13 +209,14 @@ export function ConfigEditor(props: Props) {
               required
               id="config-editor-password"
               isConfigured={secureJsonFields.password}
-              value={secureJsonData?.password || ""}
+              value={secureJsonData?.password || ''}
               width={35}
               onReset={onResetPassword}
               onChange={onPasswordChange}
             />
-          </InlineField></>
-      }
+          </InlineField>
+        </>
+      )}
     </>
   );
 }
