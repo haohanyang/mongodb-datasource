@@ -18,7 +18,7 @@ import { CoreApp, FeatureState, QueryEditorProps, SelectableValue } from '@grafa
 import { DataSource } from '../datasource';
 import { MongoDataSourceOptions, MongoQuery, QueryLanguage, QueryType, DEFAULT_QUERY } from '../types';
 import { parseJsQuery, parseJsQueryLegacy, validateJsonQueryText, validatePositiveNumber } from '../utils';
-import * as monacoType from 'monaco-editor/esm/vs/editor/editor.api';
+import { editor } from 'monaco-editor';
 import './QueryEditor.css';
 
 type Props = QueryEditorProps<DataSource, MongoQuery, MongoDataSourceOptions>;
@@ -43,7 +43,7 @@ const languageOptions: Array<SelectableValue<string>> = [
 ];
 
 export function QueryEditor({ query, onChange, app }: Props) {
-  const codeEditorRef = useRef<monacoType.editor.IStandaloneCodeEditor | null>(null);
+  const codeEditorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const [queryTextError, setQueryTextError] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -129,7 +129,7 @@ export function QueryEditor({ query, onChange, app }: Props) {
     onChange({ ...query, aggregateComment: event.target.value });
   };
 
-  const onCodeEditorDidMount = (e: monacoType.editor.IStandaloneCodeEditor) => {
+  const onCodeEditorDidMount = (e: editor.IStandaloneCodeEditor) => {
     codeEditorRef.current = e;
   };
 
