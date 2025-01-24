@@ -13,10 +13,7 @@
     "author": {
       "name": "Haohan Yang"
     },
-    "keywords": [
-      "datasource",
-      "mongodb"
-    ],
+    "keywords": ["datasource", "mongodb"],
     "logos": {
       "small": "img/logo.svg",
       "large": "img/logo.svg"

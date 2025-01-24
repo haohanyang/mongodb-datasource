@@ -1,4 +1,10 @@
-module.exports = {
-  // Prettier configuration provided by Grafana scaffolding
+/**
+ * @type {import('prettier').Options}
+ */
+const config = {
   ...require('./.config/.prettierrc.js'),
+  singleQuote: true,
+  trailingComma: 'all',
 };
+
+module.exports = config;

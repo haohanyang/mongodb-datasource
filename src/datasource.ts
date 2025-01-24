@@ -1,13 +1,27 @@
 import {
-  DataSourceInstanceSettings, CoreApp, ScopedVars, DataQueryRequest, LegacyMetricFindQueryOptions,
-  MetricFindValue, dateTime, LiveChannelScope, DataQueryResponse,
-  LoadingState
-} from "@grafana/data";
-import { DataSourceWithBackend, getGrafanaLiveSrv, getTemplateSrv } from "@grafana/runtime";
-import { parseJsQuery, getBucketCount, parseJsQueryLegacy, randomId, getMetricValues, datetimeToJson, base64UrlEncode } from "./utils";
-import { MongoQuery, MongoDataSourceOptions, DEFAULT_QUERY, QueryLanguage, VariableQuery } from "./types";
-import { firstValueFrom, merge, Observable, of } from "rxjs";
-
+  DataSourceInstanceSettings,
+  CoreApp,
+  ScopedVars,
+  DataQueryRequest,
+  LegacyMetricFindQueryOptions,
+  MetricFindValue,
+  dateTime,
+  LiveChannelScope,
+  DataQueryResponse,
+  LoadingState,
+} from '@grafana/data';
+import { DataSourceWithBackend, getGrafanaLiveSrv, getTemplateSrv } from '@grafana/runtime';
+import {
+  parseJsQuery,
+  getBucketCount,
+  parseJsQueryLegacy,
+  randomId,
+  getMetricValues,
+  datetimeToJson,
+  base64UrlEncode,
+} from './utils';
+import { MongoQuery, MongoDataSourceOptions, DEFAULT_QUERY, QueryLanguage, VariableQuery } from './types';
+import { firstValueFrom, merge, Observable, of } from 'rxjs';
 
 export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourceOptions> {
   constructor(instanceSettings: DataSourceInstanceSettings<MongoDataSourceOptions>) {
@@ -29,66 +43,65 @@ export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourc
       queryText = jsonQuery!;
     }
 
-    const from = getTemplateSrv().replace("$__from", {});
-    const to = getTemplateSrv().replace("$__to", {});
+    const from = getTemplateSrv().replace('$__from', {});
+    const to = getTemplateSrv().replace('$__to', {});
 
     // Compatible with legacy plugin $from
-    if (from !== "$__from") {
+    if (from !== '$__from') {
       queryText = queryText.replaceAll(/"\$from"/g, datetimeToJson(from));
     }
 
     // Compatible with legacy plugin $to
-    if (to !== "$__to") {
+    if (to !== '$__to') {
       queryText = queryText.replaceAll(/"\$to"/g, datetimeToJson(to));
     }
 
-    const interval = scopedVars["__interval_ms"]?.value;
+    const interval = scopedVars['__interval_ms']?.value;
 
     // Compatible with legacy plugin $dateBucketCount
     if (interval && from && to) {
-      queryText = queryText.replaceAll(
-        /"\$dateBucketCount"/g,
-        getBucketCount(from, to, interval).toString()
-      );
+      queryText = queryText.replaceAll(/"\$dateBucketCount"/g, getBucketCount(from, to, interval).toString());
     }
 
     const text = getTemplateSrv().replace(queryText, scopedVars);
     return {
       ...query,
-      queryText: text
+      queryText: text,
     };
   }
 
   async metricFindQuery(query: VariableQuery, options?: LegacyMetricFindQueryOptions): Promise<MetricFindValue[]> {
     const request: DataQueryRequest<MongoQuery> = {
-      requestId: "variable-query-" + randomId(3),
-      targets: [{
-        refId: "A",
-        queryLanguage: QueryLanguage.JSON,
-        collection: query.collection,
-        queryText: getTemplateSrv().replace(query.queryText),
-        queryType: "table",
-        isStreaming: false
-      }],
+      requestId: 'variable-query-' + randomId(3),
+      targets: [
+        {
+          refId: 'A',
+          queryLanguage: QueryLanguage.JSON,
+          collection: query.collection,
+          queryText: getTemplateSrv().replace(query.queryText),
+          queryType: 'table',
+          isStreaming: false,
+        },
+      ],
       scopedVars: options?.scopedVars || {},
-      interval: "5s",
-      timezone: "browser",
+      interval: '5s',
+      timezone: 'browser',
       intervalMs: 5000,
       range: options?.range || {
         from: dateTime(),
         to: dateTime(),
         raw: {
-          from: "now",
-          to: "now"
-        }
+          from: 'now',
+          to: 'now',
+        },
       },
-      app: "variable-query",
-      startTime: (options?.range?.from || dateTime()).toDate().getUTCMilliseconds()
+      app: 'variable-query',
+      startTime: (options?.range?.from || dateTime()).toDate().getUTCMilliseconds(),
     };
 
     const resp = await firstValueFrom(this.query(request));
     if (resp.errors?.length && resp.errors.length > 0) {
-      throw new Error(resp.errors[0].message || "Unknown error");
+      throw new Error(resp.errors[0].message || 'Unknown error');
     }
 
     return getMetricValues(resp);
@@ -98,10 +111,9 @@ export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourc
     return !!query.queryText && !!query.collection;
   }
 
-
   query(request: DataQueryRequest<MongoQuery>): Observable<DataQueryResponse> {
     if (request.liveStreaming) {
-      const observables = request.targets.map(query => {
+      const observables = request.targets.map((query) => {
         return getGrafanaLiveSrv().getDataStream({
           addr: {
             scope: LiveChannelScope.DataSource,
@@ -117,13 +129,12 @@ export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourc
       return merge(...observables);
     }
 
-    const streamQueries = request.targets.filter(query => query.isStreaming);
+    const streamQueries = request.targets.filter((query) => query.isStreaming);
 
     if (streamQueries.length === 0) {
       return super.query(request);
-
     } else if (streamQueries.length === request.targets.length) {
-      const observables = request.targets.map(query => {
+      const observables = request.targets.map((query) => {
         return getGrafanaLiveSrv().getDataStream({
           addr: {
             scope: LiveChannelScope.DataSource,
@@ -142,7 +153,7 @@ export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourc
       return of({
         data: [],
         error: {
-          message: "Mix of streaming requests and normal requests is not supported",
+          message: 'Mix of streaming requests and normal requests is not supported',
         },
         state: LoadingState.Error,
       });

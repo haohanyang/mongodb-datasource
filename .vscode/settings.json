@@ -1,9 +1,5 @@
 {
-    "typescript.format.semicolons": "insert",
-    "typescript.preferences.quoteStyle": "double",
-    "editor.formatOnSave": true,
-    "editor.trimAutoWhitespace": true,
-    "go.testFlags": [
-        "-v"
-    ]
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "go.testFlags": ["-v"]
 }

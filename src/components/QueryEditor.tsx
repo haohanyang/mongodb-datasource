@@ -1,4 +1,4 @@
-import React, { ChangeEvent, FormEventHandler, useRef, useState } from "react";
+import React, { ChangeEvent, FormEventHandler, useRef, useState } from 'react';
 import {
   Button,
   CodeEditor,
@@ -12,51 +12,58 @@ import {
   RadioButtonGroup,
   Stack,
   FeatureBadge,
-  Switch
-} from "@grafana/ui";
-import { CoreApp, FeatureState, QueryEditorProps, SelectableValue } from "@grafana/data";
-import { DataSource } from "../datasource";
-import { MongoDataSourceOptions, MongoQuery, QueryLanguage, QueryType, DEFAULT_QUERY } from "../types";
-import { parseJsQuery, parseJsQueryLegacy, validateJsonQueryText, validatePositiveNumber } from "../utils";
-import * as monacoType from "monaco-editor/esm/vs/editor/editor.api";
-import "./QueryEditor.css";
+  Switch,
+} from '@grafana/ui';
+import { CoreApp, FeatureState, QueryEditorProps, SelectableValue } from '@grafana/data';
+import { DataSource } from '../datasource';
+import { MongoDataSourceOptions, MongoQuery, QueryLanguage, QueryType, DEFAULT_QUERY } from '../types';
+import { parseJsQuery, parseJsQueryLegacy, validateJsonQueryText, validatePositiveNumber } from '../utils';
+import * as monacoType from 'monaco-editor/esm/vs/editor/editor.api';
+import './QueryEditor.css';
 
 type Props = QueryEditorProps<DataSource, MongoQuery, MongoDataSourceOptions>;
 
 const queryTypes: Array<SelectableValue<string>> = [
   {
-    label: "Time series",
+    label: 'Time series',
     value: QueryType.TIMESERIES,
-    icon: "chart-line"
+    icon: 'chart-line',
   },
   {
-    label: "Data Table",
+    label: 'Data Table',
     value: QueryType.TABLE,
-    icon: "table"
-  }
+    icon: 'table',
+  },
 ];
 
 const languageOptions: Array<SelectableValue<string>> = [
-  { label: "JSON", value: QueryLanguage.JSON },
-  { label: "JavaScript", value: QueryLanguage.JAVASCRIPT, description: "JavaScript Legacy" },
-  { label: "JavaScript Shadow", value: QueryLanguage.JAVASCRIPT_SHADOW, description: "JavaScript with Evaluation" }
+  { label: 'JSON', value: QueryLanguage.JSON },
+  { label: 'JavaScript', value: QueryLanguage.JAVASCRIPT, description: 'JavaScript Legacy' },
+  { label: 'JavaScript Shadow', value: QueryLanguage.JAVASCRIPT_SHADOW, description: 'JavaScript with Evaluation' },
 ];
 
-
 export function QueryEditor({ query, onChange, app }: Props) {
-
   const codeEditorRef = useRef<monacoType.editor.IStandaloneCodeEditor | null>(null);
   const [queryTextError, setQueryTextError] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
-  const [maxTimeMSText, setMaxTimeMSText] = useState<string>(query.aggregateMaxTimeMS ? query.aggregateMaxTimeMS.toString() : "");
-  const [maxAwaitTimeMSText, setMaxAwaitTimeMSText] = useState<string>(query.aggregateMaxAwaitTime ? query.aggregateMaxAwaitTime.toString() : "");
-  const [batchSizeText, setBatchSizeText] = useState<string>(query.aggregateBatchSize ? query.aggregateBatchSize.toString() : "");
+  const [maxTimeMSText, setMaxTimeMSText] = useState<string>(
+    query.aggregateMaxTimeMS ? query.aggregateMaxTimeMS.toString() : '',
+  );
+  const [maxAwaitTimeMSText, setMaxAwaitTimeMSText] = useState<string>(
+    query.aggregateMaxAwaitTime ? query.aggregateMaxAwaitTime.toString() : '',
+  );
+  const [batchSizeText, setBatchSizeText] = useState<string>(
+    query.aggregateBatchSize ? query.aggregateBatchSize.toString() : '',
+  );
 
   const onQueryTextChange = (queryText: string) => {
     if (query.queryLanguage === QueryLanguage.JAVASCRIPT || query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW) {
       // parse the JavaScript query
-      const { error, collection } = query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW ? parseJsQuery(queryText) : parseJsQueryLegacy(queryText);
+      const { error, collection } =
+        query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW
+          ? parseJsQuery(queryText)
+          : parseJsQueryLegacy(queryText);
       // let the same query text as it is
       onChange({ ...query, queryText: queryText, ...(collection ? { collection } : {}) });
       setQueryTextError(error);
@@ -100,7 +107,8 @@ export function QueryEditor({ query, onChange, app }: Props) {
 
   const onAllowDiskUseChange = (event: ChangeEvent<HTMLInputElement>) => {
     onChange({
-      ...query, aggregateAllowDiskUse: event.target.checked
+      ...query,
+      aggregateAllowDiskUse: event.target.checked,
     });
   };
 
@@ -127,11 +135,11 @@ export function QueryEditor({ query, onChange, app }: Props) {
 
   const onFormatQueryText = () => {
     if (codeEditorRef.current) {
-      codeEditorRef.current.getAction("editor.action.formatDocument").run();
+      codeEditorRef.current.getAction('editor.action.formatDocument').run();
     }
   };
 
-  const onIsStreamingChange: FormEventHandler<HTMLInputElement> = e => {
+  const onIsStreamingChange: FormEventHandler<HTMLInputElement> = (e) => {
     onChange({ ...query, isStreaming: e.currentTarget.checked });
   };
 
@@ -142,69 +150,153 @@ export function QueryEditor({ query, onChange, app }: Props) {
   return (
     <>
       <Field label="Query Type" description="Choose to query time series or table">
-        <RadioButtonGroup id="query-editor-query-type" options={queryTypes} onChange={onQueryTypeChange} value={query.queryType || QueryType.TIMESERIES} />
+        <RadioButtonGroup
+          id="query-editor-query-type"
+          options={queryTypes}
+          onChange={onQueryTypeChange}
+          value={query.queryType || QueryType.TIMESERIES}
+        />
       </Field>
-      {app !== CoreApp.Explore && <div className="query-editor-collection-streaming-container">
-        <Field className="query-editor-collection-streaming-field" label={<><Stack direction="row" gap={1} alignItems="center">
-            <div className="field-label">Streaming</div>
-            <FeatureBadge featureState={FeatureState.experimental} />
-          </Stack>
-          </>} horizontal={true}>
-          <Switch id="query-editor-collection-streaming" value={query.isStreaming === true} onChange={onIsStreamingChange} />
-        </Field>
-        <div className="field-description">Watch MongoDB Change Streams</div>
-         </div>}
+      {app !== CoreApp.Explore && (
+        <div className="query-editor-collection-streaming-container">
+          <Field
+            className="query-editor-collection-streaming-field"
+            label={
+              <>
+                <Stack direction="row" gap={1} alignItems="center">
+                  <div className="field-label">Streaming</div>
+                  <FeatureBadge featureState={FeatureState.experimental} />
+                </Stack>
+              </>
+            }
+            horizontal={true}
+          >
+            <Switch
+              id="query-editor-collection-streaming"
+              value={query.isStreaming === true}
+              onChange={onIsStreamingChange}
+            />
+          </Field>
+          <div className="field-description">Watch MongoDB Change Streams</div>
+        </div>
+      )}
 
       <InlineFieldRow>
-        <InlineField label="Collection" error="Collection is required" invalid={query.queryLanguage !== QueryLanguage.JAVASCRIPT && !query.collection} tooltip="Name of the MongoDB collection to query">
-          <Input width={25} id="query-editor-collection" onChange={onCollectionChange} value={query.collection} disabled={query.queryLanguage === QueryLanguage.JAVASCRIPT} />
+        <InlineField
+          label="Collection"
+          error="Collection is required"
+          invalid={query.queryLanguage !== QueryLanguage.JAVASCRIPT && !query.collection}
+          tooltip="Name of the MongoDB collection to query"
+        >
+          <Input
+            width={25}
+            id="query-editor-collection"
+            onChange={onCollectionChange}
+            value={query.collection}
+            disabled={query.queryLanguage === QueryLanguage.JAVASCRIPT}
+          />
         </InlineField>
         <InlineField label="Query language">
-          <Select id="query-editor-query-language" onChange={onQueryLanguageChange} options={languageOptions} value={query.queryLanguage} width={25} />
+          <Select
+            id="query-editor-query-language"
+            onChange={onQueryLanguageChange}
+            options={languageOptions}
+            value={query.queryLanguage}
+            width={25}
+          />
         </InlineField>
       </InlineFieldRow>
       <ControlledCollapse label="Aggregate Options" isOpen={isOpen} onToggle={() => setIsOpen(!isOpen)}>
         <InlineFieldRow>
-          <InlineField label="Max time(ms)" tooltip="The maximum amount of time that the query can run on the server. The default value is nil, meaning that there is no time limit for query execution."
-            error="Invalid time" invalid={maxTimeMSText !== "" && !validatePositiveNumber(maxTimeMSText)}>
+          <InlineField
+            label="Max time(ms)"
+            tooltip="The maximum amount of time that the query can run on the server. The default value is nil, meaning that there is no time limit for query execution."
+            error="Invalid time"
+            invalid={maxTimeMSText !== '' && !validatePositiveNumber(maxTimeMSText)}
+          >
             <Input id="query-editor-max-time-ms" onChange={onMaxTimeMSChange} value={maxTimeMSText} />
           </InlineField>
         </InlineFieldRow>
         <InlineFieldRow>
-          <InlineField label="Max Await Time(ms)" tooltip="The maximum amount of time that the server should wait for new documents to satisfy a tailable cursor query.">
+          <InlineField
+            label="Max Await Time(ms)"
+            tooltip="The maximum amount of time that the server should wait for new documents to satisfy a tailable cursor query."
+          >
             <Input id="query-editor-max-await-time-ms" onChange={onMaxAwaitTimeMSChange} value={maxAwaitTimeMSText} />
           </InlineField>
         </InlineFieldRow>
         <InlineFieldRow>
-          <InlineField label="Comment" tooltip="A string that will be included in server logs, profiling logs, and currentOp queries to help trace the operation.">
+          <InlineField
+            label="Comment"
+            tooltip="A string that will be included in server logs, profiling logs, and currentOp queries to help trace the operation."
+          >
             <Input id="query-editor-comment" onChange={onCommentChange} value={query.aggregateComment} />
           </InlineField>
         </InlineFieldRow>
         <InlineFieldRow>
-          <InlineField label="Batch Size" tooltip="The maximum number of documents to be included in each batch returned by the server."
-            error="Invalid batch size" invalid={batchSizeText !== "" && !validatePositiveNumber(batchSizeText)}>
+          <InlineField
+            label="Batch Size"
+            tooltip="The maximum number of documents to be included in each batch returned by the server."
+            error="Invalid batch size"
+            invalid={batchSizeText !== '' && !validatePositiveNumber(batchSizeText)}
+          >
             <Input id="query-editor-batch-size" onChange={onBatchSizeChange} value={batchSizeText} />
           </InlineField>
         </InlineFieldRow>
         <InlineFieldRow>
-          <InlineField label="Allow Disk Use" tooltip="If true, the operation can write to temporary files in the _tmp subdirectory of the database directory path on the server. The default value is false.">
-            <InlineSwitch id="query-editor-allow-disk-use" onChange={onAllowDiskUseChange} value={query.aggregateAllowDiskUse} />
+          <InlineField
+            label="Allow Disk Use"
+            tooltip="If true, the operation can write to temporary files in the _tmp subdirectory of the database directory path on the server. The default value is false."
+          >
+            <InlineSwitch
+              id="query-editor-allow-disk-use"
+              onChange={onAllowDiskUseChange}
+              value={query.aggregateAllowDiskUse}
+            />
           </InlineField>
         </InlineFieldRow>
         <InlineFieldRow>
-          <InlineField label="Bypass Document Validation" tooltip="If true, writes executed as part of the operation will opt out of document-level validation on the server. This option is valid for MongoDB versions >= 3.2 and is ignored for previous server versions. The default value is false.">
-            <InlineSwitch id="query-editor-bypass-document-validation" onChange={onBypassDocumentValidationChange} value={query.aggregateBypassDocumentValidation} />
+          <InlineField
+            label="Bypass Document Validation"
+            tooltip="If true, writes executed as part of the operation will opt out of document-level validation on the server. This option is valid for MongoDB versions >= 3.2 and is ignored for previous server versions. The default value is false."
+          >
+            <InlineSwitch
+              id="query-editor-bypass-document-validation"
+              onChange={onBypassDocumentValidationChange}
+              value={query.aggregateBypassDocumentValidation}
+            />
           </InlineField>
         </InlineFieldRow>
       </ControlledCollapse>
-      <Field label="Query Text" description={`Enter the Mongo Aggregation Pipeline (${query.queryLanguage === QueryLanguage.JSON ? "JSON" : "JavaScript"})`}
-        error={queryTextError} invalid={queryTextError != null}>
-        <CodeEditor onEditorDidMount={onCodeEditorDidMount} width="100%" height={300} language={query.queryLanguage === QueryLanguage.JAVASCRIPT || query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW ? "javascript" : "json"}
-          onBlur={onQueryTextChange} value={query.queryText || ""} showMiniMap={false} showLineNumbers={true} monacoOptions={{ fontSize: 14 }} />
+      <Field
+        label="Query Text"
+        description={`Enter the Mongo Aggregation Pipeline (${
+          query.queryLanguage === QueryLanguage.JSON ? 'JSON' : 'JavaScript'
+        })`}
+        error={queryTextError}
+        invalid={queryTextError != null}
+      >
+        <CodeEditor
+          onEditorDidMount={onCodeEditorDidMount}
+          width="100%"
+          height={300}
+          language={
+            query.queryLanguage === QueryLanguage.JAVASCRIPT || query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW
+              ? 'javascript'
+              : 'json'
+          }
+          onBlur={onQueryTextChange}
+          value={query.queryText || ''}
+          showMiniMap={false}
+          showLineNumbers={true}
+          monacoOptions={{ fontSize: 14 }}
+        />
       </Field>
       <Stack direction="row" wrap alignItems="flex-start" justifyContent="start" gap={1}>
-        <Button onClick={onFormatQueryText} variant="secondary">Format</Button>
+        <Button onClick={onFormatQueryText} variant="secondary">
+          Format
+        </Button>
       </Stack>
     </>
   );
-};
+}
