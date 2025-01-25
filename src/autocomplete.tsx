@@ -1,10 +1,12 @@
 import { useRef, useEffect } from 'react';
 import { type Monaco, type monacoTypes } from '@grafana/ui';
 import { languages } from 'monaco-editor';
+import { DataSourceApi } from '@grafana/data';
 
 // Supports JSON only right now
 class CompletionProvider implements monacoTypes.languages.CompletionItemProvider {
   constructor(
+    private readonly datasource: DataSourceApi,
     private readonly monaco: Monaco,
     private readonly editor: monacoTypes.editor.IStandaloneCodeEditor,
   ) {}
@@ -67,7 +69,7 @@ class CompletionProvider implements monacoTypes.languages.CompletionItemProvider
         {
           label: '"$limit"',
           kind: languages.CompletionItemKind.Function,
-          insertText: '"\\$match": ${1:number}',
+          insertText: '"\\$limit": ${1:number}',
           range: range,
           detail: 'stage',
           insertTextRules: languages.CompletionItemInsertTextRule.InsertAsSnippet,
@@ -118,7 +120,7 @@ class CompletionProvider implements monacoTypes.languages.CompletionItemProvider
   }
 }
 
-export function useAutocomplete() {
+export function useAutocomplete(datasource: DataSourceApi) {
   const autocompleteDisposeFun = useRef<(() => void) | null>(null);
   useEffect(() => {
     return () => {
@@ -127,7 +129,7 @@ export function useAutocomplete() {
   }, []);
 
   return (editor: monacoTypes.editor.IStandaloneCodeEditor, monaco: Monaco) => {
-    const provider = new CompletionProvider(monaco, editor);
+    const provider = new CompletionProvider(datasource, monaco, editor);
     const { dispose } = monaco.languages.registerCompletionItemProvider('json', provider);
     autocompleteDisposeFun.current = dispose;
   };
