@@ -1,21 +1,15 @@
 import { useRef, useEffect } from 'react';
 import { type Monaco, type monacoTypes } from '@grafana/ui';
 import { languages } from 'monaco-editor';
-import { DataSourceApi } from '@grafana/data';
+import aggregationData from './aggregation.json';
 
 // Supports JSON only right now
 class CompletionProvider implements monacoTypes.languages.CompletionItemProvider {
-  constructor(
-    private readonly datasource: DataSourceApi,
-    private readonly monaco: Monaco,
-    private readonly editor: monacoTypes.editor.IStandaloneCodeEditor,
-  ) {}
+  constructor(private readonly editor: monacoTypes.editor.IStandaloneCodeEditor) {}
 
   provideCompletionItems(
     model: monacoTypes.editor.ITextModel,
     position: monacoTypes.Position,
-    context: monacoTypes.languages.CompletionContext,
-    token: monacoTypes.CancellationToken,
   ): monacoTypes.languages.ProviderResult<monacoTypes.languages.CompletionList> {
     if (this.editor.getModel()?.id !== model.id) {
       return { suggestions: [] };
@@ -46,81 +40,23 @@ class CompletionProvider implements monacoTypes.languages.CompletionItemProvider
       endColumn: word.endColumn,
     };
 
+    const suggestions: languages.CompletionItem[] = aggregationData['stages'].map((s) => ({
+      label: `"${s['name']}"`,
+      kind: languages.CompletionItemKind.Function,
+      insertText: s['insertText'] ? s['insertText'] : `"\\${s['name']}": {\n\t$0\n}`,
+      range: range,
+      detail: 'stage',
+      documentation: s['description'],
+      insertTextRules: languages.CompletionItemInsertTextRule.InsertAsSnippet,
+    }));
+
     return {
-      suggestions: [
-        {
-          label: '"$match"',
-          kind: languages.CompletionItemKind.Function,
-          insertText: '"\\$match": {\n\t${1:query}$0\n}',
-          range: range,
-          detail: 'stage',
-          documentation: 'Filters documents based on a specified query predicate.',
-          insertTextRules: languages.CompletionItemInsertTextRule.InsertAsSnippet,
-        },
-        {
-          label: '"$project"',
-          kind: languages.CompletionItemKind.Function,
-          insertText: '"\\$project": {\n\t${1:specification(s)}$0\n}',
-          range: range,
-          detail: 'stage',
-          documentation: 'Passes along the documents with the requested fields to the next stage in the pipeline.',
-          insertTextRules: languages.CompletionItemInsertTextRule.InsertAsSnippet,
-        },
-        {
-          label: '"$limit"',
-          kind: languages.CompletionItemKind.Function,
-          insertText: '"\\$limit": ${1:number}',
-          range: range,
-          detail: 'stage',
-          insertTextRules: languages.CompletionItemInsertTextRule.InsertAsSnippet,
-        },
-        {
-          label: '"$lookup"',
-          kind: languages.CompletionItemKind.Function,
-          insertText:
-            '"\\$lookup": {\n\t"from": ${1:collection}$0,\n\t"localField": ${2:field},\n\t"foreignField": ${3:field},\n\t"as": ${4:result}\n}',
-          range: range,
-          detail: 'stage',
-          insertTextRules: languages.CompletionItemInsertTextRule.InsertAsSnippet,
-        },
-        {
-          label: '"$sort"',
-          kind: languages.CompletionItemKind.Function,
-          insertText: '"\\$sort": {\n\t${1:field1}$0: ${2:sortOrder}\n}',
-          range: range,
-          detail: 'stage',
-          insertTextRules: languages.CompletionItemInsertTextRule.InsertAsSnippet,
-        },
-        {
-          label: '"$facet"',
-          kind: languages.CompletionItemKind.Function,
-          insertText: '"\\$facet": {\n\t${1:outputFieldN}$0: [ ${2:stageN}, ${3:...} ]\n}',
-          range: range,
-          detail: 'stage',
-          insertTextRules: languages.CompletionItemInsertTextRule.InsertAsSnippet,
-        },
-        {
-          label: '"$addFields"',
-          kind: languages.CompletionItemKind.Function,
-          insertText: '"\\$addFields": {\n\t${1:newField}: ${2:expression}$0, ${3:...}\n}',
-          range: range,
-          detail: 'stage',
-          insertTextRules: languages.CompletionItemInsertTextRule.InsertAsSnippet,
-        },
-        {
-          label: '"$count"',
-          kind: languages.CompletionItemKind.Function,
-          insertText: '"\\$count": "${1:string}"',
-          range: range,
-          detail: 'stage',
-          insertTextRules: languages.CompletionItemInsertTextRule.InsertAsSnippet,
-        },
-      ],
+      suggestions: suggestions,
     };
   }
 }
 
-export function useAutocomplete(datasource: DataSourceApi) {
+export function useAutocomplete() {
   const autocompleteDisposeFun = useRef<(() => void) | null>(null);
   useEffect(() => {
     return () => {
@@ -129,7 +65,7 @@ export function useAutocomplete(datasource: DataSourceApi) {
   }, []);
 
   return (editor: monacoTypes.editor.IStandaloneCodeEditor, monaco: Monaco) => {
-    const provider = new CompletionProvider(datasource, monaco, editor);
+    const provider = new CompletionProvider(editor);
     const { dispose } = monaco.languages.registerCompletionItemProvider('json', provider);
     autocompleteDisposeFun.current = dispose;
   };

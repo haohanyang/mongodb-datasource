@@ -43,11 +43,11 @@ const languageOptions: Array<SelectableValue<string>> = [
   { label: 'JavaScript Shadow', value: QueryLanguage.JAVASCRIPT_SHADOW, description: 'JavaScript with Evaluation' },
 ];
 
-export function QueryEditor({ query, onChange, app, datasource }: Props) {
+export function QueryEditor({ query, onChange, app }: Props) {
   const codeEditorRef = useRef<monacoTypes.editor.IStandaloneCodeEditor | null>(null);
   const [queryTextError, setQueryTextError] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
-  const setupAutocompleteFn = useAutocomplete(datasource);
+  const setupAutocompleteFn = useAutocomplete();
 
   const [maxTimeMSText, setMaxTimeMSText] = useState<string>(
     query.aggregateMaxTimeMS ? query.aggregateMaxTimeMS.toString() : '',
