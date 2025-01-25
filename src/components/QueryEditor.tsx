@@ -18,7 +18,8 @@ import { CoreApp, FeatureState, QueryEditorProps, SelectableValue } from '@grafa
 import { DataSource } from '../datasource';
 import { MongoDataSourceOptions, MongoQuery, QueryLanguage, QueryType, DEFAULT_QUERY } from '../types';
 import { parseJsQuery, parseJsQueryLegacy, validateJsonQueryText, validatePositiveNumber } from '../utils';
-import { editor } from 'monaco-editor';
+import type { monacoTypes } from '@grafana/ui';
+import { useAutocomplete } from '../autocomplete';
 import './QueryEditor.css';
 
 type Props = QueryEditorProps<DataSource, MongoQuery, MongoDataSourceOptions>;
@@ -43,9 +44,10 @@ const languageOptions: Array<SelectableValue<string>> = [
 ];
 
 export function QueryEditor({ query, onChange, app }: Props) {
-  const codeEditorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
+  const codeEditorRef = useRef<monacoTypes.editor.IStandaloneCodeEditor | null>(null);
   const [queryTextError, setQueryTextError] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const setupAutocompleteFn = useAutocomplete();
 
   const [maxTimeMSText, setMaxTimeMSText] = useState<string>(
     query.aggregateMaxTimeMS ? query.aggregateMaxTimeMS.toString() : '',
@@ -127,10 +129,6 @@ export function QueryEditor({ query, onChange, app }: Props) {
 
   const onCommentChange = (event: ChangeEvent<HTMLInputElement>) => {
     onChange({ ...query, aggregateComment: event.target.value });
-  };
-
-  const onCodeEditorDidMount = (e: editor.IStandaloneCodeEditor) => {
-    codeEditorRef.current = e;
   };
 
   const onFormatQueryText = () => {
@@ -277,7 +275,10 @@ export function QueryEditor({ query, onChange, app }: Props) {
         invalid={queryTextError != null}
       >
         <CodeEditor
-          onEditorDidMount={onCodeEditorDidMount}
+          onEditorDidMount={(editor, monaco) => {
+            codeEditorRef.current = editor;
+            setupAutocompleteFn(editor, monaco);
+          }}
           width="100%"
           height={300}
           language={

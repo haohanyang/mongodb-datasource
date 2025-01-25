@@ -42,3 +42,5 @@ ci/
 venv/
 mongodb-datasource/
 grafana-storage/
+
+mongo-docs/
