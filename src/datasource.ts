@@ -19,6 +19,7 @@ import {
   getMetricValues,
   datetimeToJson,
   base64UrlEncode,
+  unixTsToMongoID
 } from './utils';
 import { MongoQuery, MongoDataSourceOptions, DEFAULT_QUERY, QueryLanguage, VariableQuery } from './types';
 import { firstValueFrom, merge, Observable, of } from 'rxjs';
@@ -45,6 +46,10 @@ export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourc
 
     const from = getTemplateSrv().replace('$__from', {});
     const to = getTemplateSrv().replace('$__to', {});
+
+    queryText = queryText
+      .replaceAll(/"\$__from_oid"/g, `"${unixTsToMongoID(from, '0')}"`)
+      .replaceAll(/"\$__to_oid"/g, `"${unixTsToMongoID(to, 'f')}"`);
 
     // Compatible with legacy plugin $from
     if (from !== '$__from') {
