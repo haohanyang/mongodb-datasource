@@ -9,20 +9,32 @@ import {
   LiveChannelScope,
   DataQueryResponse,
   LoadingState,
+  DataFrameSchema,
+  FieldType,
 } from '@grafana/data';
 import { DataSourceWithBackend, getGrafanaLiveSrv, getTemplateSrv } from '@grafana/runtime';
 import {
   parseJsQuery,
-  getBucketCount,
-  parseJsQueryLegacy,
-  randomId,
-  getMetricValues,
-  datetimeToJson,
-  base64UrlEncode,
-  unixTsToMongoID
-} from './utils';
+  parseJsQueryLegacy
+} from './parse';
+import { base64UrlEncode } from './encode'
+import { datetimeToJson, unixTsToMongoID } from "./datetime"
 import { MongoQuery, MongoDataSourceOptions, DEFAULT_QUERY, QueryLanguage, VariableQuery } from './types';
 import { firstValueFrom, merge, Observable, of } from 'rxjs';
+
+
+
+function randomId(length: number) {
+  let result = '';
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const charactersLength = characters.length;
+  let counter = 0;
+  while (counter < length) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    counter += 1;
+  }
+  return result;
+}
 
 export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourceOptions> {
   constructor(instanceSettings: DataSourceInstanceSettings<MongoDataSourceOptions>) {
@@ -44,28 +56,23 @@ export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourc
       queryText = jsonQuery!;
     }
 
-    const from = getTemplateSrv().replace('$__from', {});
-    const to = getTemplateSrv().replace('$__to', {});
+    // Get query ranges in unix milliseconds
+    const from = parseInt(getTemplateSrv().replace('$__from', {}), 10);
+    const to = parseInt(getTemplateSrv().replace('$__to', {}), 10);
 
     queryText = queryText
+      // Compatible with legacy plugin $from
+      .replaceAll(/"\$from"/g, datetimeToJson(from))
+      .replaceAll(/"\$to"/g, datetimeToJson(to))
       .replaceAll(/"\$__from_oid"/g, `"${unixTsToMongoID(from, '0')}"`)
       .replaceAll(/"\$__to_oid"/g, `"${unixTsToMongoID(to, 'f')}"`);
-
-    // Compatible with legacy plugin $from
-    if (from !== '$__from') {
-      queryText = queryText.replaceAll(/"\$from"/g, datetimeToJson(from));
-    }
-
-    // Compatible with legacy plugin $to
-    if (to !== '$__to') {
-      queryText = queryText.replaceAll(/"\$to"/g, datetimeToJson(to));
-    }
 
     const interval = scopedVars['__interval_ms']?.value;
 
     // Compatible with legacy plugin $dateBucketCount
-    if (interval && from && to) {
-      queryText = queryText.replaceAll(/"\$dateBucketCount"/g, getBucketCount(from, to, interval).toString());
+    if (interval) {
+      const numBuckets = Math.ceil((to - from) / interval);
+      queryText = queryText.replaceAll(/"\$dateBucketCount"/g, numBuckets.toString());
     }
 
     const text = getTemplateSrv().replace(queryText, scopedVars);
@@ -164,4 +171,27 @@ export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourc
       });
     }
   }
+}
+
+
+function getMetricValues(response: DataQueryResponse): MetricFindValue[] {
+  const dataframe = response.data[0] as DataFrameSchema;
+  const field = dataframe.fields.find((f) => f.name === 'value');
+
+  if (!field) {
+    throw new Error('Field "value" not found');
+  }
+
+  if (field.type !== FieldType.string && field.type !== FieldType.number) {
+    throw new Error('Each element should be string or number');
+  }
+
+  // @ts-ignore
+  return field.values.map((value: string | number) => {
+    return {
+      text: value.toString(),
+      value: value,
+      expandable: true,
+    };
+  });
 }

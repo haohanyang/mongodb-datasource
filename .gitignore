@@ -44,3 +44,5 @@ mongodb-datasource/
 grafana-storage/
 
 mongo-docs/
+
+.vscode/launch.json
