@@ -13,12 +13,12 @@ import {
   Stack,
   FeatureBadge,
   Switch,
+  type monacoTypes,
 } from '@grafana/ui';
 import { CoreApp, FeatureState, QueryEditorProps, SelectableValue } from '@grafana/data';
 import { DataSource } from '../datasource';
 import { MongoDataSourceOptions, MongoQuery, QueryLanguage, QueryType, DEFAULT_QUERY } from '../types';
 import { parseJsQuery, parseJsQueryLegacy, validateJsonQueryText, validatePositiveNumber } from '../utils';
-import type { monacoTypes } from '@grafana/ui';
 import { useAutocomplete } from '../autocomplete';
 import './QueryEditor.css';
 
