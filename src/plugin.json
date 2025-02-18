@@ -7,6 +7,7 @@
   "id": "haohanyang-mongodb-datasource",
   "metrics": true,
   "backend": true,
+  "annotations": true,
   "executable": "gpx_mongodb_datasource",
   "info": {
     "description": "MongoDB integration and data source",

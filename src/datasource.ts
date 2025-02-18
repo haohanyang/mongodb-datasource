@@ -8,7 +8,7 @@ import {
   dateTime,
   LiveChannelScope,
   DataQueryResponse,
-  LoadingState,
+  LoadingState
 } from '@grafana/data';
 import { DataSourceWithBackend, getGrafanaLiveSrv, getTemplateSrv } from '@grafana/runtime';
 import {
@@ -74,6 +74,8 @@ export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourc
       queryText: text,
     };
   }
+
+  annotations = {}
 
   async metricFindQuery(query: VariableQuery, options?: LegacyMetricFindQueryOptions): Promise<MetricFindValue[]> {
     const request: DataQueryRequest<MongoQuery> = {
