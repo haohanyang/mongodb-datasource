@@ -51,7 +51,8 @@
     { "name": "$indexStats", "description": "Returns statistics regarding the use of each index for the collection." },
     {
       "name": "$limit",
-      "description": "Passes the first n documents unmodified to the pipeline where n is the specified limit. For each input document, outputs either one document (for the first n documents) or zero documents (after the first n documents)."
+      "description": "Passes the first n documents unmodified to the pipeline where n is the specified limit. For each input document, outputs either one document (for the first n documents) or zero documents (after the first n documents).",
+      "insertText": "\"\\$limit\": ${1:number}"
     },
     {
       "name": "$listSampledQueries",
