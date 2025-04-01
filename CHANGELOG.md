@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.1 - 2025-02-18
+
+### Added
+
+- Added query editor aggregation stage autocomplete. Enter `$` when the cursor is inside brackets `{}` and you will get a list of stage operators to select.
+- Added annotation query support
+- Added new variables `$__from_oid` and `$__to_oid` which are Mongo ObjectIds generated from the panel's current time range
+
 ## 0.3.0 - 2025-01-11
 
 ### Added
