@@ -13,6 +13,7 @@ import {
   Stack,
   FeatureBadge,
   Switch,
+  Modal,
   type monacoTypes,
 } from '@grafana/ui';
 import { CoreApp, FeatureState, QueryEditorProps, SelectableValue } from '@grafana/data';
@@ -44,9 +45,11 @@ const languageOptions: Array<SelectableValue<string>> = [
 ];
 
 export function QueryEditor({ query, onChange, app }: Props) {
-  const codeEditorRef = useRef<monacoTypes.editor.IStandaloneCodeEditor | null>(null);
+  const codeEditorMainRef = useRef<monacoTypes.editor.IStandaloneCodeEditor | null>(null);
+  const codeEditorModalRef = useRef<monacoTypes.editor.IStandaloneCodeEditor | null>(null);
   const [queryTextError, setQueryTextError] = useState<string | null>(null);
-  const [isOpen, setIsOpen] = useState(false);
+  const [isAggregateOptionPanelOpen, setIsAggregateOptionPanelOpen] = useState(false);
+  const [isEditorModalOpen, setIsEditorModalOpen] = useState(false);
   const setupAutocompleteFn = useAutocomplete();
 
   const [maxTimeMSText, setMaxTimeMSText] = useState<string>(
@@ -131,10 +134,8 @@ export function QueryEditor({ query, onChange, app }: Props) {
     onChange({ ...query, aggregateComment: event.target.value });
   };
 
-  const onFormatQueryText = () => {
-    if (codeEditorRef.current) {
-      codeEditorRef.current.getAction('editor.action.formatDocument').run();
-    }
+  const onFormatQueryText = (editor: monacoTypes.editor.IStandaloneCodeEditor | null) => {
+    editor?.getAction('editor.action.formatDocument').run();
   };
 
   const onIsStreamingChange: FormEventHandler<HTMLInputElement> = (e) => {
@@ -204,7 +205,7 @@ export function QueryEditor({ query, onChange, app }: Props) {
           />
         </InlineField>
       </InlineFieldRow>
-      <ControlledCollapse label="Aggregate Options" isOpen={isOpen} onToggle={() => setIsOpen(!isOpen)}>
+      <ControlledCollapse label="Aggregate Options" isOpen={isAggregateOptionPanelOpen} onToggle={() => setIsAggregateOptionPanelOpen(!isAggregateOptionPanelOpen)}>
         <InlineFieldRow>
           <InlineField
             label="Max time(ms)"
@@ -268,15 +269,14 @@ export function QueryEditor({ query, onChange, app }: Props) {
       </ControlledCollapse>
       <Field
         label="Query Text"
-        description={`Enter the Mongo Aggregation Pipeline (${
-          query.queryLanguage === QueryLanguage.JSON ? 'JSON' : 'JavaScript'
-        })`}
+        description={`Enter the Mongo Aggregation Pipeline (${query.queryLanguage === QueryLanguage.JSON ? 'JSON' : 'JavaScript'
+          })`}
         error={queryTextError}
         invalid={queryTextError != null}
       >
         <CodeEditor
           onEditorDidMount={(editor, monaco) => {
-            codeEditorRef.current = editor;
+            codeEditorMainRef.current = editor;
             setupAutocompleteFn(editor, monaco);
           }}
           width="100%"
@@ -294,10 +294,42 @@ export function QueryEditor({ query, onChange, app }: Props) {
         />
       </Field>
       <Stack direction="row" wrap alignItems="flex-start" justifyContent="start" gap={1}>
-        <Button onClick={onFormatQueryText} variant="secondary">
+        <Button onClick={() => onFormatQueryText(codeEditorMainRef.current)} variant="secondary">
           Format
         </Button>
+        <Button onClick={() => setIsEditorModalOpen(true)} variant="secondary">
+          Open editor in pop-up view
+        </Button>
       </Stack>
+      {/* Code Editoor Modal */}
+      <Modal title="title" isOpen={isEditorModalOpen}>
+        <CodeEditor
+          onEditorDidMount={(editor, monaco) => {
+            codeEditorModalRef.current = editor;
+            setupAutocompleteFn(editor, monaco);
+          }}
+          width="100%"
+          height={500}
+          language={
+            query.queryLanguage === QueryLanguage.JAVASCRIPT || query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW
+              ? 'javascript'
+              : 'json'
+          }
+          onBlur={onQueryTextChange}
+          value={query.queryText || ''}
+          showMiniMap={true}
+          showLineNumbers={true}
+          monacoOptions={{ fontSize: 15 }}
+        />
+        <Modal.ButtonRow>
+          <Button onClick={() => onFormatQueryText(codeEditorModalRef.current)} variant="secondary">
+            Format
+          </Button>
+          <Button variant="primary" fill="outline" onClick={() => setIsEditorModalOpen(false)}>
+            Close
+          </Button>
+        </Modal.ButtonRow>
+      </Modal>
     </>
   );
 }
