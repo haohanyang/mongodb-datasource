@@ -2,7 +2,7 @@
   "name": "mongodb-datasource",
   "version": "0.3.1",
   "scripts": {
-    "build": "webpack -c ./.config/webpack/webpack.config.ts --env production",
+    "build": "webpack -c ./.config/webpack/webpack.config.ts --env development",
     "dev": "webpack -w -c ./.config/webpack/webpack.config.ts --env development",
     "test": "jest --watch --onlyChanged",
     "test:ci": "jest --passWithNoTests --maxWorkers 4",
@@ -68,6 +68,7 @@
     "@grafana/ui": "^11.2.0",
     "react": "18.2.0",
     "react-dom": "18.2.0",
+    "react-hook-form": "^7.56.3",
     "shadowrealm-api": "^0.8.3",
     "tslib": "2.5.3"
   },

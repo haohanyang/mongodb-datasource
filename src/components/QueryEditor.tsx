@@ -1,7 +1,6 @@
-import React, { ChangeEvent, FormEventHandler, useRef, useState } from 'react';
+import React from 'react';
+import { ChangeEvent, FormEventHandler, useState } from 'react';
 import {
-  Button,
-  CodeEditor,
   Field,
   InlineField,
   InlineFieldRow,
@@ -14,13 +13,14 @@ import {
   FeatureBadge,
   Switch,
   Modal,
-  type monacoTypes,
+  useTheme2,
 } from '@grafana/ui';
 import { CoreApp, FeatureState, QueryEditorProps, SelectableValue } from '@grafana/data';
 import { DataSource } from '../datasource';
 import { MongoDataSourceOptions, MongoQuery, QueryLanguage, QueryType, DEFAULT_QUERY } from '../types';
 import { parseJsQuery, parseJsQueryLegacy, validateJsonQueryText, validatePositiveNumber } from '../utils';
-import { useAutocomplete } from '../autocomplete';
+import { QueryEditorRaw } from './QueryEditorRaw';
+import { QueryToolbox } from './QueryToolbox';
 import './QueryEditor.css';
 
 type Props = QueryEditorProps<DataSource, MongoQuery, MongoDataSourceOptions>;
@@ -44,13 +44,14 @@ const languageOptions: Array<SelectableValue<string>> = [
   { label: 'JavaScript Shadow', value: QueryLanguage.JAVASCRIPT_SHADOW, description: 'JavaScript with Evaluation' },
 ];
 
-export function QueryEditor({ query, onChange, app }: Props) {
-  const codeEditorMainRef = useRef<monacoTypes.editor.IStandaloneCodeEditor | null>(null);
-  const codeEditorModalRef = useRef<monacoTypes.editor.IStandaloneCodeEditor | null>(null);
+export function QueryEditor(props: Props) {
+  const { query, onChange, app } = props;
+
+  const theme = useTheme2();
+
   const [queryTextError, setQueryTextError] = useState<string | null>(null);
-  const [isAggregateOptionPanelOpen, setIsAggregateOptionPanelOpen] = useState(false);
-  const [isEditorModalOpen, setIsEditorModalOpen] = useState(false);
-  const setupAutocompleteFn = useAutocomplete();
+  const [isAggregateOptionExpanded, setIsAggregateOptionExpanded] = useState(false);
+  const [isEditorExpanded, setIsEditorExpanded] = useState(false);
 
   const [maxTimeMSText, setMaxTimeMSText] = useState<string>(
     query.aggregateMaxTimeMS ? query.aggregateMaxTimeMS.toString() : '',
@@ -61,6 +62,50 @@ export function QueryEditor({ query, onChange, app }: Props) {
   const [batchSizeText, setBatchSizeText] = useState<string>(
     query.aggregateBatchSize ? query.aggregateBatchSize.toString() : '',
   );
+
+  const renderCodeEditor = (showTools: boolean, width?: number, height?: number) => {
+    return (
+      <QueryEditorRaw
+        query={query.queryText || ''}
+        language={
+          query.queryLanguage === QueryLanguage.JAVASCRIPT || query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW
+            ? 'javascript'
+            : 'json'
+        }
+        onBlur={onQueryTextChange}
+        width={width}
+        height={height}
+        fontSize={14}
+      >
+        {({ formatQuery }) => {
+          return (
+            <QueryToolbox
+              isExpanded={isEditorExpanded}
+              onExpand={setIsEditorExpanded}
+              onFormatCode={formatQuery}
+              showTools={showTools}
+              error={queryTextError ? queryTextError : undefined}
+            />
+          );
+        }}
+      </QueryEditorRaw>
+    );
+  };
+
+  const renderPlaceholder = () => {
+    return (
+      <div
+        style={{
+          background: theme.colors.background.primary,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        Editing in expanded code editor
+      </div>
+    );
+  };
 
   const onQueryTextChange = (queryText: string) => {
     if (query.queryLanguage === QueryLanguage.JAVASCRIPT || query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW) {
@@ -134,10 +179,6 @@ export function QueryEditor({ query, onChange, app }: Props) {
     onChange({ ...query, aggregateComment: event.target.value });
   };
 
-  const onFormatQueryText = (editor: monacoTypes.editor.IStandaloneCodeEditor | null) => {
-    editor?.getAction('editor.action.formatDocument').run();
-  };
-
   const onIsStreamingChange: FormEventHandler<HTMLInputElement> = (e) => {
     onChange({ ...query, isStreaming: e.currentTarget.checked });
   };
@@ -205,7 +246,11 @@ export function QueryEditor({ query, onChange, app }: Props) {
           />
         </InlineField>
       </InlineFieldRow>
-      <ControlledCollapse label="Aggregate Options" isOpen={isAggregateOptionPanelOpen} onToggle={() => setIsAggregateOptionPanelOpen(!isAggregateOptionPanelOpen)}>
+      <ControlledCollapse
+        label="Aggregate Options"
+        isOpen={isAggregateOptionExpanded}
+        onToggle={() => setIsAggregateOptionExpanded(!isAggregateOptionExpanded)}
+      >
         <InlineFieldRow>
           <InlineField
             label="Max time(ms)"
@@ -269,67 +314,19 @@ export function QueryEditor({ query, onChange, app }: Props) {
       </ControlledCollapse>
       <Field
         label="Query Text"
-        description={`Enter the Mongo Aggregation Pipeline (${query.queryLanguage === QueryLanguage.JSON ? 'JSON' : 'JavaScript'
-          })`}
+        description={`Enter the Mongo Aggregation Pipeline (${
+          query.queryLanguage === QueryLanguage.JSON ? 'JSON' : 'JavaScript'
+        })`}
         error={queryTextError}
         invalid={queryTextError != null}
       >
-        <CodeEditor
-          onEditorDidMount={(editor, monaco) => {
-            codeEditorMainRef.current = editor;
-            setupAutocompleteFn(editor, monaco);
-          }}
-          width="100%"
-          height={300}
-          language={
-            query.queryLanguage === QueryLanguage.JAVASCRIPT || query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW
-              ? 'javascript'
-              : 'json'
-          }
-          onBlur={onQueryTextChange}
-          value={query.queryText || ''}
-          showMiniMap={false}
-          showLineNumbers={true}
-          monacoOptions={{ fontSize: 14 }}
-        />
+        {isEditorExpanded ? renderPlaceholder() : renderCodeEditor(true, undefined, 300)}
       </Field>
-      <Stack direction="row" wrap alignItems="flex-start" justifyContent="start" gap={1}>
-        <Button onClick={() => onFormatQueryText(codeEditorMainRef.current)} variant="secondary">
-          Format
-        </Button>
-        <Button onClick={() => setIsEditorModalOpen(true)} variant="secondary">
-          Open editor in pop-up view
-        </Button>
-      </Stack>
-      {/* Code Editoor Modal */}
-      <Modal title="title" isOpen={isEditorModalOpen}>
-        <CodeEditor
-          onEditorDidMount={(editor, monaco) => {
-            codeEditorModalRef.current = editor;
-            setupAutocompleteFn(editor, monaco);
-          }}
-          width="100%"
-          height={500}
-          language={
-            query.queryLanguage === QueryLanguage.JAVASCRIPT || query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW
-              ? 'javascript'
-              : 'json'
-          }
-          onBlur={onQueryTextChange}
-          value={query.queryText || ''}
-          showMiniMap={true}
-          showLineNumbers={true}
-          monacoOptions={{ fontSize: 15 }}
-        />
-        <Modal.ButtonRow>
-          <Button onClick={() => onFormatQueryText(codeEditorModalRef.current)} variant="secondary">
-            Format
-          </Button>
-          <Button variant="primary" fill="outline" onClick={() => setIsEditorModalOpen(false)}>
-            Close
-          </Button>
-        </Modal.ButtonRow>
-      </Modal>
+      {isEditorExpanded && (
+        <Modal title="Query Text" isOpen={isEditorExpanded} onDismiss={() => setIsEditorExpanded(false)}>
+          {renderCodeEditor(true, undefined, 500)}
+        </Modal>
+      )}
     </>
   );
 }
