@@ -2,25 +2,27 @@ import React from 'react';
 import { ChangeEvent, FormEventHandler, useState } from 'react';
 import {
   Field,
+  Button,
   InlineField,
   InlineFieldRow,
   Input,
-  Select,
   ControlledCollapse,
   InlineSwitch,
-  RadioButtonGroup,
   Stack,
   FeatureBadge,
   Switch,
   Modal,
   useTheme2,
+  Tooltip,
 } from '@grafana/ui';
+import { EditorHeader, InlineSelect, FlexItem } from '@grafana/plugin-ui';
 import { CoreApp, FeatureState, QueryEditorProps, SelectableValue } from '@grafana/data';
 import { DataSource } from '../datasource';
 import { MongoDataSourceOptions, MongoQuery, QueryLanguage, QueryType, DEFAULT_QUERY } from '../types';
 import { parseJsQuery, parseJsQueryLegacy, validateJsonQueryText, validatePositiveNumber } from '../utils';
 import { QueryEditorRaw } from './QueryEditorRaw';
 import { QueryToolbox } from './QueryToolbox';
+import validator from 'validator';
 import './QueryEditor.css';
 
 type Props = QueryEditorProps<DataSource, MongoQuery, MongoDataSourceOptions>;
@@ -32,7 +34,7 @@ const queryTypes: Array<SelectableValue<string>> = [
     icon: 'chart-line',
   },
   {
-    label: 'Data Table',
+    label: 'Table',
     value: QueryType.TABLE,
     icon: 'table',
   },
@@ -45,50 +47,92 @@ const languageOptions: Array<SelectableValue<string>> = [
 ];
 
 export function QueryEditor(props: Props) {
-  const { query, onChange, app } = props;
+  const { query, onChange, app, onRunQuery } = props;
 
   const theme = useTheme2();
 
-  const [queryTextError, setQueryTextError] = useState<string | null>(null);
+  const [validationErrors, setValidationErrors] = useState<{ [key: string]: string }>({});
   const [isAggregateOptionExpanded, setIsAggregateOptionExpanded] = useState(false);
   const [isEditorExpanded, setIsEditorExpanded] = useState(false);
 
-  const [maxTimeMSText, setMaxTimeMSText] = useState<string>(
-    query.aggregateMaxTimeMS ? query.aggregateMaxTimeMS.toString() : '',
-  );
-  const [maxAwaitTimeMSText, setMaxAwaitTimeMSText] = useState<string>(
-    query.aggregateMaxAwaitTime ? query.aggregateMaxAwaitTime.toString() : '',
-  );
-  const [batchSizeText, setBatchSizeText] = useState<string>(
-    query.aggregateBatchSize ? query.aggregateBatchSize.toString() : '',
-  );
+  const addValidationError = (field: string, message: string) => {
+    setValidationErrors((prev) => ({ ...prev, [field]: message }));
+  };
+
+  const removeValidationError = (field: string) => {
+    setValidationErrors((prev) => {
+      const { [field]: _, ...rest } = prev;
+      return rest;
+    });
+  };
+
+  const renderRunButton = (isQueryRunnable: boolean) => {
+    if (isQueryRunnable) {
+      return (
+        <Button icon="play" variant="primary" size="sm" onClick={() => onRunQuery()}>
+          Run query
+        </Button>
+      );
+    }
+    return (
+      <Tooltip theme="error" content={<>Your query is invalid. Check below for details.</>} placement="top">
+        <Button icon="exclamation-triangle" variant="secondary" size="sm" onClick={onRunQuery}>
+          Run query
+        </Button>
+      </Tooltip>
+    );
+  };
 
   const renderCodeEditor = (showTools: boolean, width?: number, height?: number) => {
     return (
-      <QueryEditorRaw
-        query={query.queryText || ''}
-        language={
-          query.queryLanguage === QueryLanguage.JAVASCRIPT || query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW
-            ? 'javascript'
-            : 'json'
-        }
-        onBlur={onQueryTextChange}
-        width={width}
-        height={height}
-        fontSize={14}
-      >
-        {({ formatQuery }) => {
-          return (
-            <QueryToolbox
-              isExpanded={isEditorExpanded}
-              onExpand={setIsEditorExpanded}
-              onFormatCode={formatQuery}
-              showTools={showTools}
-              error={queryTextError ? queryTextError : undefined}
+      <>
+        {!isEditorExpanded && (
+          <EditorHeader>
+            <InlineSelect
+              label="Format"
+              value={query.queryType}
+              placeholder="Select format"
+              menuShouldPortal
+              onChange={(val) => onChange({ ...query, queryType: val.value })}
+              options={queryTypes}
             />
-          );
-        }}
-      </QueryEditorRaw>
+            <InlineSelect
+              id="query-editor-query-language"
+              label="Language"
+              placeholder="Select query language"
+              options={languageOptions}
+              value={query.queryLanguage}
+              onChange={(val) => props.onChange({ ...query, queryLanguage: val.value })}
+            />
+            <FlexItem grow={1} />
+            {renderRunButton(true)}
+          </EditorHeader>
+        )}
+        <QueryEditorRaw
+          query={query.queryText || ''}
+          language={
+            query.queryLanguage === QueryLanguage.JAVASCRIPT || query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW
+              ? 'javascript'
+              : 'json'
+          }
+          onBlur={onQueryTextChange}
+          width={width}
+          height={height}
+          fontSize={14}
+        >
+          {({ formatQuery }) => {
+            return (
+              <QueryToolbox
+                isExpanded={isEditorExpanded}
+                onExpand={setIsEditorExpanded}
+                onFormatCode={formatQuery}
+                showTools={showTools}
+                error={validationErrors['query']}
+              />
+            );
+          }}
+        </QueryEditorRaw>
+      </>
     );
   };
 
@@ -116,20 +160,12 @@ export function QueryEditor(props: Props) {
           : parseJsQueryLegacy(queryText);
       // let the same query text as it is
       onChange({ ...query, queryText: queryText, ...(collection ? { collection } : {}) });
-      setQueryTextError(error);
+      addValidationError('query', error || '');
     } else {
       onChange({ ...query, queryText: queryText });
       const error = validateJsonQueryText(queryText);
-      setQueryTextError(error);
+      addValidationError('query', error || '');
     }
-  };
-
-  const onQueryLanguageChange = (value: SelectableValue<string>) => {
-    onChange({ ...query, queryLanguage: value.value });
-  };
-
-  const onQueryTypeChange = (value: string) => {
-    onChange({ ...query, queryType: value });
   };
 
   const onCollectionChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -189,14 +225,6 @@ export function QueryEditor(props: Props) {
 
   return (
     <>
-      <Field label="Query Type" description="Choose to query time series or table">
-        <RadioButtonGroup
-          id="query-editor-query-type"
-          options={queryTypes}
-          onChange={onQueryTypeChange}
-          value={query.queryType || QueryType.TIMESERIES}
-        />
-      </Field>
       {app !== CoreApp.Explore && (
         <div className="query-editor-collection-streaming-container">
           <Field
@@ -236,16 +264,9 @@ export function QueryEditor(props: Props) {
             disabled={query.queryLanguage === QueryLanguage.JAVASCRIPT}
           />
         </InlineField>
-        <InlineField label="Query language">
-          <Select
-            id="query-editor-query-language"
-            onChange={onQueryLanguageChange}
-            options={languageOptions}
-            value={query.queryLanguage}
-            width={25}
-          />
-        </InlineField>
       </InlineFieldRow>
+      {isEditorExpanded ? renderPlaceholder() : renderCodeEditor(true, undefined, 300)}
+
       <ControlledCollapse
         label="Aggregate Options"
         isOpen={isAggregateOptionExpanded}
@@ -255,15 +276,21 @@ export function QueryEditor(props: Props) {
           <InlineField
             label="Max time(ms)"
             tooltip="The maximum amount of time that the query can run on the server. The default value is nil, meaning that there is no time limit for query execution."
-            error="Invalid time"
-            invalid={maxTimeMSText !== '' && !validatePositiveNumber(maxTimeMSText)}
           >
-            <Input id="query-editor-max-time-ms" onChange={onMaxTimeMSChange} value={maxTimeMSText} />
+            <Input
+              id="query-editor-max-time-ms"
+              onChange={(evt: ChangeEvent<HTMLInputElement>) => {
+                if (!evt.target.value) {
+                  onChange({ ...query, aggregateMaxTimeMS: undefined });
+                } else if (validator.isInt(evt.target.value, { gt: 1 })) {
+                  onChange({ ...query, aggregateMaxTimeMS: parseInt(evt.target.value, 10) });
+                }
+              }}
+              value={query.aggregateMaxTimeMS}
+            />
           </InlineField>
-        </InlineFieldRow>
-        <InlineFieldRow>
           <InlineField
-            label="Max Await Time(ms)"
+            label="Max await time(ms)"
             tooltip="The maximum amount of time that the server should wait for new documents to satisfy a tailable cursor query."
           >
             <Input id="query-editor-max-await-time-ms" onChange={onMaxAwaitTimeMSChange} value={maxAwaitTimeMSText} />
@@ -276,10 +303,8 @@ export function QueryEditor(props: Props) {
           >
             <Input id="query-editor-comment" onChange={onCommentChange} value={query.aggregateComment} />
           </InlineField>
-        </InlineFieldRow>
-        <InlineFieldRow>
           <InlineField
-            label="Batch Size"
+            label="Batch size"
             tooltip="The maximum number of documents to be included in each batch returned by the server."
             error="Invalid batch size"
             invalid={batchSizeText !== '' && !validatePositiveNumber(batchSizeText)}
@@ -289,7 +314,7 @@ export function QueryEditor(props: Props) {
         </InlineFieldRow>
         <InlineFieldRow>
           <InlineField
-            label="Allow Disk Use"
+            label="Allow disk use"
             tooltip="If true, the operation can write to temporary files in the _tmp subdirectory of the database directory path on the server. The default value is false."
           >
             <InlineSwitch
@@ -298,10 +323,8 @@ export function QueryEditor(props: Props) {
               value={query.aggregateAllowDiskUse}
             />
           </InlineField>
-        </InlineFieldRow>
-        <InlineFieldRow>
           <InlineField
-            label="Bypass Document Validation"
+            label="Bypass document validation"
             tooltip="If true, writes executed as part of the operation will opt out of document-level validation on the server. This option is valid for MongoDB versions >= 3.2 and is ignored for previous server versions. The default value is false."
           >
             <InlineSwitch
@@ -312,16 +335,6 @@ export function QueryEditor(props: Props) {
           </InlineField>
         </InlineFieldRow>
       </ControlledCollapse>
-      <Field
-        label="Query Text"
-        description={`Enter the Mongo Aggregation Pipeline (${
-          query.queryLanguage === QueryLanguage.JSON ? 'JSON' : 'JavaScript'
-        })`}
-        error={queryTextError}
-        invalid={queryTextError != null}
-      >
-        {isEditorExpanded ? renderPlaceholder() : renderCodeEditor(true, undefined, 300)}
-      </Field>
       {isEditorExpanded && (
         <Modal title="Query Text" isOpen={isEditorExpanded} onDismiss={() => setIsEditorExpanded(false)}>
           {renderCodeEditor(true, undefined, 500)}
