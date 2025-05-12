@@ -2,24 +2,7 @@ import { DataFrameSchema, DataQueryResponse, FieldType, MetricFindValue } from '
 import { JsQueryResult } from 'types';
 import shadow from 'shadowrealm-api';
 import { getTemplateSrv } from '@grafana/runtime';
-
-export function validateJsonQueryText(queryText?: string): string | null {
-  if (!queryText) {
-    return 'Please enter the query text';
-  }
-
-  try {
-    const queryJson = JSON.parse(queryText);
-
-    if (!Array.isArray(queryJson)) {
-      return 'Invalid query';
-    } else {
-      return null;
-    }
-  } catch (e) {
-    return 'Invalid query';
-  }
-}
+import validator from 'validator';
 
 export function parseJsQueryLegacy(queryText: string): JsQueryResult {
   const regex = /^db\.(.+)\.aggregate\((.+)\)$/;
@@ -35,7 +18,7 @@ export function parseJsQueryLegacy(queryText: string): JsQueryResult {
     return {
       jsonQuery: queryText,
       collection: collection,
-      error: validateJsonQueryText(queryText),
+      error: validator.isJSON(queryText) ? null : 'Invalid JSON',
     };
   } else {
     return {
@@ -122,15 +105,6 @@ export function getMetricValues(response: DataQueryResponse): MetricFindValue[] 
   });
 }
 
-export function validatePositiveNumber(num: string) {
-  if (!/^\d+$/.test(num.trim())) {
-    return false;
-  }
-
-  const parsed = parseInt(num, 10);
-  return parsed > 0;
-}
-
 export function base64UrlEncode(input: string | undefined) {
   if (!input) {
     return '';
@@ -143,13 +117,13 @@ export function base64UrlEncode(input: string | undefined) {
 }
 
 export function unixTsToMongoID(utc: string, rightPadding: string) {
-  const val = Math.trunc(parseInt(utc, 10) / 1000)
+  const val = Math.trunc(parseInt(utc, 10) / 1000);
 
-  if (val < 0 || val > 0xFFFFFFFF) {
+  if (val < 0 || val > 0xffffffff) {
     return '';
   }
 
-  let hexString = val.toString(16)
+  let hexString = val.toString(16);
 
   while (hexString.length < 8) {
     hexString = '0' + hexString;
