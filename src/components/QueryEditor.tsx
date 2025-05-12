@@ -1,5 +1,4 @@
-import React from 'react';
-import { ChangeEvent, useState } from 'react';
+import React, { ChangeEvent, useState } from 'react';
 import {
   Button,
   InlineField,
@@ -9,17 +8,15 @@ import {
   InlineSwitch,
   Modal,
   useTheme2,
-  Tooltip,
 } from '@grafana/ui';
 import { EditorHeader, InlineSelect, FlexItem } from '@grafana/plugin-ui';
-import { CoreApp, QueryEditorProps, SelectableValue } from '@grafana/data';
+import { CoreApp, QueryEditorProps, SelectableValue, LoadingState } from '@grafana/data';
 import { DataSource } from '../datasource';
 import { MongoDataSourceOptions, MongoQuery, QueryLanguage, QueryType, DEFAULT_QUERY } from '../types';
 import { parseJsQuery, parseJsQueryLegacy } from '../utils';
 import { QueryEditorRaw } from './QueryEditorRaw';
 import { QueryToolbox } from './QueryToolbox';
 import validator from 'validator';
-import './QueryEditor.css';
 
 type Props = QueryEditorProps<DataSource, MongoQuery, MongoDataSourceOptions>;
 
@@ -43,31 +40,13 @@ const languageOptions: Array<SelectableValue<string>> = [
 ];
 
 export function QueryEditor(props: Props) {
-  const { query, app, onRunQuery } = props;
+  const { query, app, data, onRunQuery } = props;
 
   const theme = useTheme2();
 
   const [queryTextError, setQueryTextError] = useState<string | null>(null);
   const [isAggregateOptionExpanded, setIsAggregateOptionExpanded] = useState(false);
   const [isEditorExpanded, setIsEditorExpanded] = useState(false);
-
-
-  const renderRunButton = (isQueryRunnable: boolean) => {
-    if (isQueryRunnable) {
-      return (
-        <Button icon="play" variant="primary" size="sm" onClick={() => onRunQuery()}>
-          Run query
-        </Button>
-      );
-    }
-    return (
-      <Tooltip theme="error" content={<>Your query is invalid. Check below for details.</>} placement="top">
-        <Button icon="exclamation-triangle" variant="secondary" size="sm" onClick={onRunQuery}>
-          Run query
-        </Button>
-      </Tooltip>
-    );
-  };
 
   const renderCodeEditor = (showTools: boolean, width?: number, height?: number) => {
     return (
@@ -88,21 +67,34 @@ export function QueryEditor(props: Props) {
               placeholder="Select query language"
               options={languageOptions}
               value={query.queryLanguage}
-              onChange={val => props.onChange({ ...query, queryLanguage: val.value })}
+              onChange={(val) => props.onChange({ ...query, queryLanguage: val.value })}
             />
             <FlexItem grow={1} />
-            {renderRunButton(true)}
+            {!query.isStreaming && (
+              <Button
+                icon="play"
+                variant="primary"
+                size="sm"
+                onClick={() => onRunQuery()}
+                disabled={data?.state === LoadingState.Loading}
+              >
+                Run query
+              </Button>
+            )}
           </EditorHeader>
         )}
         <QueryEditorRaw
-          query={query.queryText || ''}
+          query={query.queryText ?? ''}
           language={
             query.queryLanguage === QueryLanguage.JAVASCRIPT || query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW
               ? 'javascript'
               : 'json'
           }
           onBlur={(queryText: string) => {
-            if (query.queryLanguage === QueryLanguage.JAVASCRIPT || query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW) {
+            if (
+              query.queryLanguage === QueryLanguage.JAVASCRIPT ||
+              query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW
+            ) {
               // parse the JavaScript query
               const { error, collection } =
                 query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW
@@ -114,7 +106,7 @@ export function QueryEditor(props: Props) {
             } else {
               props.onChange({ ...query, queryText: queryText });
               if (!validator.isJSON(queryText)) {
-                setQueryTextError("Query should be a valid JSON")
+                setQueryTextError('Query should be a valid JSON');
               } else {
                 setQueryTextError(null);
               }
@@ -163,25 +155,30 @@ export function QueryEditor(props: Props) {
     <>
       <InlineFieldRow>
         <InlineField
-          label="Collection" error="Collection is required"
+          label="Collection"
+          error="Collection is required"
           invalid={query.queryLanguage !== QueryLanguage.JAVASCRIPT && !query.collection}
           tooltip="Name of MongoDB collection to query"
         >
           <Input
-            width={25} id="query-editor-collection" value={query.collection}
-            onChange={(evt: ChangeEvent<HTMLInputElement>) => props.onChange({ ...query, collection: evt.target.value })}
+            width={25}
+            id="query-editor-collection"
+            value={query.collection}
+            onChange={(evt: ChangeEvent<HTMLInputElement>) =>
+              props.onChange({ ...query, collection: evt.target.value })
+            }
             disabled={query.queryLanguage === QueryLanguage.JAVASCRIPT}
           />
         </InlineField>
-        {app !== CoreApp.Explore && <InlineField label="Streaming" tooltip="Watch MongoDB change streams">
-          <InlineSwitch
-            id="query-editor-collection-streaming"
-            value={query.isStreaming === true}
-            onChange={evt => props.onChange({ ...query, isStreaming: evt.currentTarget.checked })}
-          />
-        </InlineField>
-        }
-
+        {app !== CoreApp.Explore && (
+          <InlineField label="Streaming" tooltip="(Experimental) Watch MongoDB change streams">
+            <InlineSwitch
+              id="query-editor-collection-streaming"
+              value={query.isStreaming === true}
+              onChange={(evt) => props.onChange({ ...query, isStreaming: evt.currentTarget.checked })}
+            />
+          </InlineField>
+        )}
       </InlineFieldRow>
       {isEditorExpanded ? renderPlaceholder() : renderCodeEditor(true, undefined, 300)}
 
@@ -196,7 +193,8 @@ export function QueryEditor(props: Props) {
             tooltip="The maximum amount of time that the query can run on the server. The default value is nil, meaning that there is no time limit for query execution."
           >
             <Input
-              id="query-editor-max-time-ms" value={query.aggregateMaxTimeMS}
+              id="query-editor-max-time-ms"
+              value={query.aggregateMaxTimeMS}
               onChange={(evt: ChangeEvent<HTMLInputElement>) => {
                 if (!evt.target.value) {
                   props.onChange({ ...query, aggregateMaxTimeMS: undefined });
@@ -210,14 +208,17 @@ export function QueryEditor(props: Props) {
             label="Max await time(ms)"
             tooltip="The maximum amount of time that the server should wait for new documents to satisfy a tailable cursor query."
           >
-            <Input id="query-editor-max-await-time-ms" value={query.aggregateMaxAwaitTime}
+            <Input
+              id="query-editor-max-await-time-ms"
+              value={query.aggregateMaxAwaitTime}
               onChange={(evt: ChangeEvent<HTMLInputElement>) => {
                 if (!evt.target.value) {
                   props.onChange({ ...query, aggregateMaxAwaitTime: undefined });
                 } else if (validator.isInt(evt.target.value, { gt: 0 })) {
                   props.onChange({ ...query, aggregateMaxAwaitTime: parseInt(evt.target.value, 10) });
                 }
-              }} />
+              }}
+            />
           </InlineField>
         </InlineFieldRow>
         <InlineFieldRow>
@@ -225,18 +226,23 @@ export function QueryEditor(props: Props) {
             label="Comment"
             tooltip="A string that will be included in server logs, profiling logs, and currentOp queries to help trace the operation."
           >
-            <Input id="query-editor-comment" value={query.aggregateComment}
+            <Input
+              id="query-editor-comment"
+              value={query.aggregateComment}
               onChange={(evt: ChangeEvent<HTMLInputElement>) => {
                 if (evt.target.value) {
                   props.onChange({ ...query, aggregateComment: evt.target.value });
                 }
-              }} />
+              }}
+            />
           </InlineField>
           <InlineField
             label="Batch size"
             tooltip="The maximum number of documents to be included in each batch returned by the server."
           >
-            <Input id="query-editor-batch-size" value={query.aggregateBatchSize}
+            <Input
+              id="query-editor-batch-size"
+              value={query.aggregateBatchSize}
               onChange={(evt: ChangeEvent<HTMLInputElement>) => {
                 if (validator.isInt(evt.target.value, { gt: 0 })) {
                   props.onChange({ ...query, aggregateBatchSize: parseInt(evt.target.value, 10) });
@@ -251,8 +257,11 @@ export function QueryEditor(props: Props) {
             tooltip="If true, the operation can write to temporary files in the _tmp subdirectory of the database directory path on the server. The default value is false."
           >
             <InlineSwitch
-              id="query-editor-allow-disk-use" value={query.aggregateAllowDiskUse}
-              onChange={(evt: ChangeEvent<HTMLInputElement>) => props.onChange({ ...query, aggregateAllowDiskUse: evt.target.checked })}
+              id="query-editor-allow-disk-use"
+              value={query.aggregateAllowDiskUse}
+              onChange={(evt: ChangeEvent<HTMLInputElement>) =>
+                props.onChange({ ...query, aggregateAllowDiskUse: evt.target.checked })
+              }
             />
           </InlineField>
           <InlineField
@@ -260,8 +269,11 @@ export function QueryEditor(props: Props) {
             tooltip="If true, writes executed as part of the operation will opt out of document-level validation on the server. This option is valid for MongoDB versions >= 3.2 and is ignored for previous server versions. The default value is false."
           >
             <InlineSwitch
-              id="query-editor-bypass-document-validation" value={query.aggregateBypassDocumentValidation}
-              onChange={(evt: ChangeEvent<HTMLInputElement>) => props.onChange({ ...query, aggregateBypassDocumentValidation: evt.target.checked })}
+              id="query-editor-bypass-document-validation"
+              value={query.aggregateBypassDocumentValidation}
+              onChange={(evt: ChangeEvent<HTMLInputElement>) =>
+                props.onChange({ ...query, aggregateBypassDocumentValidation: evt.target.checked })
+              }
             />
           </InlineField>
         </InlineFieldRow>
