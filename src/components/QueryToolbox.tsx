@@ -1,6 +1,5 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { css } from '@emotion/css';
-import { useMemo, useState } from 'react';
 import { Stack, IconButton, useTheme2 } from '@grafana/ui';
 
 interface QueryToolboxProps {

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { VariableQuery } from '../types';
-import { CodeEditor, Field, InlineField, Input, Button, Alert } from '@grafana/ui';
+import { InlineField, Input, Alert, InlineFieldRow, Button } from '@grafana/ui';
+import { QueryEditorRaw } from './QueryEditorRaw';
 
 interface VariableQueryProps {
   query: VariableQuery;
@@ -9,53 +10,44 @@ interface VariableQueryProps {
 
 export const VariableQueryEditor = ({ onChange, query }: VariableQueryProps) => {
   const [state, setState] = useState(query);
-
-  const saveQuery = () => {
-    onChange(state, `${state.collection} (${state.queryText})`);
-  };
-
-  const handleCollectionChange = (event: React.FormEvent<HTMLInputElement>) =>
-    setState({
-      ...state,
-      collection: event.currentTarget.value,
-    });
-
-  const handleQueryTextChange = (text: string) =>
-    setState({
-      ...state,
-      queryText: text,
-    });
-
   return (
     <>
-      <InlineField
-        label="Collection"
-        tooltip="Enter the MongoDB collection"
-        error="Please enter the collection"
-        invalid={!query.collection}
-      >
-        <Input name="collection" onChange={handleCollectionChange} value={state.collection}></Input>
-      </InlineField>
-      <Field label="Query Text" description="MongoDB aggregate (JSON)">
-        <CodeEditor
-          width="100%"
-          height={300}
-          language="json"
-          onBlur={saveQuery}
-          value={query.queryText || ''}
-          showMiniMap={false}
-          showLineNumbers={true}
-          onChange={handleQueryTextChange}
-          monacoOptions={{ fontSize: 14 }}
-        />
-      </Field>
-      <Alert title="Query info" severity="info">
+      <InlineFieldRow>
+        <InlineField
+          label="Collection"
+          tooltip="Name of MongoDB collection to query"
+          error="Collection is required"
+          invalid={!state.collection}
+        >
+          <Input
+            name="collection"
+            onChange={(evt) => setState({ ...state, collection: evt.currentTarget.value })}
+            value={state.collection}
+          ></Input>
+        </InlineField>
+        <Button
+          onClick={() => {
+            onChange(
+              { queryText: state.queryText, collection: state.collection },
+              `${state.collection} (${state.queryText})`,
+            );
+          }}
+        >
+          Save and Query
+        </Button>
+      </InlineFieldRow>
+
+      <QueryEditorRaw
+        query={query.queryText ?? ''}
+        language="json"
+        onBlur={(queryText) => setState({ ...query, queryText: queryText })}
+        height={300}
+        fontSize={14}
+      />
+      <Alert title="Query info" severity="info" style={{ marginTop: 2 }}>
         The query result is expected to contain <code>value</code> field which has elements of type <code>string</code>{' '}
         or <code>number</code>
       </Alert>
-      <Button onClick={saveQuery} variant="primary">
-        Query
-      </Button>
     </>
   );
 };

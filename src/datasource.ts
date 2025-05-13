@@ -10,7 +10,7 @@ import {
   DataQueryResponse,
   LoadingState
 } from '@grafana/data';
-import { DataSourceWithBackend, getGrafanaLiveSrv, getTemplateSrv } from '@grafana/runtime';
+import { DataSourceWithBackend, getGrafanaLiveSrv, getTemplateSrv, TemplateSrv } from '@grafana/runtime';
 import {
   parseJsQuery,
   getBucketCount,
@@ -23,10 +23,13 @@ import {
 } from './utils';
 import { MongoQuery, MongoDataSourceOptions, DEFAULT_QUERY, QueryLanguage, VariableQuery } from './types';
 import { firstValueFrom, merge, Observable, of } from 'rxjs';
+import { MongoDBVariableSupport } from 'variables'
 
-export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourceOptions> {
-  constructor(instanceSettings: DataSourceInstanceSettings<MongoDataSourceOptions>) {
+export class MongoDBDataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourceOptions> {
+  constructor(instanceSettings: DataSourceInstanceSettings<MongoDataSourceOptions>,
+    private readonly templateSrv: TemplateSrv = getTemplateSrv()) {
     super(instanceSettings);
+    this.variables = new MongoDBVariableSupport(this, this.templateSrv);
   }
 
   getDefaultQuery(_: CoreApp): Partial<MongoQuery> {

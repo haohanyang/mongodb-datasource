@@ -11,14 +11,14 @@ import {
 } from '@grafana/ui';
 import { EditorHeader, InlineSelect, FlexItem } from '@grafana/plugin-ui';
 import { CoreApp, QueryEditorProps, SelectableValue, LoadingState } from '@grafana/data';
-import { DataSource } from '../datasource';
+import { MongoDBDataSource } from '../datasource';
 import { MongoDataSourceOptions, MongoQuery, QueryLanguage, QueryType, DEFAULT_QUERY } from '../types';
 import { parseJsQuery, parseJsQueryLegacy } from '../utils';
 import { QueryEditorRaw } from './QueryEditorRaw';
 import { QueryToolbox } from './QueryToolbox';
 import validator from 'validator';
 
-type Props = QueryEditorProps<DataSource, MongoQuery, MongoDataSourceOptions>;
+type Props = QueryEditorProps<MongoDBDataSource, MongoQuery, MongoDataSourceOptions>;
 
 const queryTypes: Array<SelectableValue<string>> = [
   {
