@@ -1,6 +1,6 @@
 import { DataSourceInstanceSettings, CoreApp, ScopedVars, DataQueryRequest, LiveChannelScope, DataQueryResponse, LoadingState, rangeUtil } from '@grafana/data';
 import { DataSourceWithBackend, getGrafanaLiveSrv, getTemplateSrv, TemplateSrv } from '@grafana/runtime';
-import { parseJsQuery, getBucketCount, parseJsQueryLegacy, datetimeToJson, base64UrlEncode, unixTsToMongoID } from './utils';
+import { parseJsQuery, getBucketCount, parseJsQueryLegacy, base64UrlEncode, datetimeToJson, unixTsToMongoID } from './utils';
 import { MongoDBQuery, MongoDataSourceOptions, DEFAULT_QUERY, QueryLanguage } from './types';
 import { merge, Observable, of } from 'rxjs';
 import { MongoDBVariableSupport } from 'variables'
@@ -17,16 +17,7 @@ export class MongoDBDataSource extends DataSourceWithBackend<MongoDBQuery, Mongo
   }
 
   applyTemplateVariables(query: MongoDBQuery, scopedVars: ScopedVars) {
-    console.log("scopedVars", scopedVars);
-    console.log("Vars", this.templateSrv.getVariables());
     const variables = { ...scopedVars };
-
-
-    const from = this.templateSrv.replace('$__from', variables);
-    const to = this.templateSrv.replace('$__to', variables);
-
-    variables.from = { value: datetimeToJson(from) }
-    variables.to = { value: datetimeToJson(to) }
 
     let queryText = query.queryText!;
     if (query.queryLanguage === QueryLanguage.JAVASCRIPT || query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW) {
@@ -37,16 +28,24 @@ export class MongoDBDataSource extends DataSourceWithBackend<MongoDBQuery, Mongo
       queryText = jsonQuery!;
     }
 
+    // Get time range
+    const from = this.templateSrv.replace('$__from', variables);
+    const to = this.templateSrv.replace('$__to', variables);
 
-    queryText = queryText
-      .replaceAll(/"\$__from_oid"/g, `"${unixTsToMongoID(from, '0')}"`)
-      .replaceAll(/"\$__to_oid"/g, `"${unixTsToMongoID(to, 'f')}"`);
+    if (from && to) {
+      variables.__from_oid = { value: unixTsToMongoID(from, '0') }
+      variables.__to_oid = { value: unixTsToMongoID(to, 'f') }
+
+      queryText = queryText
+        .replaceAll(/"\$from"/g, datetimeToJson(from))
+        .replaceAll(/"\$to"/g, datetimeToJson(to));
+    }
+
 
     const interval = scopedVars['__interval_ms']?.value;
-
-    // Compatible with legacy plugin $dateBucketCount
+    // $dateBucketCount
     if (interval && from && to) {
-      queryText = queryText.replaceAll(/"\$dateBucketCount"/g, getBucketCount(from, to, interval).toString());
+      variables.dateBucketCount = { value: getBucketCount(from, to, interval) }
     }
 
     const text = this.templateSrv.replace(queryText, variables);

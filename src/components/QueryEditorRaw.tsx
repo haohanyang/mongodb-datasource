@@ -1,5 +1,5 @@
 import React, { useRef, useCallback } from 'react';
-import { CodeEditor, type monacoTypes } from '@grafana/ui';
+import { CodeEditor, type MonacoEditor } from '@grafana/ui';
 import { useAutocomplete } from 'autocomplete';
 
 interface QueryEditorRawProps {
@@ -13,7 +13,7 @@ interface QueryEditorRawProps {
 }
 
 export function QueryEditorRaw({ query, onBlur, language, width, height, fontSize, children }: QueryEditorRawProps) {
-  const monacoRef = useRef<monacoTypes.editor.IStandaloneCodeEditor | null>(null);
+  const monacoRef = useRef<MonacoEditor | null>(null);
   const setupAutocompleteFn = useAutocomplete();
 
   const formatQuery = useCallback(() => {
