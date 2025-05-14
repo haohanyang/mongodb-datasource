@@ -1,41 +1,25 @@
-import {
-  DataSourceInstanceSettings,
-  CoreApp,
-  ScopedVars,
-  DataQueryRequest,
-  LegacyMetricFindQueryOptions,
-  MetricFindValue,
-  dateTime,
-  LiveChannelScope,
-  DataQueryResponse,
-  LoadingState
-} from '@grafana/data';
-import { DataSourceWithBackend, getGrafanaLiveSrv, getTemplateSrv } from '@grafana/runtime';
-import {
-  parseJsQuery,
-  getBucketCount,
-  parseJsQueryLegacy,
-  randomId,
-  getMetricValues,
-  datetimeToJson,
-  base64UrlEncode,
-  unixTsToMongoID
-} from './utils';
-import { MongoQuery, MongoDataSourceOptions, DEFAULT_QUERY, QueryLanguage, VariableQuery } from './types';
-import { firstValueFrom, merge, Observable, of } from 'rxjs';
+import { DataSourceInstanceSettings, CoreApp, ScopedVars, DataQueryRequest, LiveChannelScope, DataQueryResponse, LoadingState } from '@grafana/data';
+import { DataSourceWithBackend, getGrafanaLiveSrv, getTemplateSrv, TemplateSrv } from '@grafana/runtime';
+import { parseJsQuery, parseJsQueryLegacy, base64UrlEncode, unixTsToMongoID } from './utils';
+import { MongoDBQuery, MongoDataSourceOptions, DEFAULT_QUERY, QueryLanguage } from './types';
+import { merge, Observable, of } from 'rxjs';
+import { MongoDBVariableSupport } from 'variables'
 
-export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourceOptions> {
-  constructor(instanceSettings: DataSourceInstanceSettings<MongoDataSourceOptions>) {
+export class MongoDBDataSource extends DataSourceWithBackend<MongoDBQuery, MongoDataSourceOptions> {
+  constructor(instanceSettings: DataSourceInstanceSettings<MongoDataSourceOptions>,
+    private readonly templateSrv: TemplateSrv = getTemplateSrv()) {
     super(instanceSettings);
+    this.variables = new MongoDBVariableSupport(this);
   }
 
-  getDefaultQuery(_: CoreApp): Partial<MongoQuery> {
+  getDefaultQuery(_: CoreApp): Partial<MongoDBQuery> {
     return DEFAULT_QUERY;
   }
 
-  applyTemplateVariables(query: MongoQuery, scopedVars: ScopedVars) {
-    let queryText = query.queryText!;
+  applyTemplateVariables(query: MongoDBQuery, scopedVars: ScopedVars) {
+    const variables = { ...scopedVars };
 
+    let queryText = query.queryText!;
     if (query.queryLanguage === QueryLanguage.JAVASCRIPT || query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW) {
       const { jsonQuery } =
         query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW
@@ -44,31 +28,46 @@ export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourc
       queryText = jsonQuery!;
     }
 
-    const from = getTemplateSrv().replace('$__from', {});
-    const to = getTemplateSrv().replace('$__to', {});
+    // Get time range
+    let from_ms: number | undefined = undefined;
+    let to_ms: number | undefined = undefined;
 
-    queryText = queryText
-      .replaceAll(/"\$__from_oid"/g, `"${unixTsToMongoID(from, '0')}"`)
-      .replaceAll(/"\$__to_oid"/g, `"${unixTsToMongoID(to, 'f')}"`);
+    const from = this.templateSrv.replace('$__from', variables);
+    const to = this.templateSrv.replace('$__to', variables);
 
-    // Compatible with legacy plugin $from
     if (from !== '$__from') {
-      queryText = queryText.replaceAll(/"\$from"/g, datetimeToJson(from));
+      from_ms = parseInt(from, 10);
+      // $__from_oid
+      variables.__from_oid = { value: unixTsToMongoID(from_ms, '0') }
+      // $from
+      queryText = queryText
+        .replaceAll(/"\$from"/g, JSON.stringify({
+          $date: {
+            $numberLong: from,
+          },
+        }))
     }
 
-    // Compatible with legacy plugin $to
     if (to !== '$__to') {
-      queryText = queryText.replaceAll(/"\$to"/g, datetimeToJson(to));
+      to_ms = parseInt(to, 10);
+      // $__to_oid
+      variables.__to_oid = { value: unixTsToMongoID(to_ms, 'f') }
+      // $to
+      queryText = queryText
+        .replaceAll(/"\$to"/g, JSON.stringify({
+          $date: {
+            $numberLong: to,
+          },
+        }));
     }
 
-    const interval = scopedVars['__interval_ms']?.value;
-
-    // Compatible with legacy plugin $dateBucketCount
-    if (interval && from && to) {
-      queryText = queryText.replaceAll(/"\$dateBucketCount"/g, getBucketCount(from, to, interval).toString());
+    const interval_ms: number | undefined = scopedVars['__interval_ms']?.value;
+    // $dateBucketCount
+    if (interval_ms && from_ms && to_ms) {
+      variables.dateBucketCount = { value: Math.ceil((parseInt(to, 10) - parseInt(from, 10)) / interval_ms) }
     }
 
-    const text = getTemplateSrv().replace(queryText, scopedVars);
+    const text = this.templateSrv.replace(queryText, variables);
     return {
       ...query,
       queryText: text,
@@ -77,48 +76,11 @@ export class DataSource extends DataSourceWithBackend<MongoQuery, MongoDataSourc
 
   annotations = {}
 
-  async metricFindQuery(query: VariableQuery, options?: LegacyMetricFindQueryOptions): Promise<MetricFindValue[]> {
-    const request: DataQueryRequest<MongoQuery> = {
-      requestId: 'variable-query-' + randomId(3),
-      targets: [
-        {
-          refId: 'A',
-          queryLanguage: QueryLanguage.JSON,
-          collection: query.collection,
-          queryText: getTemplateSrv().replace(query.queryText),
-          queryType: 'table',
-          isStreaming: false,
-        },
-      ],
-      scopedVars: options?.scopedVars || {},
-      interval: '5s',
-      timezone: 'browser',
-      intervalMs: 5000,
-      range: options?.range || {
-        from: dateTime(),
-        to: dateTime(),
-        raw: {
-          from: 'now',
-          to: 'now',
-        },
-      },
-      app: 'variable-query',
-      startTime: (options?.range?.from || dateTime()).toDate().getUTCMilliseconds(),
-    };
-
-    const resp = await firstValueFrom(this.query(request));
-    if (resp.errors?.length && resp.errors.length > 0) {
-      throw new Error(resp.errors[0].message || 'Unknown error');
-    }
-
-    return getMetricValues(resp);
-  }
-
-  filterQuery(query: MongoQuery): boolean {
+  filterQuery(query: MongoDBQuery): boolean {
     return !!query.queryText && !!query.collection;
   }
 
-  query(request: DataQueryRequest<MongoQuery>): Observable<DataQueryResponse> {
+  query(request: DataQueryRequest<MongoDBQuery>): Observable<DataQueryResponse> {
     if (request.liveStreaming) {
       const observables = request.targets.map((query) => {
         return getGrafanaLiveSrv().getDataStream({

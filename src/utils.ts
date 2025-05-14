@@ -1,25 +1,7 @@
-import { DataFrameSchema, DataQueryResponse, FieldType, MetricFindValue } from '@grafana/data';
 import { JsQueryResult } from 'types';
 import shadow from 'shadowrealm-api';
 import { getTemplateSrv } from '@grafana/runtime';
-
-export function validateJsonQueryText(queryText?: string): string | null {
-  if (!queryText) {
-    return 'Please enter the query text';
-  }
-
-  try {
-    const queryJson = JSON.parse(queryText);
-
-    if (!Array.isArray(queryJson)) {
-      return 'Invalid query';
-    } else {
-      return null;
-    }
-  } catch (e) {
-    return 'Invalid query';
-  }
-}
+import validator from 'validator';
 
 export function parseJsQueryLegacy(queryText: string): JsQueryResult {
   const regex = /^db\.(.+)\.aggregate\((.+)\)$/;
@@ -35,7 +17,7 @@ export function parseJsQueryLegacy(queryText: string): JsQueryResult {
     return {
       jsonQuery: queryText,
       collection: collection,
-      error: validateJsonQueryText(queryText),
+      error: validator.isJSON(queryText) ? null : 'Invalid JSON',
     };
   } else {
     return {
@@ -68,26 +50,6 @@ export function parseJsQuery(queryText: string): JsQueryResult {
   }
 }
 
-export function datetimeToJson(datetime: string) {
-  return JSON.stringify({
-    $date: {
-      $numberLong: datetime,
-    },
-  });
-}
-
-export function getBucketCount(from: string, to: string, intervalMs: number) {
-  let current = parseInt(from, 10);
-  const toMs = parseInt(to, 10);
-  let count = 0;
-  while (current < toMs) {
-    current += intervalMs;
-    count++;
-  }
-
-  return count;
-}
-
 export function randomId(length: number) {
   let result = '';
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -98,37 +60,6 @@ export function randomId(length: number) {
     counter += 1;
   }
   return result;
-}
-
-export function getMetricValues(response: DataQueryResponse): MetricFindValue[] {
-  const dataframe = response.data[0] as DataFrameSchema;
-  const field = dataframe.fields.find((f) => f.name === 'value');
-
-  if (!field) {
-    throw new Error('Field "value" not found');
-  }
-
-  if (field.type !== FieldType.string && field.type !== FieldType.number) {
-    throw new Error('Each element should be string or number');
-  }
-
-  // @ts-ignore
-  return field.values.map((value: string | number) => {
-    return {
-      text: value.toString(),
-      value: value,
-      expandable: true,
-    };
-  });
-}
-
-export function validatePositiveNumber(num: string) {
-  if (!/^\d+$/.test(num.trim())) {
-    return false;
-  }
-
-  const parsed = parseInt(num, 10);
-  return parsed > 0;
 }
 
 export function base64UrlEncode(input: string | undefined) {
@@ -142,14 +73,14 @@ export function base64UrlEncode(input: string | undefined) {
   return base64Url;
 }
 
-export function unixTsToMongoID(utc: string, rightPadding: string) {
-  const val = Math.trunc(parseInt(utc, 10) / 1000)
+export function unixTsToMongoID(utc_ms: number, rightPadding: string) {
+  const val = Math.trunc(utc_ms / 1000);
 
-  if (val < 0 || val > 0xFFFFFFFF) {
+  if (val < 0 || val > 0xffffffff) {
     return '';
   }
 
-  let hexString = val.toString(16)
+  let hexString = val.toString(16);
 
   while (hexString.length < 8) {
     hexString = '0' + hexString;
