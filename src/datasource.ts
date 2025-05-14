@@ -17,7 +17,6 @@ export class MongoDBDataSource extends DataSourceWithBackend<MongoDBQuery, Mongo
   }
 
   applyTemplateVariables(query: MongoDBQuery, scopedVars: ScopedVars) {
-    console.log("scopedVars", scopedVars);
     const variables = { ...scopedVars };
 
     let queryText = query.queryText!;

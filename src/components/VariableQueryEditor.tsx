@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { InlineField, Input, Alert, Button } from '@grafana/ui';
-
-import { EditorRow, EditorRows } from '@grafana/plugin-ui';
+import { InlineField, Input, Alert, Button, InlineFieldRow } from '@grafana/ui';
 import { QueryEditorProps } from '@grafana/data';
 import { MongoDataSourceOptions, MongoDBQuery, MongoDBVariableQuery, QueryType } from '../types';
 import { QueryEditorRaw } from './QueryEditorRaw';
@@ -26,8 +24,8 @@ export const VariableQueryEditor = ({ onChange, query }: VariableQueryEditorProp
   }, [query]);
 
   return (
-    <EditorRows>
-      <EditorRow>
+    <div>
+      <InlineFieldRow style={{ justifyContent: 'space-between' }}>
         <InlineField
           label="Collection"
           tooltip="Name of MongoDB collection to query"
@@ -43,13 +41,16 @@ export const VariableQueryEditor = ({ onChange, query }: VariableQueryEditorProp
           ></Input>
         </InlineField>
         <Button
-          onClick={() => {
-            onChange({ queryText: queryText, queryType: QueryType.TABLE, refId: refId, collection: collection });
-          }}
+          icon="play"
+          variant="primary"
+          size="sm"
+          onClick={() =>
+            onChange({ queryText: queryText, queryType: QueryType.TABLE, refId: refId, collection: collection })
+          }
         >
           Save and Query
         </Button>
-      </EditorRow>
+      </InlineFieldRow>
       <QueryEditorRaw
         query={queryText}
         language="json"
@@ -61,6 +62,6 @@ export const VariableQueryEditor = ({ onChange, query }: VariableQueryEditorProp
         The query result is expected to contain <code>value</code> field which has elements of type <code>string</code>{' '}
         or <code>number</code>
       </Alert>
-    </EditorRows>
+    </div>
   );
 };

@@ -20,7 +20,6 @@ export class MongoDBVariableSupport extends CustomVariableSupport<MongoDBDataSou
         }
 
         const dataframe = response.data[0] as DataFrameSchema;
-        console.log(dataframe);
         const field = dataframe.fields.find((f) => f.name === 'value');
 
         if (!field) {
