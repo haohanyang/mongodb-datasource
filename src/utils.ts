@@ -1,4 +1,3 @@
-import { DataFrameSchema, DataQueryResponse, FieldType, MetricFindValue } from '@grafana/data';
 import { JsQueryResult } from 'types';
 import shadow from 'shadowrealm-api';
 import { getTemplateSrv } from '@grafana/runtime';
@@ -56,7 +55,7 @@ export function datetimeToJson(datetime: string) {
     $date: {
       $numberLong: datetime,
     },
-  });
+  })
 }
 
 export function getBucketCount(from: string, to: string, intervalMs: number) {
@@ -81,28 +80,6 @@ export function randomId(length: number) {
     counter += 1;
   }
   return result;
-}
-
-export function getMetricValues(response: DataQueryResponse): MetricFindValue[] {
-  const dataframe = response.data[0] as DataFrameSchema;
-  const field = dataframe.fields.find((f) => f.name === 'value');
-
-  if (!field) {
-    throw new Error('Field "value" not found');
-  }
-
-  if (field.type !== FieldType.string && field.type !== FieldType.number) {
-    throw new Error('Each element should be string or number');
-  }
-
-  // @ts-ignore
-  return field.values.map((value: string | number) => {
-    return {
-      text: value.toString(),
-      value: value,
-      expandable: true,
-    };
-  });
 }
 
 export function base64UrlEncode(input: string | undefined) {

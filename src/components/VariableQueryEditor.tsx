@@ -1,46 +1,59 @@
-import React, { useState } from 'react';
-import { VariableQuery } from '../types';
-import { InlineField, Input, Alert, InlineFieldRow, Button } from '@grafana/ui';
+import React, { useEffect, useState } from 'react';
+import { InlineField, Input, Alert, Button } from '@grafana/ui';
+
+import { EditorRow, EditorRows } from '@grafana/plugin-ui';
+import { QueryEditorProps } from '@grafana/data';
+import { MongoDataSourceOptions, MongoDBQuery, MongoDBVariableQuery, QueryType } from '../types';
 import { QueryEditorRaw } from './QueryEditorRaw';
+import { MongoDBDataSource } from 'datasource';
 
-interface VariableQueryProps {
-  query: VariableQuery;
-  onChange: (query: VariableQuery, definition: string) => void;
-}
+const refId = 'MongoDBVariableQueryEditor-VariableQuery';
 
-export const VariableQueryEditor = ({ onChange, query }: VariableQueryProps) => {
-  const [state, setState] = useState(query);
+export type VariableQueryEditorProps = QueryEditorProps<
+  MongoDBDataSource,
+  MongoDBQuery,
+  MongoDataSourceOptions,
+  MongoDBVariableQuery
+>;
+
+export const VariableQueryEditor = ({ onChange, query }: VariableQueryEditorProps) => {
+  const [collection, setCollection] = useState('');
+  const [queryText, setQueryText] = useState('');
+
+  useEffect(() => {
+    setCollection(query.collection ?? '');
+    setQueryText(query.queryText ?? '');
+  }, [query]);
+
   return (
-    <>
-      <InlineFieldRow>
+    <EditorRows>
+      <EditorRow>
         <InlineField
           label="Collection"
           tooltip="Name of MongoDB collection to query"
           error="Collection is required"
-          invalid={!state.collection}
+          invalid={!collection}
         >
           <Input
             name="collection"
-            onChange={(evt) => setState({ ...state, collection: evt.currentTarget.value })}
-            value={state.collection}
+            onChange={(evt) => {
+              setCollection(evt.currentTarget.value);
+            }}
+            value={collection}
           ></Input>
         </InlineField>
         <Button
           onClick={() => {
-            onChange(
-              { queryText: state.queryText, collection: state.collection },
-              `${state.collection} (${state.queryText})`,
-            );
+            onChange({ queryText: queryText, queryType: QueryType.TABLE, refId: refId, collection: collection });
           }}
         >
           Save and Query
         </Button>
-      </InlineFieldRow>
-
+      </EditorRow>
       <QueryEditorRaw
-        query={query.queryText ?? ''}
+        query={queryText}
         language="json"
-        onBlur={(queryText) => setState({ ...query, queryText: queryText })}
+        onBlur={(queryText) => setQueryText(queryText)}
         height={300}
         fontSize={14}
       />
@@ -48,6 +61,6 @@ export const VariableQueryEditor = ({ onChange, query }: VariableQueryProps) => 
         The query result is expected to contain <code>value</code> field which has elements of type <code>string</code>{' '}
         or <code>number</code>
       </Alert>
-    </>
+    </EditorRows>
   );
 };
