@@ -1,5 +1,5 @@
 import { useRef, useEffect } from 'react';
-import { type Monaco, type monacoTypes } from '@grafana/ui';
+import { type Monaco, type monacoTypes, type MonacoEditor } from '@grafana/ui';
 import { languages } from 'monaco-editor';
 import completionData from './completions.json';
 
@@ -9,10 +9,9 @@ interface CompletionState {
   fields?: string[] | string;
 }
 
-
 // Supports JSON only right now
 class CompletionProvider implements monacoTypes.languages.CompletionItemProvider {
-  constructor(private readonly editor: monacoTypes.editor.IStandaloneCodeEditor) { }
+  constructor(private readonly editor: MonacoEditor) {}
 
   provideCompletionItems(
     model: monacoTypes.editor.ITextModel,
@@ -71,36 +70,34 @@ export function useAutocomplete() {
     };
   }, []);
 
-  return (editor: monacoTypes.editor.IStandaloneCodeEditor, monaco: Monaco) => {
+  return (editor: MonacoEditor, monaco: Monaco) => {
     const provider = new CompletionProvider(editor);
     const { dispose } = monaco.languages.registerCompletionItemProvider('json', provider);
     autocompleteDisposeFun.current = dispose;
   };
 }
 
-
-
-
 function createInsertText({ name, fields }: CompletionState) {
   if (fields) {
     if (Array.isArray(fields)) {
-      let insertText = `"\\${name}": {\n\t`
+      let insertText = `"\\${name}": {\n\t`;
       for (let i = 0; i < fields.length; i++) {
-        const field = fields[i]
-        insertText += `"${field}": \${${i + 1}:${field}}`
+        const field = fields[i];
+        insertText += `"${field}": \${${i + 1}:${field}}`;
 
         if (i == 0) {
-          insertText += '$0'
+          insertText += '$0';
         }
 
         if (i != fields.length - 1) {
-          insertText += ',\n\t'
+          insertText += ',\n\t';
         }
       }
+      insertText += '\n}';
 
-      return insertText
+      return insertText;
     }
-    return `"\\${name}": \${1:${fields}}`
+    return `"\\${name}": \${1:${fields}}`;
   }
-  return `"\\${name}": {\n\t$0\n}`
+  return `"\\${name}": {\n\t$0\n}`;
 }

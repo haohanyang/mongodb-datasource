@@ -44,5 +44,3 @@ mongodb-datasource/
 grafana-storage/
 
 mongo-docs/
-
-src/editor/completions.json

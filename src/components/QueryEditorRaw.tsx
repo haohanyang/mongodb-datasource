@@ -2,6 +2,7 @@ import React, { useRef, useCallback } from 'react';
 import { CodeEditor, type MonacoEditor } from '@grafana/ui';
 import { useAutocomplete } from '../editor/autocomplete';
 import { useValidation } from '../editor/validation';
+import { useHover } from '../editor/hover';
 
 interface QueryEditorRawProps {
   query: string;
@@ -17,6 +18,7 @@ export function QueryEditorRaw({ query, onBlur, language, width, height, fontSiz
   const monacoRef = useRef<MonacoEditor | null>(null);
 
   const setupAutocompleteFn = useAutocomplete();
+  const setupHoverFn = useHover();
   const setupValidationFn = useValidation();
 
   const formatQuery = useCallback(() => {
@@ -32,6 +34,7 @@ export function QueryEditorRaw({ query, onBlur, language, width, height, fontSiz
           monacoRef.current = editor;
           setupValidationFn(editor, monaco);
           setupAutocompleteFn(editor, monaco);
+          setupHoverFn(editor, monaco);
         }}
         height={height || '240px'}
         width={width ? `${width - 2}px` : undefined}
