@@ -85,11 +85,11 @@ function createInsertText({ name, fields }: CompletionState) {
         const field = fields[i];
         insertText += `"${field}": \${${i + 1}:${field}}`;
 
-        if (i == 0) {
+        if (i === 0) {
           insertText += '$0';
         }
 
-        if (i != fields.length - 1) {
+        if (i !== fields.length - 1) {
           insertText += ',\n\t';
         }
       }
