@@ -1,11 +1,18 @@
 import { useRef, useEffect } from 'react';
 import { type Monaco, type monacoTypes } from '@grafana/ui';
 import { languages } from 'monaco-editor';
-import aggregationData from './aggregation.json';
+import completionData from './completions.json';
+
+interface CompletionState {
+  name: string;
+  description: string;
+  fields?: string[] | string;
+}
+
 
 // Supports JSON only right now
 class CompletionProvider implements monacoTypes.languages.CompletionItemProvider {
-  constructor(private readonly editor: monacoTypes.editor.IStandaloneCodeEditor) {}
+  constructor(private readonly editor: monacoTypes.editor.IStandaloneCodeEditor) { }
 
   provideCompletionItems(
     model: monacoTypes.editor.ITextModel,
@@ -40,13 +47,13 @@ class CompletionProvider implements monacoTypes.languages.CompletionItemProvider
       endColumn: word.endColumn,
     };
 
-    const suggestions: languages.CompletionItem[] = aggregationData['stages'].map((s) => ({
-      label: `"${s['name']}"`,
+    const suggestions: languages.CompletionItem[] = completionData['stages'].map((stage) => ({
+      label: `"${stage.name}"`,
       kind: languages.CompletionItemKind.Function,
-      insertText: s['insertText'] ? s['insertText'] : `"\\${s['name']}": {\n\t$0\n}`,
+      insertText: createInsertText(stage),
       range: range,
       detail: 'stage',
-      documentation: s['description'],
+      documentation: stage.description,
       insertTextRules: languages.CompletionItemInsertTextRule.InsertAsSnippet,
     }));
 
@@ -69,4 +76,31 @@ export function useAutocomplete() {
     const { dispose } = monaco.languages.registerCompletionItemProvider('json', provider);
     autocompleteDisposeFun.current = dispose;
   };
+}
+
+
+
+
+function createInsertText({ name, fields }: CompletionState) {
+  if (fields) {
+    if (Array.isArray(fields)) {
+      let insertText = `"\\${name}": {\n\t`
+      for (let i = 0; i < fields.length; i++) {
+        const field = fields[i]
+        insertText += `"${field}": \${${i + 1}:${field}}`
+
+        if (i == 0) {
+          insertText += '$0'
+        }
+
+        if (i != fields.length - 1) {
+          insertText += ',\n\t'
+        }
+      }
+
+      return insertText
+    }
+    return `"\\${name}": \${1:${fields}}`
+  }
+  return `"\\${name}": {\n\t$0\n}`
 }
