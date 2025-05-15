@@ -1,0 +1,236 @@
+[
+  {
+    "name": "$addFields",
+    "description": "Adds new field(s) to a document with a computed value, or reassigns an existing field(s) with a computed value.",
+    "comment": "* newField: The new field name.\n * expression: The new field expression.",
+    "snippet": "{\n  ${1:newField}: ${2:expression}, ${3:...}\n}"
+  },
+  {
+    "name": "$bucket",
+    "description": "Categorizes incoming documents into groups, called buckets, based on specified boundaries.",
+    "comment": "* groupBy: The expression to group by.\n * boundaries: An array of the lower boundaries for each bucket.\n * default: The bucket name for documents that do not fall within the specified boundaries\n * output: {\n *   outputN: Optional. The output object may contain a single or numerous field names used to accumulate values per bucket.\n * }",
+    "snippet": "{\n  groupBy: ${1:expression},\n  boundaries: [ ${2:lowerbound}, ${3:...} ],\n  default: ${4:literal},\n  output: {\n    ${5:outputN}: { ${6:accumulator} }, ${7:...}\n  }\n}"
+  },
+  {
+    "name": "$bucketAuto",
+    "description": "Automatically categorizes documents into a specified number of buckets, attempting even distribution if possible.",
+    "comment": "* groupBy: The expression to group by.\n * buckets: The desired number of buckets\n * output: {\n *   outputN: Optional. The output object may contain a single or numerous field names used to accumulate values per bucket.\n * }\n * granularity: Optional number series",
+    "snippet": "{\n  groupBy: ${1:expression},\n  buckets: ${2:number},\n  output: {\n    ${3:outputN}: ${4:accumulator}, ${5:...}\n  },\n  granularity: '${6:string}'\n}"
+  },
+  {
+    "name": "$changeStream",
+    "description": "Returns a Change Stream cursor for the collection.",
+    "comment": "* allChangesForCluster: Optional boolean to include all changes in the cluster.\n * fullDocument: Optional value to request a copy of full document when modified by update operations (Introduced in 6.0).\n * fullDocumentBeforeChange: Value to configure whether to return a full document before the change or not.\n * resumeAfter: Specifies a resume token as the logical starting point for the change stream. Cannot be used with startAfter or startAtOperationTime fields.\n * showExpandedEvents: Specifies whether to include additional change events, such as such as DDL and index operations (Introduced in 6.0).\n * startAfter: Specifies a resume token as the logical starting point for the change stream. Cannot be used with resumeAfter or startAtOperationTime fields.\n * startAtOperationTime: Specifies a time as the logical starting point for the change stream. Cannot be used with resumeAfter or startAfter fields.",
+    "snippet": "{\n  allChangesForCluster: ${1:boolean},\n  fullDocument: '${2:string}',\n  fullDocumentBeforeChange: '${3:string}',\n  resumeAfter: ${4:resumeToken},\n  showExpandedEvents: ${5:boolean},\n  startAfter: ${6:resumeToken},\n  startAtOperationTime: ${7:time},\n}"
+  },
+  {
+    "name": "$collStats",
+    "description": "Returns statistics regarding a collection or view.",
+    "comment": "* histograms: Optional latency histograms.\n * storageStats: Optional storage stats.",
+    "snippet": "{\n  latencyStats: {\n    histograms: ${1:boolean}\n  },\n  storageStats: {${2:}},\n}"
+  },
+  {
+    "name": "$count",
+    "description": "Returns a count of the number of documents at this stage of the aggregation pipeline.",
+    "comment": "* Provide the field name for the count.",
+    "snippet": "'${1:string}'"
+  },
+  {
+    "name": "$currentOp",
+    "description": "Returns a cursor over information on active and/or dormant operations for the MongoDB deployment as well as inactive sessions that are holding locks as part of a transaction.",
+    "comment": "* allUsers: Optional boolean value to specify whether to return operations for all users or not.\n * idleConnections: Optional boolean value to specify whether to return all operations including idle connections or not.\n * idleCursors: Optional boolean value to specify whether to report on cursors that are idle or not.\n * idleSessions: Optional boolean value to specify whether to report on dormant sessions or not.\n * localOps: Optional boolean value to specify whether to report on operations running locally on targetted mongos or not.\n * backtrace: Optional boolean value to specify whether callstack information is returned as part of the waitingForLatch output field.",
+    "snippet": "{\n  allUsers: ${1:false},\n  idleConnections: ${2:false},\n  idleCursors: ${3:false},\n  idleSessions: ${4:true},\n  localOps: ${5:false},\n  backtrace: ${6:false},\n}"
+  },
+  {
+    "name": "$densify",
+    "description": "Creates new documents to eliminate the gaps in the time or numeric domain at the required granularity level.",
+    "comment": "* field: The required field to densify.\n * partitionByFields: The set of fields that acts as a compound key to define each partition.\n * range: {\n *   step: The amount to increment the field value in each document.\n *   unit: If specified field must evaluate to a date for every document in the collection, otherwise must evaluate to a numeric.\n *   bounds: A string or array of numeric/date bounds, corresponding to the type of the field.\n * }",
+    "snippet": "{\n  field: ${1:string},\n  partitionByFields: [${2:string}, ${3:string}, ...],\n  range: {\n    step: ${4:number},\n    unit: ${5:string},\n    bounds: [${6:lowerbound}, ${7:upperbound}, ...]\n  }\n}"
+  },
+  {
+    "name": "$documents",
+    "description": "Returns literal documents from input values.",
+    "comment": "* expression: Any valid expression.",
+    "snippet": "{\n  ${1:expression}\n}"
+  },
+  {
+    "name": "$facet",
+    "description": "Allows for multiple parellel aggregations to be specified.",
+    "comment": "* outputFieldN: The first output field.\n * stageN: The first aggregation stage.",
+    "snippet": "{\n  ${1:outputFieldN}: [ ${2:stageN}, ${3:...} ]\n}"
+  },
+  {
+    "name": "$fill",
+    "description": "Populates null and missing field values within documents.",
+    "comment": "* sortBy: Syntax is the same as $sort, required if \"method\" is used in at least one output spec otherwise optional\n * partitionBy: Optional, default is a single partition. Specification is the same as _id in $group (same as partitionBy in window functions).\n * partitionByFields: Optional, set of fields that acts as a compound key to define each partition.\n * output - Required, object for each field to fill in. For a single field, can be a single object.\n * output.<field> - A field to be filled with value, if missing or null in the current document.",
+    "snippet": "{\n  sortBy: ${1:sortSpec},\n  partitionBy: ${2:expression},\n  partitionByFields: [${3:string}, ${4:string}, ...],\n  output: {\n    field1: {value: ${5:expression}},\n    field2: {method: ${6:string}},\n    ...\n  }\n}"
+  },
+  {
+    "name": "$geoNear",
+    "description": "Returns documents based on proximity to a geospatial point.",
+    "comment": "* near: The point to search near.\n * distanceField: The calculated distance.\n * maxDistance: The maximum distance, in meters, documents can be before being excluded from results.\n * query: Limits results that match the query\n * includeLocs: Optional. Labels and includes the point used to match the document.\n * num: Optional. The maximum number of documents to return.\n * spherical: Defaults to false. Specifies whether to use spherical geometry.",
+    "snippet": "{\n  near: { type: 'Point', coordinates: [ ${1:number}, ${2:number} ] },\n  distanceField: '${3:string}',\n  maxDistance: ${4:number},\n  query: {${5}},\n  includeLocs: '${6}',\n  num: ${7:number},\n  spherical: ${8:boolean}\n}"
+  },
+  {
+    "name": "$graphLookup",
+    "description": "Performs a recursive search on a collection.",
+    "comment": "* from: The target collection.\n * startWith: Expression to start.\n * connectFromField: Field to connect.\n * connectToField: Field to connect to.\n * as: Name of the array field.\n * maxDepth: Optional max recursion depth.\n * depthField: Optional Name of the depth field.\n * restrictSearchWithMatch: Optional query.",
+    "snippet": "{\n  from: '${1:string}',\n  startWith: ${2:expression},\n  connectFromField: '${3:string}',\n  connectToField: '${4:string}',\n  as: '${5:string}',\n  maxDepth: ${6:number},\n  depthField: '${7:string}',\n  restrictSearchWithMatch: {${8}}\n}"
+  },
+  {
+    "name": "$group",
+    "description": "Groups documents by a specified expression.",
+    "comment": "* _id: The id of the group.\n * fieldN: The first field name.",
+    "snippet": "{\n  _id: ${1:expression},\n  ${2:fieldN}: {\n    ${3:accumulatorN}: ${4:expressionN}\n  }\n}"
+  },
+  {
+    "name": "$indexStats",
+    "description": "Returns statistics regarding the use of each index for the collection.",
+    "comment": "* No parameters.",
+    "snippet": "{}"
+  },
+  {
+    "name": "$limit",
+    "description": "Limits the number of documents that flow into subsequent stages.",
+    "comment": "* Provide the number of documents to limit.",
+    "snippet": "${1:number}"
+  },
+  {
+    "name": "$listLocalSessions",
+    "description": "Lists the sessions cached in memory by the mongod or mongos instance.",
+    "comment": "* users: Optional list of users for which local sessions need to be returned.\n * allUsers: Optional boolean value to specify whether to return local sessions for all users or not.",
+    "snippet": "{\n  allUsers: ${1:false},\n  users: [\n    { user: '${2:string}', db: '${3:string}' }\n  ]\n}"
+  },
+  {
+    "name": "$lookup",
+    "description": "Performs a join between two collections.",
+    "comment": "* from: The target collection.\n * localField: The local join field.\n * foreignField: The target join field.\n * as: The name for the results.\n * pipeline: Optional pipeline to run on the foreign collection.\n * let: Optional variables to use in the pipeline field stages.",
+    "snippet": "{\n  from: ${1:collection},\n  localField: ${2:field},\n  foreignField: ${3:field},\n  as: ${4:result}\n}"
+  },
+  {
+    "name": "$match",
+    "description": "Filters the document stream to allow only matching documents to pass through to subsequent stages.",
+    "comment": "* query: The query in MQL.",
+    "snippet": "{\n  ${1:query}\n}"
+  },
+  {
+    "name": "$merge",
+    "description": "Merges the resulting documents into a collection, optionally overriding existing documents.",
+    "comment": "* into: The target collection.\n * on: Fields to  identify.\n * let: Defined variables.\n * whenMatched: Action for matching docs.\n * whenNotMatched: Action for non-matching docs.",
+    "snippet": "{\n  into: '${1:string}',\n  on: '${2:string}',\n  let: '${3:specification(s)}',\n  whenMatched: '${4:string}',\n  whenNotMatched: '${5:string}'\n}"
+  },
+  {
+    "name": "$merge",
+    "description": "Merges the resulting documents into a collection, optionally overriding existing documents.",
+    "comment": "* atlas: Location to write the documents from the aggregation pipeline.\n * on: Fields to identify.\n * let: Defined variables.\n * whenMatched: Action for matching docs.\n * whenNotMatched: Action for non-matching docs.",
+    "snippet": "{\n  into: {\n    atlas: {\n      clusterName: '${1:atlasClusterName}',\n      db: '${2:database}',\n      coll: '${3:collection}',\n      projectId: '${4:optionalAtlasProjectId}'\n    }\n  },\n  on: '${5:identifier}',\n  let: { ${6:specification(s)} },\n  whenMatched: '${7:string}',\n  whenNotMatched: '${8:string}'\n}"
+  },
+  {
+    "name": "$out",
+    "description": "Writes the result of a pipeline to a new or existing collection.",
+    "comment": "* Provide the name of the output database and collection.",
+    "snippet": "{\n  db: '${1:string}',\n  coll: '${2:string}',\n  /*\n  timeseries: {\n    timeField: '${3:field}',\n    bucketMaxSpanSeconds: '${4:number}',\n    granularity: '${5:granularity}'\n  }\n  */\n}"
+  },
+  {
+    "name": "$out",
+    "description": "Writes the result of a pipeline to an Atlas cluster, S3 bucket, or Azure Blob Storage.",
+    "comment": "* Use any one of the following:\n * s3: Parameters to save the data to S3.\n * atlas: Parameters to save the data to Atlas. Example:\n * {\n *   atlas: {\n *     db: 'string',\n *     coll: 'string',\n *     projectId: 'string',\n *     clusterName: 'string'\n *   }\n * },\n * azure: Parameters to save the data to Azure. Example:\n * {\n *   azure: {\n *     serviceURL: 'string',\n *     containerName: 'string',\n *     region: 'string,\n *     filename: 'string',\n *     format: {\n *       name: 'string',\n *       maxFileSize: 'string',\n *       maxRowGroupSize: 'string',\n *       columnCompression: 'string'\n *     },\n *     errorMode: 'string'\n *   }\n * }",
+    "snippet": "{\n  s3: {\n    bucket: '${1:string}',\n    region: '${2:string}',\n    filename: '${3:string}',\n    format: {\n      name: '${4:string}',\n      maxFileSize: '${5:bytes}',\n      maxRowGroupSize: '${6:string}',\n      columnCompression: '${7:string}'\n    },\n    errorMode: '${8:string}'\n  }\n}"
+  },
+  {
+    "name": "$project",
+    "description": "Adds new field(s) to a document with a computed value, or reassigns an existing field(s) with a computed value. Unlike $addFields, $project can also remove fields.",
+    "comment": "* specifications: The fields to include or exclude.",
+    "snippet": "{\n  ${1:specification(s)}\n}"
+  },
+  {
+    "name": "$redact",
+    "description": "Restricts the content for each document based on information stored in the documents themselves",
+    "comment": "* expression: Any valid expression that\n * evaluates to $$DESCEND, $$PRUNE, or $$KEEP.",
+    "snippet": "{\n  ${1:expression}\n}"
+  },
+  {
+    "name": "$replaceRoot",
+    "description": "Replaces a document with the specified embedded document.",
+    "comment": "* replacementDocument: A document or string.",
+    "snippet": "{\n  newRoot: ${1:replacementDocument}\n}"
+  },
+  {
+    "name": "$replaceWith",
+    "description": "Replaces a document with the specified embedded document.",
+    "comment": "* replacementDocument: A document or string.",
+    "snippet": "{\n  newWith: ${1:replacementDocument}\n}"
+  },
+  {
+    "name": "$sample",
+    "description": "Randomly selects the specified number of documents from its input.",
+    "comment": "* size: The number of documents to sample.",
+    "snippet": "{\n  size: ${1:number}\n}"
+  },
+  {
+    "name": "$search",
+    "description": "Performs a full-text search on the specified field(s).",
+    "comment": "* index: The name of the Search index.\n * text: Analyzed search, with required fields of query and path, the analyzed field(s) to search.\n * compound: Combines ops.\n * span: Find in text field regions.\n * exists: Test for presence of a field.\n * near: Find near number or date.\n * range: Find in numeric or date range.",
+    "snippet": "{\n  index: '${1:string}',\n  text: {\n    query: '${2:string}',\n    path: '${3:string}'\n  }\n}"
+  },
+  {
+    "name": "$searchMeta",
+    "description": "Performs a full-text search on the specified field(s) and gets back only the generated search meta data from a query.",
+    "comment": "* index: The name of the Search index.\n * count: The count of the results.\n * facet: {\n *   operator: Analyzed search, with required fields of query and path, can either be replaced with the name of a valid operator.\n *   facets: {\n *     stringFacet: Narrows search results based on unique string values, with required fields of type and path.\n *     numberFacet: Narrows search results by breaking them up into separate ranges of numbers, with required fields of type, path, and boundaries.\n *     dateFacet: Narrows search results by breaking them up into separate ranges of dates, with required fields of type, path, and boundaries.\n *   }\n * }",
+    "snippet": "{\n  index: ${1:string},\n  facet: {\n    operator: {\n      text: {\n        query: ${2:string},\n        path: ${3:string}\n      }\n    },\n    facets: {\n      ${4:stringFacet}: {\n        type: ${5:string},\n        path: ${6:string},\n        numBuckets: ${7:integer}\n      },\n      numberFacet: {\n        type: 'number',\n        path: ${8:string},\n        boundaries: [${9:lowerbound}, ${10:upperbound}, ...],\n        default: ${11:string}\n      }\n    }\n  }\n}"
+  },
+  {
+    "name": "$set",
+    "description": "Adds new fields to documents. $set outputs documents that contain all existing fields from the input documents and newly added fields.",
+    "comment": "* field: The field name\n * expression: The expression.",
+    "snippet": "{\n  ${1:field}: ${2:expression}\n}"
+  },
+  {
+    "name": "$setWindowFields",
+    "description": "Capable of partitioning incoming data, and can apply one or more functions to defined windows within each partition.",
+    "comment": "* partitionBy: partitioning of data.\n * sortBy: fields to sort by.\n * output: {\n *   path: {\n *     function: The window function to compute over the given window.\n *     window: {\n *       documents: A number of documents before and after the current document.\n *       range: A range of possible values around the value in the current document's sortBy field.\n *       unit: Specifies the units for the window bounds.\n *     }\n *   }\n * }",
+    "snippet": "{\n  partitionBy: ${1:expression},\n  sortBy: ${2:sortSpec},\n  output: {\n    ${3:path}: {\n      ${4:function}: ${5:functionArgs},\n      window: {\n        documents: [${6:lowerbound}, ${7:upperbound}],\n        range: [${8:lowerbound}, ${9:upperbound}],\n        unit: ${10:string}\n      }\n    },\n    ${11:path2}: ...\n  }\n}"
+  },
+  {
+    "name": "$skip",
+    "description": "Skips a specified number of documents before advancing to the next stage.",
+    "comment": "* Provide the number of documents to skip.",
+    "snippet": "${1:number}"
+  },
+  {
+    "name": "$sort",
+    "description": "Reorders the document stream by a specified sort key and direction.",
+    "comment": "* Provide any number of field/order pairs.",
+    "snippet": "{\n  ${1:field1}: ${2:sortOrder}\n}"
+  },
+  {
+    "name": "$sortByCount",
+    "description": "Groups incoming documents based on the value of a specified expression, then computes the count of documents in each distinct group.",
+    "comment": "* expression: Grouping expression or string.",
+    "snippet": "{\n  ${1:expression}\n}"
+  },
+  {
+    "name": "$unionWith",
+    "description": "Perform a union with a pipeline on another collection.",
+    "comment": "* coll: The collection name.\n * pipeline: The pipeline on the other collection.",
+    "snippet": "{\n  coll: '${1:coll}',\n  pipeline: [${2:pipeline}]\n}"
+  },
+  {
+    "name": "$unset",
+    "description": "Excludes fields from the result document.",
+    "comment": "* Provide the field name to exclude.\n * To exclude multiple fields, pass the field names in an array.",
+    "snippet": "'${1:string}'"
+  },
+  {
+    "name": "$unwind",
+    "description": "Outputs a new document for each element in a specified array. ",
+    "comment": "* path: Path to the array field.\n * includeArrayIndex: Optional name for index.\n * preserveNullAndEmptyArrays: Optional\n *   toggle to unwind null and empty values.",
+    "snippet": "{\n  path: ${1:path},\n  includeArrayIndex: '${2:string}',\n  preserveNullAndEmptyArrays: ${3:boolean}\n}"
+  },
+  {
+    "name": "$vectorSearch",
+    "description": "Performs a kNN search on a vector in the specified field or fields. The field that you want to search must be covered by an Atlas Search index of type `vectorEmbedding`.",
+    "comment": "* queryVector: Array of numbers of BSON types `int` or `double` that represent the query vector. The array size must match the number of vector dimensions specified in the index for the field. (Required)\n * path: The field to search. (Required)\n * numCandidates: Number of nearest neighbors to use during the search. You can specify a number higher than the number of documents to return (`limit`) to increase accuracy. (Required)\n * index: Name of the Atlas Search index to use. (Required)\n * limit: Number (of type `int` only) of documents to return in the results. (Required)\n * filter: Any MongoDB Query Language (MQL) match expression that compares an indexed field with a boolean, number (not decimals), or string to use as a prefilter. (Optional)\n * exact: Choose between false for ANN (Approximate Nearest Neighbor) and true for ENN (Exact Nearest Neighbor). Defaults to false. (Optional)",
+    "snippet": "{\n  queryVector: [${1:dimension1}, ${2:dimension2}, ...],\n  path: ${3:string},\n  numCandidates: ${4:numCandidates},\n  index: ${5:string},\n  limit: ${6:limit},\n  filter: {${7:expression}},\n  exact: ${8:boolean}\n}"
+  }
+]

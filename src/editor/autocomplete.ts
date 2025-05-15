@@ -1,7 +1,7 @@
 import { useRef, useEffect } from 'react';
 import { type Monaco, type monacoTypes, type MonacoEditor } from '@grafana/ui';
 import { languages } from 'monaco-editor';
-import completionData from './completions.json';
+import stages from './stages.json';
 
 interface CompletionState {
   name: string;
@@ -11,7 +11,7 @@ interface CompletionState {
 
 // Supports JSON only right now
 class CompletionProvider implements monacoTypes.languages.CompletionItemProvider {
-  constructor(private readonly editor: MonacoEditor) {}
+  constructor(private readonly editor: MonacoEditor) { }
 
   provideCompletionItems(
     model: monacoTypes.editor.ITextModel,
@@ -46,10 +46,10 @@ class CompletionProvider implements monacoTypes.languages.CompletionItemProvider
       endColumn: word.endColumn,
     };
 
-    const suggestions: languages.CompletionItem[] = completionData['stages'].map((stage) => ({
+    const suggestions: languages.CompletionItem[] = stages.map((stage) => ({
       label: `"${stage.name}"`,
       kind: languages.CompletionItemKind.Function,
-      insertText: createInsertText(stage),
+      insertText: `"\\${stage.name}": ${stage.snippet}`,
       range: range,
       detail: 'stage',
       documentation: stage.description,
