@@ -11,31 +11,46 @@
     },
     {
       "name": "$bucketAuto",
-      "description": "Categorizes incoming documents into a specific number of groups, called buckets, based on a specified expression. Bucket boundaries are automatically determined in an attempt to evenly distribute the documents into the specified number of buckets."
+      "description": "Categorizes incoming documents into a specific number of groups, called buckets, based on a specified expression. Bucket boundaries are automatically determined in an attempt to evenly distribute the documents into the specified number of buckets.",
+      "fields": ["groupBy", "buckets", "output", "granularity"]
     },
     {
       "name": "$changeStream",
-      "description": "Returns a [Change Stream](https://www.mongodb.com/docs/manual/changeStreams/#std-label-changeStreams) cursor for the collection. This stage can only occur once in an aggregation pipeline and it must occur as the first stage."
+      "description": "Returns a [Change Stream](https://www.mongodb.com/docs/manual/changeStreams/#std-label-changeStreams) cursor for the collection. This stage can only occur once in an aggregation pipeline and it must occur as the first stage.",
+      "fields": [
+        "allChangesForCluster",
+        "fullDocument",
+        "fullDocumentBeforeChange",
+        "resumeAfter",
+        "showExpandedEvents",
+        "startAfter",
+        "startAtOperationTime"
+      ]
     },
     {
       "name": "$changeStreamSplitLargeEvent",
-      "description": "Splits large [change stream](https://www.mongodb.com/docs/manual/changeStreams/#std-label-changeStreams) events that exceed 16 MB into smaller fragments returned in a change stream cursor.  \nYou can only use `$changeStreamSplitLargeEvent` in a `$changeStream` pipeline and it must be the final stage in the pipeline."
+      "description": "Splits large [change stream](https://www.mongodb.com/docs/manual/changeStreams/#std-label-changeStreams) events that exceed 16 MB into smaller fragments returned in a change stream cursor.  \nYou can only use `$changeStreamSplitLargeEvent` in a `$changeStream` pipeline and it must be the final stage in the pipeline.",
+      "fields": ["fragment", "of"]
     },
     {
       "name": "$collStats",
-      "description": "Returns statistics regarding a collection or view."
+      "description": "Returns statistics regarding a collection or view.",
+      "fields": ["latencyStats", "storageStats", "count", "queryExecStats"]
     },
     {
       "name": "$count",
-      "description": "Returns a count of the number of documents at this stage of the aggregation pipeline.  \nDistinct from the [`$count`](https://www.mongodb.com/docs/manual/reference/operator/aggregation/count-accumulator/#mongodb-group-grp.-count) aggregation accumulator."
+      "description": "Returns a count of the number of documents at this stage of the aggregation pipeline.  \nDistinct from the [`$count`](https://www.mongodb.com/docs/manual/reference/operator/aggregation/count-accumulator/#mongodb-group-grp.-count) aggregation accumulator.",
+      "fields": "string"
     },
     {
       "name": "$densify",
-      "description": "Creates new documents in a sequence of documents where certain values in a field are missing."
+      "description": "Creates new documents in a sequence of documents where certain values in a field are missing.",
+      "fields": ["field", "partitionByFields", "range"]
     },
     {
       "name": "$documents",
-      "description": "Returns literal documents from input expressions."
+      "description": "Returns literal documents from input expressions.",
+      "fields": "expression"
     },
     {
       "name": "$facet",
@@ -43,19 +58,42 @@
     },
     {
       "name": "$fill",
-      "description": "Populates `null` and missing field values within documents."
+      "description": "Populates `null` and missing field values within documents.",
+      "fields": ["partitionBy", "partitionByFields", "sortBy", "output"]
     },
     {
       "name": "$geoNear",
-      "description": "Returns an ordered stream of documents based on the proximity to a geospatial point. Incorporates the functionality of [`$match`](https://www.mongodb.com/docs/manual/reference/operator/aggregation/match/#mongodb-pipeline-pipe.-match) , [`$sort`](https://www.mongodb.com/docs/manual/reference/operator/aggregation/sort/#mongodb-pipeline-pipe.-sort) , and [`$limit`](https://www.mongodb.com/docs/manual/reference/operator/aggregation/limit/#mongodb-pipeline-pipe.-limit) for geospatial data. The output documents include an additional distance field and can include a location identifier field."
+      "description": "Returns an ordered stream of documents based on the proximity to a geospatial point. Incorporates the functionality of [`$match`](https://www.mongodb.com/docs/manual/reference/operator/aggregation/match/#mongodb-pipeline-pipe.-match) , [`$sort`](https://www.mongodb.com/docs/manual/reference/operator/aggregation/sort/#mongodb-pipeline-pipe.-sort) , and [`$limit`](https://www.mongodb.com/docs/manual/reference/operator/aggregation/limit/#mongodb-pipeline-pipe.-limit) for geospatial data. The output documents include an additional distance field and can include a location identifier field.",
+      "fields": [
+        "distanceField",
+        "distanceMultiplier",
+        "includeLocs",
+        "key",
+        "maxDistance",
+        "minDistance",
+        "near",
+        "query",
+        "spherical"
+      ]
     },
     {
       "name": "$graphLookup",
-      "description": "Performs a recursive search on a collection. To each output document, adds a new array field that contains the traversal results of the recursive search for that document."
+      "description": "Performs a recursive search on a collection. To each output document, adds a new array field that contains the traversal results of the recursive search for that document.",
+      "fields": [
+        "from",
+        "startWith",
+        "connectFromField",
+        "connectToField",
+        "as",
+        "maxDepth",
+        "depthField",
+        "restrictSearchWithMatch"
+      ]
     },
     {
       "name": "$group",
-      "description": "Groups input documents by a specified identifier expression and applies the accumulator expression(s), if specified, to each group. Consumes all input documents and outputs one document per each distinct group. The output documents only contain the identifier field and, if specified, accumulated fields."
+      "description": "Groups input documents by a specified identifier expression and applies the accumulator expression(s), if specified, to each group. Consumes all input documents and outputs one document per each distinct group. The output documents only contain the identifier field and, if specified, accumulated fields.",
+      "fields": ["_id"]
     },
     {
       "name": "$indexStats",
@@ -63,15 +101,18 @@
     },
     {
       "name": "$limit",
-      "description": "Passes the first *n* documents unmodified to the pipeline where *n* is the specified limit. For each input document, outputs either one document (for the first *n* documents) or zero documents (after the first *n* documents)."
+      "description": "Passes the first *n* documents unmodified to the pipeline where *n* is the specified limit. For each input document, outputs either one document (for the first *n* documents) or zero documents (after the first *n* documents).",
+      "fields": "positive 64-bit integer"
     },
     {
       "name": "$listSampledQueries",
-      "description": "Lists sampled queries for all collections or a specific collection."
+      "description": "Lists sampled queries for all collections or a specific collection.",
+      "fields": ["namespace"]
     },
     {
       "name": "$listSearchIndexes",
-      "description": "Returns information about existing [Atlas Search indexes](https://www.mongodb.com/docs/atlas/atlas-search/atlas-search-overview/#fts-indexes) on a specified collection."
+      "description": "Returns information about existing [Atlas Search indexes](https://www.mongodb.com/docs/atlas/atlas-search/atlas-search-overview/#fts-indexes) on a specified collection.",
+      "fields": ["id", "name"]
     },
     {
       "name": "$listSessions",
@@ -79,7 +120,8 @@
     },
     {
       "name": "$lookup",
-      "description": "Performs a left outer join to another collection in the *same* database to filter in documents from the \"joined\" collection for processing."
+      "description": "Performs a left outer join to another collection in the *same* database to filter in documents from the \"joined\" collection for processing.",
+      "fields": ["from", "localField", "foreignField", "let", "pipeline", "as"]
     },
     {
       "name": "$match",
@@ -87,15 +129,18 @@
     },
     {
       "name": "$merge",
-      "description": "Writes the resulting documents of the aggregation pipeline to a collection. The stage can incorporate (insert new documents, merge documents, replace documents, keep existing documents, fail the operation, process documents with a custom update pipeline) the results into an output collection. To use the [`$merge`](https://www.mongodb.com/docs/manual/reference/operator/aggregation/merge/#mongodb-pipeline-pipe.-merge) stage, it must be the last stage in the pipeline."
+      "description": "Writes the resulting documents of the aggregation pipeline to a collection. The stage can incorporate (insert new documents, merge documents, replace documents, keep existing documents, fail the operation, process documents with a custom update pipeline) the results into an output collection. To use the [`$merge`](https://www.mongodb.com/docs/manual/reference/operator/aggregation/merge/#mongodb-pipeline-pipe.-merge) stage, it must be the last stage in the pipeline.",
+      "fields": ["into", "on", "let", "whenMatched", "whenNotMatched"]
     },
     {
       "name": "$out",
-      "description": "Writes the resulting documents of the aggregation pipeline to a collection. To use the [`$out`](https://www.mongodb.com/docs/manual/reference/operator/aggregation/out/#mongodb-pipeline-pipe.-out) stage, it must be the last stage in the pipeline."
+      "description": "Writes the resulting documents of the aggregation pipeline to a collection. To use the [`$out`](https://www.mongodb.com/docs/manual/reference/operator/aggregation/out/#mongodb-pipeline-pipe.-out) stage, it must be the last stage in the pipeline.",
+      "fields": ["db", "coll", "timeseries"]
     },
     {
       "name": "$planCacheStats",
-      "description": "Returns [plan cache](https://www.mongodb.com/docs/manual/core/query-plans/#std-label-query-plans-query-optimization) information for a collection."
+      "description": "Returns [plan cache](https://www.mongodb.com/docs/manual/core/query-plans/#std-label-query-plans-query-optimization) information for a collection.",
+      "fields": "boolean"
     },
     {
       "name": "$project",
@@ -103,27 +148,33 @@
     },
     {
       "name": "$querySettings",
-      "description": "Returns query settings previously added with [`setQuerySettings` .](https://www.mongodb.com/docs/manual/reference/command/setQuerySettings/#mongodb-dbcommand-dbcmd.setQuerySettings)  \n*New in version 8.0* ."
+      "description": "Returns query settings previously added with [`setQuerySettings` .](https://www.mongodb.com/docs/manual/reference/command/setQuerySettings/#mongodb-dbcommand-dbcmd.setQuerySettings)  \n*New in version 8.0* .",
+      "fields": ["showDebugQueryShape"]
     },
     {
       "name": "$queryStats",
-      "description": "Returns runtime statistics for recorded queries.  \n**WARNING:** The `$queryStats` aggregation stage is unsupported and is not guaranteed to be stable in a future release. Don't build functionality that relies on a specific output format of this stage, since the output may change in a future release."
+      "description": "Returns runtime statistics for recorded queries.  \n**WARNING:** The `$queryStats` aggregation stage is unsupported and is not guaranteed to be stable in a future release. Don't build functionality that relies on a specific output format of this stage, since the output may change in a future release.",
+      "fields": ["transformIdentifiers"]
     },
     {
       "name": "$redact",
-      "description": "Reshapes each document in the stream by restricting the content for each document based on information stored in the documents themselves. Incorporates the functionality of [`$project`](https://www.mongodb.com/docs/manual/reference/operator/aggregation/project/#mongodb-pipeline-pipe.-project) and [`$match`](https://www.mongodb.com/docs/manual/reference/operator/aggregation/match/#mongodb-pipeline-pipe.-match) . Can be used to implement field level redaction. For each input document, outputs either one or zero documents."
+      "description": "Reshapes each document in the stream by restricting the content for each document based on information stored in the documents themselves. Incorporates the functionality of [`$project`](https://www.mongodb.com/docs/manual/reference/operator/aggregation/project/#mongodb-pipeline-pipe.-project) and [`$match`](https://www.mongodb.com/docs/manual/reference/operator/aggregation/match/#mongodb-pipeline-pipe.-match) . Can be used to implement field level redaction. For each input document, outputs either one or zero documents.",
+      "fields": "expression"
     },
     {
       "name": "$replaceRoot",
-      "description": "Replaces a document with the specified embedded document. The operation replaces all existing fields in the input document, including the `_id` field. Specify a document embedded in the input document to promote the embedded document to the top level.  \n[`$replaceWith`](https://www.mongodb.com/docs/manual/reference/operator/aggregation/replaceWith/#mongodb-pipeline-pipe.-replaceWith) is an alias for [`$replaceRoot`](https://www.mongodb.com/docs/manual/reference/operator/aggregation/replaceRoot/#mongodb-pipeline-pipe.-replaceRoot) stage."
+      "description": "Replaces a document with the specified embedded document. The operation replaces all existing fields in the input document, including the `_id` field. Specify a document embedded in the input document to promote the embedded document to the top level.  \n[`$replaceWith`](https://www.mongodb.com/docs/manual/reference/operator/aggregation/replaceWith/#mongodb-pipeline-pipe.-replaceWith) is an alias for [`$replaceRoot`](https://www.mongodb.com/docs/manual/reference/operator/aggregation/replaceRoot/#mongodb-pipeline-pipe.-replaceRoot) stage.",
+      "fields": "replacementDocument"
     },
     {
       "name": "$replaceWith",
-      "description": "Replaces a document with the specified embedded document. The operation replaces all existing fields in the input document, including the `_id` field. Specify a document embedded in the input document to promote the embedded document to the top level.  [`$replaceWith`](https://www.mongodb.com/docs/manual/reference/operator/aggregation/replaceWith/#mongodb-pipeline-pipe.-replaceWith) is an alias for [`$replaceRoot`](https://www.mongodb.com/docs/manual/reference/operator/aggregation/replaceRoot/#mongodb-pipeline-pipe.-replaceRoot) stage."
+      "description": "Replaces a document with the specified embedded document. The operation replaces all existing fields in the input document, including the `_id` field. Specify a document embedded in the input document to promote the embedded document to the top level.  [`$replaceWith`](https://www.mongodb.com/docs/manual/reference/operator/aggregation/replaceWith/#mongodb-pipeline-pipe.-replaceWith) is an alias for [`$replaceRoot`](https://www.mongodb.com/docs/manual/reference/operator/aggregation/replaceRoot/#mongodb-pipeline-pipe.-replaceRoot) stage.",
+      "fields": "replacementDocument"
     },
     {
       "name": "$sample",
-      "description": "Randomly selects the specified number of documents from its input."
+      "description": "Randomly selects the specified number of documents from its input.",
+      "fields": ["size"]
     },
     {
       "name": "$search",
@@ -139,11 +190,13 @@
     },
     {
       "name": "$setWindowFields",
-      "description": "Groups documents into windows and applies one or more operators to the documents in each window.  \n*New in version 5.0* ."
+      "description": "Groups documents into windows and applies one or more operators to the documents in each window.  \n*New in version 5.0* .",
+      "fields": ["partitionBy", "sortBy", "output"]
     },
     {
       "name": "$skip",
-      "description": "Skips the first *n* documents where *n* is the specified skip number and passes the remaining documents unmodified to the pipeline. For each input document, outputs either zero documents (for the first *n* documents) or one document (if after the first *n* documents)."
+      "description": "Skips the first *n* documents where *n* is the specified skip number and passes the remaining documents unmodified to the pipeline. For each input document, outputs either zero documents (for the first *n* documents) or one document (if after the first *n* documents).",
+      "fields": "positive 64-bit integer"
     },
     {
       "name": "$sort",
@@ -151,11 +204,13 @@
     },
     {
       "name": "$sortByCount",
-      "description": "Groups incoming documents based on the value of a specified expression, then computes the count of documents in each distinct group."
+      "description": "Groups incoming documents based on the value of a specified expression, then computes the count of documents in each distinct group.",
+      "fields": "expression"
     },
     {
       "name": "$unionWith",
-      "description": "Performs a union of two collections; i.e. combines pipeline results from two collections into a single result set."
+      "description": "Performs a union of two collections; i.e. combines pipeline results from two collections into a single result set.",
+      "fields": ["coll", "pipeline"]
     },
     {
       "name": "$unset",
@@ -163,7 +218,8 @@
     },
     {
       "name": "$unwind",
-      "description": "Deconstructs an array field from the input documents to output a document for *each* element. Each output document replaces the array with an element value. For each input document, outputs *n* documents where *n* is the number of array elements and can be zero for an empty array."
+      "description": "Deconstructs an array field from the input documents to output a document for *each* element. Each output document replaces the array with an element value. For each input document, outputs *n* documents where *n* is the number of array elements and can be zero for an empty array.",
+      "fields": ["path", "includeArrayIndex", "preserveNullAndEmptyArrays"]
     },
     {
       "name": "$vectorSearch",
