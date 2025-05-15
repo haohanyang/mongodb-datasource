@@ -68,6 +68,7 @@
     "@grafana/runtime": "^11.2.0",
     "@grafana/schema": "^10.4.0",
     "@grafana/ui": "^11.2.0",
+    "@mongodb-js/mongodb-constants": "^0.11.1",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "shadowrealm-api": "^0.8.3",

@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { monacoTypes, type Monaco, type MonacoEditor } from '@grafana/ui';
-import stages from './stages.json';
+import { STAGE_OPERATORS } from '@mongodb-js/mongodb-constants'
 
-const stageObj = Object.fromEntries(stages.map((stage) => [stage.name, [stage.description, stage.comment]]))
+
+const stages = Object.fromEntries(STAGE_OPERATORS.map((stage) => [stage.name, [stage.description, stage.comment]]))
 
 class HoverProvider implements monacoTypes.languages.HoverProvider {
     constructor(private readonly editor: MonacoEditor) { }
@@ -12,8 +13,8 @@ class HoverProvider implements monacoTypes.languages.HoverProvider {
         }
 
         const word = model.getWordAtPosition(position);
-        if (word && Object.keys(stageObj).includes(word.word)) {
-            const [description, comment] = stageObj[word.word];
+        if (word && word.word in stages) {
+            const [description, comment] = stages[word.word];
             return {
                 range: {
                     startLineNumber: position.lineNumber,
@@ -24,7 +25,13 @@ class HoverProvider implements monacoTypes.languages.HoverProvider {
                 contents: [
                     { value: `[${word.word}](https://www.mongodb.com/docs/manual/reference/operator/aggregation/${word.word.substring(1)})` },
                     { value: description },
-                    { value: comment },
+                    {
+                        value: comment
+                            .trim()
+                            .replace(/^\/\*\*/g, '')
+                            .replace(/\*\/$/g, '')
+                            .trim()
+                    },
                 ]
             };
         }

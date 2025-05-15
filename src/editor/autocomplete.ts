@@ -1,7 +1,7 @@
 import { useRef, useEffect } from 'react';
 import { type Monaco, type monacoTypes, type MonacoEditor } from '@grafana/ui';
 import { languages } from 'monaco-editor';
-import stages from './stages.json';
+import { STAGE_OPERATORS } from '@mongodb-js/mongodb-constants'
 
 interface CompletionState {
   name: string;
@@ -46,7 +46,7 @@ class CompletionProvider implements monacoTypes.languages.CompletionItemProvider
       endColumn: word.endColumn,
     };
 
-    const suggestions: languages.CompletionItem[] = stages.map((stage) => ({
+    const suggestions: languages.CompletionItem[] = STAGE_OPERATORS.map((stage) => ({
       label: `"${stage.name}"`,
       kind: languages.CompletionItemKind.Function,
       insertText: `"\\${stage.name}": ${stage.snippet}`,
