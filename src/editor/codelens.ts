@@ -5,19 +5,29 @@ import { useEffect, useRef } from 'react';
 interface ParsedAggregateStages {
   name: string;
   startLine: number;
-  startCharacter: number;
-  length: number;
+  startColumn: number;
+  startOffset: number;
+  endOffset: number;
 }
 
 class CodeLensVisitor implements JSONVisitor {
   private _currentLevel: number;
   private _stages: ParsedAggregateStages[];
+  private _seperators: number[];
   private _hasError: boolean;
+  private _startLine: number;
+  private _startColumn: number;
+  private _startOffset: number;
+  private _stageName?: string;
 
   constructor() {
     this._hasError = false;
     this._currentLevel = 0;
     this._stages = [];
+    this._seperators = [];
+    this._startLine = 0;
+    this._startOffset = 0;
+    this._startColumn = 0;
   }
 
   onObjectBegin = (
@@ -31,6 +41,13 @@ class CodeLensVisitor implements JSONVisitor {
       return false;
     }
     this._currentLevel += 1;
+
+    if (this._currentLevel === 1) {
+      this._startLine = startLine;
+      this._startOffset = offset;
+      this._startColumn = startCharacter;
+    }
+    return;
   };
 
   onObjectProperty = (
@@ -39,28 +56,46 @@ class CodeLensVisitor implements JSONVisitor {
     length: number,
     startLine: number,
     startCharacter: number,
-    pathSupplier: () => JSONPath,
+    _pathSupplier: () => JSONPath,
   ) => {
     if (this._currentLevel === 1) {
-      this._stages.push({
-        name: property,
-        startLine: startLine,
-        startCharacter: startCharacter,
-        length: length,
-      });
+      this._stageName = property;
     }
   };
 
-  onObjectEnd = (offset: number, length: number, startLine: number, startCharacter: number) => {
+  onObjectEnd = (offset: number, _length: number, _startLine: number, _startCharacter: number) => {
+    if (!this._stageName) {
+      this._hasError = true;
+    } else {
+      if (this._currentLevel === 1) {
+        this._stages.push({
+          name: this._stageName,
+          startLine: this._startLine,
+          startOffset: this._startOffset,
+          startColumn: this._startColumn,
+          endOffset: offset,
+        });
+      }
+    }
     this._currentLevel -= 1;
   };
 
-  onError = (error: ParseErrorCode, offset: number, length: number, startLine: number, startCharacter: number) => {
+  onSeparator = (character: string, offset: number, _length: number, _startLine: number, _startCharacter: number) => {
+    if (character === ',' && this._currentLevel === 0) {
+      this._seperators.push(offset)
+    }
+  }
+
+  onError = (_error: ParseErrorCode, _offset: number, _length: number, _startLine: number, _startCharacter: number) => {
     this._hasError = true;
   };
 
   public get stages(): ParsedAggregateStages[] {
     return this._stages;
+  }
+
+  public get seperators(): number[] {
+    return this._seperators;
   }
 
   public get hasError(): boolean {
@@ -69,7 +104,7 @@ class CodeLensVisitor implements JSONVisitor {
 }
 
 class CodeLensProvider implements monacoTypes.languages.CodeLensProvider {
-  constructor(private readonly editor: MonacoEditor) {}
+  constructor(private readonly editor: MonacoEditor, private readonly updateTextCommandId: string) { }
 
   provideCodeLenses(
     model: monacoTypes.editor.ITextModel,
@@ -78,6 +113,8 @@ class CodeLensProvider implements monacoTypes.languages.CodeLensProvider {
     if (this.editor.getModel()?.id !== model.id) {
       return null;
     }
+
+    const lenses: monacoTypes.languages.CodeLens[] = []
 
     const text = model.getValue();
     const visitor = new CodeLensVisitor();
@@ -88,20 +125,53 @@ class CodeLensProvider implements monacoTypes.languages.CodeLensProvider {
     }
 
     const stages = visitor.stages;
-    return {
-      lenses: stages.map((stage) => ({
-        range: {
-          startLineNumber: stage.startLine,
-          startColumn: stage.startCharacter,
-          endLineNumber: stage.startLine,
-          endColumn: stage.startCharacter + stage.length,
-        },
+    const seperators = visitor.seperators;
+
+    for (let i = 0; i < stages.length; i++) {
+      const stage = stages[i];
+
+      const range = {
+        startLineNumber: stage.startLine + 1,
+        startColumn: stage.startColumn,
+        endLineNumber: stage.startLine + 2,
+        endColumn: stage.startColumn
+      }
+
+      lenses.push({
+        range,
+        // @ts-ignore
         command: {
-          id: 'mongodb.aggregate.stage',
-          title: `Stage: ${stage.name}`,
+          title: `Stage ${stage.name}`
         },
-      })),
-      dispose: () => {},
+      });
+
+      // Remove text from start - end
+      let start, end;
+
+      if (i == 0) {
+        start = stage.startOffset;
+        end = seperators.length > 0 ? seperators[0] + 1 : stage.endOffset + 1;
+      } else if (i == stages.length - 1) {
+        start = seperators[seperators.length - 1];
+        end = stage.endOffset + 1;
+      } else {
+        start = stage.startOffset;
+        end = seperators.length > 0 ? seperators[i] + 1 : stage.endOffset + 1;
+      }
+
+      lenses.push({
+        range,
+        command: {
+          id: this.updateTextCommandId,
+          title: "Delete",
+          arguments: [text.slice(0, start) + text.slice(end)]
+        },
+      });
+    }
+
+    return {
+      lenses: lenses,
+      dispose: () => { },
     };
   }
 
@@ -122,8 +192,8 @@ export function useCodeLens() {
     };
   }, []);
 
-  return (editor: MonacoEditor, monaco: Monaco) => {
-    const provider = new CodeLensProvider(editor);
+  return (editor: MonacoEditor, monaco: Monaco, updateTextCommandId: string) => {
+    const provider = new CodeLensProvider(editor, updateTextCommandId);
     const { dispose } = monaco.languages.registerCodeLensProvider('json', provider);
     codeLensDisposeFun.current = dispose;
   };

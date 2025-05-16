@@ -37,7 +37,13 @@ export function QueryEditorRaw({ query, onBlur, language, width, height, fontSiz
           setupValidationFn(editor, monaco);
           setupAutocompleteFn(editor, monaco);
           setupHoverFn(editor, monaco);
-          setupCodeLensFn(editor, monaco);
+
+          const updateTextCommandId = editor.addCommand(0, (_ctx, ...args) => {
+            const text = args[0];
+            onBlur?.(text);
+          });
+
+          setupCodeLensFn(editor, monaco, updateTextCommandId!);
         }}
         height={height || '240px'}
         width={width ? `${width - 2}px` : undefined}
