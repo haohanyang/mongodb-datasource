@@ -3,6 +3,7 @@ import { CodeEditor, type MonacoEditor } from '@grafana/ui';
 import { useAutocomplete } from '../editor/autocomplete';
 import { useValidation } from '../editor/validation';
 import { useHover } from '../editor/hover';
+import { useCodeLens } from '../editor/codelens';
 
 interface QueryEditorRawProps {
   query: string;
@@ -20,6 +21,7 @@ export function QueryEditorRaw({ query, onBlur, language, width, height, fontSiz
   const setupAutocompleteFn = useAutocomplete();
   const setupHoverFn = useHover();
   const setupValidationFn = useValidation();
+  const setupCodeLensFn = useCodeLens();
 
   const formatQuery = useCallback(() => {
     if (monacoRef.current) {
@@ -35,6 +37,7 @@ export function QueryEditorRaw({ query, onBlur, language, width, height, fontSiz
           setupValidationFn(editor, monaco);
           setupAutocompleteFn(editor, monaco);
           setupHoverFn(editor, monaco);
+          setupCodeLensFn(editor, monaco);
         }}
         height={height || '240px'}
         width={width ? `${width - 2}px` : undefined}
@@ -43,7 +46,7 @@ export function QueryEditorRaw({ query, onBlur, language, width, height, fontSiz
         value={query}
         showMiniMap={false}
         showLineNumbers={true}
-        monacoOptions={fontSize ? { fontSize: fontSize } : undefined}
+        monacoOptions={fontSize ? { fontSize: fontSize, codeLens: true } : undefined}
       />
       {children && children({ formatQuery })}
     </div>

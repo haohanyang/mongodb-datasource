@@ -40,15 +40,18 @@ class CompletionProvider implements monacoTypes.languages.CompletionItemProvider
       endColumn: word.endColumn,
     };
 
-    const stageSuggestions: languages.CompletionItem[] = STAGE_OPERATORS.map((stage) => ({
-      label: `"${stage.name}"`,
-      kind: languages.CompletionItemKind.Function,
-      insertText: `"\\${stage.name}": ${stage.snippet}`,
-      range: range,
-      detail: stage.meta,
-      documentation: stage.description,
-      insertTextRules: languages.CompletionItemInsertTextRule.InsertAsSnippet,
-    }));
+    const stageSuggestions: languages.CompletionItem[] = STAGE_OPERATORS.map((stage) => {
+      // Add double quotation marks
+      const snippet = stage.snippet.replace(/(\s*)([a-zA-Z]+)\s*: /g, '$1"$2": ');
+      return {
+        label: `"${stage.name}"`,
+        kind: languages.CompletionItemKind.Function,
+        insertText: `"\\${stage.name}": ${snippet}`,
+        range: range,
+        detail: stage.meta,
+        documentation: stage.description,
+        insertTextRules: languages.CompletionItemInsertTextRule.InsertAsSnippet,
+  }});
 
     const expressionSuggestions: languages.CompletionItem[] = [...EXPRESSION_OPERATORS, ...ACCUMULATORS, ...CONVERSION_OPERATORS, ...QUERY_OPERATORS].map((expression) => ({
       label: `"${expression.name}"`,
