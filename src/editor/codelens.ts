@@ -148,10 +148,10 @@ class CodeLensProvider implements monacoTypes.languages.CodeLensProvider {
       // Remove text from start - end
       let start, end;
 
-      if (i == 0) {
+      if (i === 0) {
         start = stage.startOffset;
         end = seperators.length > 0 ? seperators[0] + 1 : stage.endOffset + 1;
-      } else if (i == stages.length - 1) {
+      } else if (i === stages.length - 1) {
         start = seperators[seperators.length - 1];
         end = stage.endOffset + 1;
       } else {
