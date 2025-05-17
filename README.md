@@ -10,7 +10,7 @@ This plugin enables you to query and visualize data from your MongoDB databases 
 
 #### Ordinary Query
 
-![screenshot](/static/screenshot-4.png)
+![screenshot](/static/screenshot.gif)
 
 #### Live Streaming
 
@@ -19,7 +19,9 @@ This plugin enables you to query and visualize data from your MongoDB databases 
 ## Features
 
 - **Flexible Querying:** Query data using MongoDB's aggregation pipeline syntax in JSON or JavaScript. Support query variables & annotation queries to create rich dynamic dashboards.
-- **Time Series & Table Data:** Visualize time-based data or display results in tabular format for various Grafana panels.
+- **Time Series & Table Data:** Visualize time-based data or display results in
+  tabular format for various Grafana panels.
+- **Rich Language Support** IntelliSense for MongoDB query in editor: Code completion, Hover, CodeLense, etc.
 - **Live Streaming Support** (Experimental) Watch [MongoDB Change Streams](https://www.mongodb.com/docs/manual/changeStreams/) to monitor MongoDB operations and data in real-time.
 - **MongoDB Atlas Support** Connect to MongoDB Atlas Services.
 - **Grafana Alerting Support** Set up alerting rules based on query result

@@ -42,7 +42,7 @@ class CompletionProvider implements monacoTypes.languages.CompletionItemProvider
 
     const stageSuggestions: languages.CompletionItem[] = STAGE_OPERATORS.map((stage) => {
       // Add double quotation marks
-      const snippet = stage.snippet.replace(/(\s*)([a-zA-Z]+)\s*: /g, '$1"$2": ');
+      const snippet = stage.snippet.replace(/(\s*)([_a-zA-Z]+)\s*: /g, '$1"$2": ');
       return {
         label: `"${stage.name}"`,
         kind: languages.CompletionItemKind.Function,
@@ -51,7 +51,8 @@ class CompletionProvider implements monacoTypes.languages.CompletionItemProvider
         detail: stage.meta,
         documentation: stage.description,
         insertTextRules: languages.CompletionItemInsertTextRule.InsertAsSnippet,
-  }});
+      }
+    });
 
     const expressionSuggestions: languages.CompletionItem[] = [...EXPRESSION_OPERATORS, ...ACCUMULATORS, ...CONVERSION_OPERATORS, ...QUERY_OPERATORS].map((expression) => ({
       label: `"${expression.name}"`,
