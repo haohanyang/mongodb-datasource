@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.2 - 2025-05-17
+
+### Added
+
+- More autocomplete support.
+- IntelliSense: Hover on stage operator will display stage description and parameters. CodeLens on stage operator with "Delete" action. Editor validaton that displays warning if query is invalid.
+
+### Changed
+
+- Editor UI was updated to resemble the standard SQL editor
+
 ## 0.3.1 - 2025-02-18
 
 ### Added
