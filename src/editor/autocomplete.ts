@@ -1,11 +1,11 @@
 import { useRef, useEffect } from 'react';
-import { type Monaco, type monacoTypes } from '@grafana/ui';
+import { type Monaco, type monacoTypes, type MonacoEditor } from '@grafana/ui';
 import { languages } from 'monaco-editor';
-import aggregationData from './aggregation.json';
+import { STAGE_OPERATORS, EXPRESSION_OPERATORS, ACCUMULATORS, CONVERSION_OPERATORS, QUERY_OPERATORS } from '@mongodb-js/mongodb-constants'
 
 // Supports JSON only right now
 class CompletionProvider implements monacoTypes.languages.CompletionItemProvider {
-  constructor(private readonly editor: monacoTypes.editor.IStandaloneCodeEditor) {}
+  constructor(private readonly editor: MonacoEditor) { }
 
   provideCompletionItems(
     model: monacoTypes.editor.ITextModel,
@@ -40,18 +40,30 @@ class CompletionProvider implements monacoTypes.languages.CompletionItemProvider
       endColumn: word.endColumn,
     };
 
-    const suggestions: languages.CompletionItem[] = aggregationData['stages'].map((s) => ({
-      label: `"${s['name']}"`,
+    const stageSuggestions: languages.CompletionItem[] = STAGE_OPERATORS.map((stage) => {
+      // Add double quotation marks
+      const snippet = stage.snippet.replace(/(\s*)([a-zA-Z]+)\s*: /g, '$1"$2": ');
+      return {
+        label: `"${stage.name}"`,
+        kind: languages.CompletionItemKind.Function,
+        insertText: `"\\${stage.name}": ${snippet}`,
+        range: range,
+        detail: stage.meta,
+        documentation: stage.description,
+        insertTextRules: languages.CompletionItemInsertTextRule.InsertAsSnippet,
+  }});
+
+    const expressionSuggestions: languages.CompletionItem[] = [...EXPRESSION_OPERATORS, ...ACCUMULATORS, ...CONVERSION_OPERATORS, ...QUERY_OPERATORS].map((expression) => ({
+      label: `"${expression.name}"`,
       kind: languages.CompletionItemKind.Function,
-      insertText: s['insertText'] ? s['insertText'] : `"\\${s['name']}": {\n\t$0\n}`,
+      insertText: `"\\${expression.name}": \${1:expression}`,
       range: range,
-      detail: 'stage',
-      documentation: s['description'],
+      detail: expression.meta,
       insertTextRules: languages.CompletionItemInsertTextRule.InsertAsSnippet,
     }));
 
     return {
-      suggestions: suggestions,
+      suggestions: [...stageSuggestions, ...expressionSuggestions],
     };
   }
 }
@@ -64,7 +76,7 @@ export function useAutocomplete() {
     };
   }, []);
 
-  return (editor: monacoTypes.editor.IStandaloneCodeEditor, monaco: Monaco) => {
+  return (editor: MonacoEditor, monaco: Monaco) => {
     const provider = new CompletionProvider(editor);
     const { dispose } = monaco.languages.registerCompletionItemProvider('json', provider);
     autocompleteDisposeFun.current = dispose;
