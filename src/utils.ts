@@ -26,7 +26,7 @@ export function parseJsQueryLegacy(queryText: string): JsQueryResult {
   }
 }
 
-export function parseJsQuery(queryText: string): JsQueryResult {
+export function parseJsShadowQuery(queryText: string): JsQueryResult {
   // use shadow realm to evaluate the JavaScript query
   const realm = new shadow();
   try {

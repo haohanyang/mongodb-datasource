@@ -13,7 +13,7 @@ import { EditorHeader, InlineSelect, FlexItem } from '@grafana/plugin-ui';
 import { CoreApp, QueryEditorProps, SelectableValue, LoadingState } from '@grafana/data';
 import { MongoDBDataSource } from '../datasource';
 import { MongoDataSourceOptions, MongoDBQuery, QueryLanguage, QueryType, DEFAULT_QUERY } from '../types';
-import { parseJsQuery, parseJsQueryLegacy } from '../utils';
+import { parseJsShadowQuery } from '../utils';
 import { QueryEditorRaw } from './QueryEditorRaw';
 import { QueryToolbox } from './QueryToolbox';
 import validator from 'validator';
@@ -91,17 +91,18 @@ export function QueryEditor(props: Props) {
               : 'json'
           }
           onBlur={(queryText: string) => {
-            if (
-              query.queryLanguage === QueryLanguage.JAVASCRIPT ||
-              query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW
-            ) {
+            if (query.queryLanguage === QueryLanguage.JAVASCRIPT) {
+              // TODO: error handling
+              props.onChange({ ...query, queryText: queryText });
+            } else if (query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW) {
               // parse the JavaScript query
-              const { error, collection } =
-                query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW
-                  ? parseJsQuery(queryText)
-                  : parseJsQueryLegacy(queryText);
+              const { error, collection } = parseJsShadowQuery(queryText);
               // let the same query text as it is
-              props.onChange({ ...query, queryText: queryText, ...(collection ? { collection } : {}) });
+              props.onChange({
+                ...query,
+                queryText: queryText,
+                ...(collection ? { collection } : {}),
+              });
               setQueryTextError(error);
             } else {
               props.onChange({ ...query, queryText: queryText });

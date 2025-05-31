@@ -3,8 +3,7 @@ import { type Monaco, type monacoTypes, type MonacoEditor } from '@grafana/ui';
 import { languages } from 'monaco-editor';
 import { STAGE_OPERATORS, EXPRESSION_OPERATORS, ACCUMULATORS, CONVERSION_OPERATORS, QUERY_OPERATORS } from '@mongodb-js/mongodb-constants'
 
-// Supports JSON only right now
-class CompletionProvider implements monacoTypes.languages.CompletionItemProvider {
+class JSONCompletionProvider implements monacoTypes.languages.CompletionItemProvider {
   constructor(private readonly editor: MonacoEditor) { }
 
   provideCompletionItems(
@@ -69,6 +68,67 @@ class CompletionProvider implements monacoTypes.languages.CompletionItemProvider
   }
 }
 
+
+class JSCompletionProvider implements monacoTypes.languages.CompletionItemProvider {
+  constructor(private readonly editor: MonacoEditor) { }
+
+  provideCompletionItems(model: monacoTypes.editor.ITextModel, position: monacoTypes.Position, context: languages.CompletionContext, token: monacoTypes.CancellationToken): languages.ProviderResult<languages.CompletionList> {
+    if (this.editor.getModel()?.id !== model.id) {
+      return { suggestions: [] };
+    }
+
+    const word = model.getWordUntilPosition(position);
+    if (!word) {
+      return { suggestions: [] };
+    }
+
+    const textUntilPosition = model.getValueInRange({
+      startLineNumber: 1,
+      startColumn: 1,
+      endLineNumber: position.lineNumber,
+      endColumn: position.column,
+    });
+
+    // Check if the current position is inside a bracket
+    const match = textUntilPosition.match(/\s*\{\s*("[^"]*"\s*:\s*"[^"]*"\s*,\s*)*([^"]*)?$/);
+    if (!match) {
+      return { suggestions: [] };
+    }
+
+    const range = {
+      startLineNumber: position.lineNumber,
+      endLineNumber: position.lineNumber,
+      startColumn: word.startColumn,
+      endColumn: word.endColumn,
+    };
+    return {
+      suggestions: [...STAGE_OPERATORS, ...EXPRESSION_OPERATORS, ...ACCUMULATORS, ...CONVERSION_OPERATORS, ...QUERY_OPERATORS].map((op) => {
+        if (op.meta === "stage") {
+          return {
+            label: op.name,
+            kind: languages.CompletionItemKind.Function,
+            insertText: `\\${op.name}: ${op.snippet}`,
+            range: range,
+            detail: op.meta,
+            documentation: op.description,
+            insertTextRules: languages.CompletionItemInsertTextRule.InsertAsSnippet,
+          }
+        } else {
+          return {
+            label: op.name,
+            kind: languages.CompletionItemKind.Function,
+            insertText: `\\${op.name}: \${1:expression}`,
+            range: range,
+            detail: op.meta,
+            insertTextRules: languages.CompletionItemInsertTextRule.InsertAsSnippet,
+          }
+        }
+      })
+    }
+  }
+}
+
+
 export function useAutocomplete() {
   const autocompleteDisposeFun = useRef<(() => void) | null>(null);
   useEffect(() => {
@@ -77,9 +137,9 @@ export function useAutocomplete() {
     };
   }, []);
 
-  return (editor: MonacoEditor, monaco: Monaco) => {
-    const provider = new CompletionProvider(editor);
-    const { dispose } = monaco.languages.registerCompletionItemProvider('json', provider);
+  return (editor: MonacoEditor, monaco: Monaco, language: string) => {
+    const provider = language === "json" ? new JSONCompletionProvider(editor) : new JSCompletionProvider(editor);
+    const { dispose } = monaco.languages.registerCompletionItemProvider(language, provider);
     autocompleteDisposeFun.current = dispose;
   };
 }

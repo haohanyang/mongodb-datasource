@@ -56,7 +56,10 @@
     "webpack": "^5.94.0",
     "webpack-cli": "^5.1.4",
     "webpack-livereload-plugin": "^3.0.2",
-    "webpack-virtual-modules": "^0.6.2"
+    "webpack-virtual-modules": "^0.6.2",
+    "crypto-browserify": "^3.12.1",
+    "stream-browserify": "^3.0.0",
+    "buffer": "^6.0.3"
   },
   "engines": {
     "node": ">=20"
@@ -69,7 +72,9 @@
     "@grafana/schema": "^10.4.0",
     "@grafana/ui": "^11.2.0",
     "@mongodb-js/mongodb-constants": "^0.11.1",
+    "bson": "https://github.com/mongodb/js-bson/releases/download/v6.9.1/bson-6.9.1.tgz",
     "jsonc-parser": "^3.3.1",
+    "mongodb-query-parser": "^4.3.2",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "shadowrealm-api": "^0.8.3",

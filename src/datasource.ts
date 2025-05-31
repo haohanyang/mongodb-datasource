@@ -1,9 +1,11 @@
-import { DataSourceInstanceSettings, CoreApp, ScopedVars, DataQueryRequest, LiveChannelScope, DataQueryResponse, LoadingState } from '@grafana/data';
+import { DataSourceInstanceSettings, CoreApp, ScopedVars, DataQueryRequest, LiveChannelScope, DataQueryResponse, LoadingState, AdHocVariableFilter } from '@grafana/data';
 import { DataSourceWithBackend, getGrafanaLiveSrv, getTemplateSrv, TemplateSrv } from '@grafana/runtime';
-import { parseJsQuery, parseJsQueryLegacy, base64UrlEncode, unixTsToMongoID } from './utils';
+import { parseJsShadowQuery, base64UrlEncode, unixTsToMongoID } from './utils';
 import { MongoDBQuery, MongoDataSourceOptions, DEFAULT_QUERY, QueryLanguage } from './types';
 import { merge, Observable, of } from 'rxjs';
-import { MongoDBVariableSupport } from 'variables'
+import { MongoDBVariableSupport } from 'variables';
+import { EJSON } from "bson";
+import { parseFilter } from "mongodb-query-parser"
 
 export class MongoDBDataSource extends DataSourceWithBackend<MongoDBQuery, MongoDataSourceOptions> {
   constructor(instanceSettings: DataSourceInstanceSettings<MongoDataSourceOptions>,
@@ -16,15 +18,14 @@ export class MongoDBDataSource extends DataSourceWithBackend<MongoDBQuery, Mongo
     return DEFAULT_QUERY;
   }
 
+
+
   applyTemplateVariables(query: MongoDBQuery, scopedVars: ScopedVars) {
     const variables = { ...scopedVars };
 
     let queryText = query.queryText!;
-    if (query.queryLanguage === QueryLanguage.JAVASCRIPT || query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW) {
-      const { jsonQuery } =
-        query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW
-          ? parseJsQuery(queryText)
-          : parseJsQueryLegacy(queryText);
+    if (query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW) {
+      const { jsonQuery } = parseJsShadowQuery(queryText)
       queryText = jsonQuery!;
     }
 
@@ -67,7 +68,14 @@ export class MongoDBDataSource extends DataSourceWithBackend<MongoDBQuery, Mongo
       variables.dateBucketCount = { value: Math.ceil((parseInt(to, 10) - parseInt(from, 10)) / interval_ms) }
     }
 
-    const text = this.templateSrv.replace(queryText, variables);
+    let text = this.templateSrv.replace(queryText, variables);
+
+    // Convert JS to EJSON
+    if (query.queryLanguage === QueryLanguage.JAVASCRIPT) {
+      // TODO: Error handling
+      text = EJSON.stringify(parseFilter(text));
+    }
+
     return {
       ...query,
       queryText: text,

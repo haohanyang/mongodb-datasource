@@ -24,9 +24,7 @@ export function QueryEditorRaw({ query, onBlur, language, width, height, fontSiz
   const setupCodeLensFn = useCodeLens();
 
   const formatQuery = useCallback(() => {
-    if (monacoRef.current) {
-      monacoRef.current.getAction('editor.action.formatDocument').run();
-    }
+    monacoRef.current?.getAction('editor.action.formatDocument').run();
   }, []);
 
   return (
@@ -35,7 +33,7 @@ export function QueryEditorRaw({ query, onBlur, language, width, height, fontSiz
         onEditorDidMount={(editor, monaco) => {
           monacoRef.current = editor;
           setupValidationFn(editor, monaco);
-          setupAutocompleteFn(editor, monaco);
+          setupAutocompleteFn(editor, monaco, language);
           setupHoverFn(editor, monaco);
 
           const updateTextCommandId = editor.addCommand(0, (_ctx, ...args) => {
