@@ -64,6 +64,17 @@ Refer to the [example docker-compose.prod.yaml](/docker-compose.prod.yaml) file 
    - Select your MongoDB data source in a Grafana panel.
    - Use the query editor to write your aggregation pipeline queries (see Query Language below).
 
+### Installing with the Grafana CLI
+
+1. **Download:** Use the Grafana CLI, from within your Grafana instance, to download and install the plugin.
+   ```sh
+     grafana cli --pluginUrl https://github.com/haohanyang/mongodb-datasource/releases/download/v0.3.2/haohanyang-mongodb-datasource-0.3.2.zip plugins install haohanyang-mongodb-datasource
+     ```
+
+2. **Setup:** Configure the plugin as a data source within Grafana, providing your MongoDB connection details.
+
+3. **Start Querying!**
+
 ## Query Language
 
 ### JSON (Recommended)
