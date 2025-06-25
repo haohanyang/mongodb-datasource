@@ -51,12 +51,12 @@ Visit Grafana on http://localhost:3000. Add a new MongoDB data source with host 
 
 ### Full steps
 
-1. **Download:** Use the Grafana CLI, from within your Grafana instance, to download and install the plugin.
-   ```sh
-     grafana cli --pluginUrl https://github.com/haohanyang/mongodb-datasource/releases/download/v0.3.2/haohanyang-mongodb-datasource-0.3.2.zip plugins install haohanyang-mongodb-datasource
-     ```
+1. **Download:** Obtain the latest plugin build from the [Release page](https://github.com/haohanyang/mongodb-datasource/releases) or [workflow artifacts](https://github.com/haohanyang/mongodb-datasource/actions?query=branch%3Amaster).
 
-3. **Setup:** Configure the plugin as a data source within Grafana, providing your MongoDB connection details.
+2. **Install:**
+   - Extract the downloaded archive (`haohanyang-mongodb-datasource-<version>.zip`) into your Grafana plugins directory (`/var/lib/grafana/plugins` or similar).
+   - Ensure the plugin binaries (`mongodb-datasource/gpx_mongodb_datasource_*`) have execute permissions (`chmod +x`).
+   - Configure the plugin as a data source within Grafana, providing your MongoDB connection details.
 
 Refer to the [example docker-compose.prod.yaml](/docker-compose.prod.yaml) file for a production-ready setup.
 
