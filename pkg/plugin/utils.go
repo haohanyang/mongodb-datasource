@@ -87,6 +87,11 @@ func MongoUri(config *models.PluginSettings) (string, error) {
 		params = "?" + config.ConnectionParameters
 	}
 
+	// TLS passphrase
+	if config.AuthMethod == "auth-tls-ssl" && config.Secrets.ClientKeyPassword != "" {
+		params += "&sslClientCertificateKeyPassword=" + config.Secrets.ClientKeyPassword
+	}
+
 	if config.ConnectionStringScheme == "dns_seed_list" {
 		uri = fmt.Sprintf("mongodb+srv://%s%s/%s", creds, config.Host, params)
 	} else {

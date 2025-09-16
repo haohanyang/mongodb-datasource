@@ -2,8 +2,12 @@ package plugin
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -44,6 +48,16 @@ func NewDatasource(ctx context.Context, source backend.DataSourceInstanceSetting
 
 	opts := options.Client().ApplyURI(uri)
 
+	if config.AuthMethod == "auth-tls-ssl" {
+		// TLS setup
+		tlsConfig, err := tlsSetup(config)
+		if err != nil {
+			backend.Logger.Error("Failed to setup TLS", "error", err)
+			return nil, err
+		}
+		opts.SetTLSConfig(tlsConfig)
+	}
+
 	client, err := mongo.Connect(ctx, opts)
 	if err != nil {
 		backend.Logger.Error(fmt.Sprintf("Failed to connect to db: %s", err.Error()))
@@ -61,6 +75,35 @@ func NewDatasource(ctx context.Context, source backend.DataSourceInstanceSetting
 // be disposed and a new one will be created using NewSampleDatasource factory function.
 func (d *Datasource) Dispose() {
 	d.client.Disconnect(context.TODO())
+}
+
+func tlsSetup(config *models.PluginSettings) (*tls.Config, error) {
+	caFile := config.CaCertPath
+	certFile := config.ClientCertPath
+	keyFile := config.ClientKeyPath
+
+	// Loads CA certificate file
+	caCert, err := os.ReadFile(caFile)
+	if err != nil {
+		return nil, err
+	}
+	caCertPool := x509.NewCertPool()
+	if ok := caCertPool.AppendCertsFromPEM(caCert); !ok {
+		return nil, errors.New("CA file must be in PEM format")
+	}
+	// Loads client certificate files
+	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+
+	if err != nil {
+		return nil, err
+	}
+
+	tlsConfig := &tls.Config{
+		RootCAs:      caCertPool,
+		Certificates: []tls.Certificate{cert},
+	}
+
+	return tlsConfig, nil
 }
 
 // QueryData handles multiple queries and returns multiple responses.

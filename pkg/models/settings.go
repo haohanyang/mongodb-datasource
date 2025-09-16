@@ -15,11 +15,15 @@ type PluginSettings struct {
 	Username               string                `json:"username"`
 	ConnectionStringScheme string                `json:"connectionStringScheme"`
 	ConnectionParameters   string                `json:"connectionParameters"`
+	CaCertPath             string                `json:"caCertPath"`
+	ClientCertPath         string                `json:"clientCertPath"` // public client certificate
+	ClientKeyPath          string                `json:"clientKeyPath"`  // private client key
 	Secrets                *SecretPluginSettings `json:"-"`
 }
 
 type SecretPluginSettings struct {
-	Password string `json:"password"`
+	Password          string `json:"password"`
+	ClientKeyPassword string `json:"clientKeyPassword"`
 }
 
 func LoadPluginSettings(source backend.DataSourceInstanceSettings) (*PluginSettings, error) {
@@ -36,6 +40,7 @@ func LoadPluginSettings(source backend.DataSourceInstanceSettings) (*PluginSetti
 
 func loadSecretPluginSettings(source map[string]string) *SecretPluginSettings {
 	return &SecretPluginSettings{
-		Password: source["password"],
+		Password:          source["password"],
+		ClientKeyPassword: source["clientKeyPassword"],
 	}
 }

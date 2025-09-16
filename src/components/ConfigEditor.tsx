@@ -8,10 +8,6 @@ import {
   Input,
   RadioButtonGroup,
   SecretInput,
-  FileUpload,
-  FileDropzone,
-  InlineLabel,
-  Label,
   Checkbox,
 } from '@grafana/ui';
 import { DataSourcePluginOptionsEditorProps, SelectableValue } from '@grafana/data';
@@ -22,7 +18,7 @@ import {
   ConnectionStringScheme,
 } from '../types';
 
-interface Props extends DataSourcePluginOptionsEditorProps<MongoDataSourceOptions, MongoDataSourceSecureJsonData> {}
+interface Props extends DataSourcePluginOptionsEditorProps<MongoDataSourceOptions, MongoDataSourceSecureJsonData> { }
 
 const mongoDBAuthMethods: SelectableValue[] = [
   { label: 'None', value: MongoDBAuthMethod.NONE },
@@ -231,10 +227,50 @@ export function ConfigEditor(props: Props) {
 
       {jsonData.authType === MongoDBAuthMethod.TLS_SSL && (
         <>
-          <Label>Certificate Authority (.pem)</Label>
-          <FileDropzone options={{ multiple: false }} onLoad={(result) => console.log(result)} />
-          <Label>Client Certificate and Key (.pem)</Label>
-          <FileDropzone options={{ multiple: false }} onLoad={(result) => console.log(result)} />
+          <Field label="Certificate Authority">
+            <Input
+              required
+              id="config-editor-tls-ca"
+              value={jsonData.caCertPath}
+              onChange={(evt: ChangeEvent<HTMLInputElement>) => onOptionsChange({
+                ...options,
+                jsonData: {
+                  ...jsonData,
+                  caCertPath: evt.target.value,
+                },
+              })}
+
+            ></Input>
+          </Field>
+          <Field label="Client Certificate" description="Path to public client certificate (.pem)">
+            <Input
+              required
+              id="config-editor-tls-cc"
+              value={jsonData.clientCertPath}
+              onChange={(evt: ChangeEvent<HTMLInputElement>) => onOptionsChange({
+                ...options,
+                jsonData: {
+                  ...jsonData,
+                  clientCertPath: evt.target.value,
+                },
+              })}
+
+            ></Input>
+          </Field>
+          <Field label="Client Key" description="Path to private client key (.pem)">
+            <Input
+              required
+              id="config-editor-tls-ck"
+              value={jsonData.clientKeyPath}
+              onChange={(evt: ChangeEvent<HTMLInputElement>) => onOptionsChange({
+                ...options,
+                jsonData: {
+                  ...jsonData,
+                  clientKeyPath: evt.target.value,
+                },
+              })}
+            ></Input>
+          </Field>
           <Field label="Client Key Password">
             <SecretInput
               required
@@ -286,7 +322,8 @@ export function ConfigEditor(props: Props) {
             description="Disable the validation of the server certificates."
           />
         </>
-      )}
+      )
+      }
     </>
   );
 }
