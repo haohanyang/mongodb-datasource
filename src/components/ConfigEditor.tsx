@@ -8,15 +8,26 @@ import {
   Input,
   RadioButtonGroup,
   SecretInput,
+  FileUpload,
+  FileDropzone,
+  InlineLabel,
+  Label,
+  Checkbox,
 } from '@grafana/ui';
 import { DataSourcePluginOptionsEditorProps, SelectableValue } from '@grafana/data';
-import { MongoDataSourceOptions, MySecureJsonData, MongoDBAuthMethod, ConnectionStringScheme } from '../types';
+import {
+  MongoDataSourceOptions,
+  MongoDataSourceSecureJsonData,
+  MongoDBAuthMethod,
+  ConnectionStringScheme,
+} from '../types';
 
-interface Props extends DataSourcePluginOptionsEditorProps<MongoDataSourceOptions, MySecureJsonData> {}
+interface Props extends DataSourcePluginOptionsEditorProps<MongoDataSourceOptions, MongoDataSourceSecureJsonData> {}
 
 const mongoDBAuthMethods: SelectableValue[] = [
   { label: 'None', value: MongoDBAuthMethod.NONE },
   { label: 'Username/Password', value: MongoDBAuthMethod.USERNAME_PASSWORD },
+  { label: 'TLS/SSL', value: MongoDBAuthMethod.TLS_SSL },
 ];
 
 const mongoConnectionStringSchemes: SelectableValue[] = [
@@ -215,6 +226,65 @@ export function ConfigEditor(props: Props) {
               onChange={onPasswordChange}
             />
           </InlineField>
+        </>
+      )}
+
+      {jsonData.authType === MongoDBAuthMethod.TLS_SSL && (
+        <>
+          <Label>Certificate Authority (.pem)</Label>
+          <FileDropzone options={{ multiple: false }} onLoad={(result) => console.log(result)} />
+          <Label>Client Certificate and Key (.pem)</Label>
+          <FileDropzone options={{ multiple: false }} onLoad={(result) => console.log(result)} />
+          <Field label="Client Key Password">
+            <SecretInput
+              required
+              id="config-editor-client-key-password"
+              isConfigured={secureJsonFields.clientKeyPassword}
+              value={secureJsonData?.clientKeyPassword ?? ''}
+              width={35}
+              onReset={() =>
+                onOptionsChange({
+                  ...options,
+                  secureJsonFields: {
+                    ...options.secureJsonFields,
+                    clientKeyPassword: false,
+                  },
+                  secureJsonData: {
+                    ...options.secureJsonData,
+                    clientKeyPassword: '',
+                  },
+                })
+              }
+              onChange={(evt: ChangeEvent<HTMLInputElement>) =>
+                onOptionsChange({
+                  ...options,
+                  secureJsonData: {
+                    password: evt.target.value,
+                  },
+                })
+              }
+            />
+          </Field>
+          <Checkbox
+            value={false}
+            label="tlsInsecure"
+            description="This includes tlsAllowInvalidHostnames and tlsAllowInvalidCertificates."
+          />
+          <Checkbox
+            value={false}
+            label="tlsAllowInvalidHostnames"
+            description="Disable the validation of the hostnames in the certificate presented by the mongod/mongos instance."
+          />
+          <Checkbox
+            value={false}
+            label="tlsAllowInvalidCertificates"
+            description="This includes tlsAllowInvalidHostnames and tlsAllowInvalidCertificates."
+          />
+          <Checkbox
+            value={false}
+            label="tlsInsecure"
+            description="Disable the validation of the server certificates."
+          />
         </>
       )}
     </>

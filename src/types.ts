@@ -50,6 +50,7 @@ export interface JsQueryResult {
 export const MongoDBAuthMethod = {
   NONE: 'auth-none',
   USERNAME_PASSWORD: 'auth-username-password',
+  TLS_SSL: 'auto-tls-ssl'
 };
 
 export const ConnectionStringScheme = {
@@ -67,6 +68,7 @@ export interface MongoDataSourceOptions extends DataSourceJsonData {
   connectionParameters?: string;
 }
 
-export interface MySecureJsonData {
+export interface MongoDataSourceSecureJsonData {
   password?: string;
+  clientKeyPassword?: string;
 }
