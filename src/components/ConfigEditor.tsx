@@ -8,7 +8,6 @@ import {
   Input,
   RadioButtonGroup,
   SecretInput,
-  Checkbox,
 } from '@grafana/ui';
 import { DataSourcePluginOptionsEditorProps, SelectableValue } from '@grafana/data';
 import {
@@ -18,7 +17,7 @@ import {
   ConnectionStringScheme,
 } from '../types';
 
-interface Props extends DataSourcePluginOptionsEditorProps<MongoDataSourceOptions, MongoDataSourceSecureJsonData> { }
+interface Props extends DataSourcePluginOptionsEditorProps<MongoDataSourceOptions, MongoDataSourceSecureJsonData> {}
 
 const mongoDBAuthMethods: SelectableValue[] = [
   { label: 'None', value: MongoDBAuthMethod.NONE },
@@ -47,111 +46,40 @@ export function ConfigEditor(props: Props) {
     jsonData.connectionStringScheme = ConnectionStringScheme.STANDARD;
   }
 
-  const onHostChange = (event: ChangeEvent<HTMLInputElement>) => {
-    onOptionsChange({
-      ...options,
-      jsonData: {
-        ...jsonData,
-        host: event.target.value,
-      },
-    });
-  };
-
-  const onUsernameChange = (event: ChangeEvent<HTMLInputElement>) => {
-    onOptionsChange({
-      ...options,
-      jsonData: {
-        ...jsonData,
-        username: event.target.value,
-      },
-    });
-  };
-
-  const onConnectionParametersChange = (event: ChangeEvent<HTMLInputElement>) => {
-    onOptionsChange({
-      ...options,
-      jsonData: {
-        ...jsonData,
-        connectionParameters: event.target.value,
-      },
-    });
-  };
-
-  const onPortChange = (event: ChangeEvent<HTMLInputElement>) => {
-    onOptionsChange({
-      ...options,
-      jsonData: {
-        ...jsonData,
-        port: event.target.valueAsNumber,
-      },
-    });
-  };
-
-  const onDatabaseChange = (event: ChangeEvent<HTMLInputElement>) => {
-    onOptionsChange({
-      ...options,
-      jsonData: {
-        ...jsonData,
-        database: event.target.value,
-      },
-    });
-  };
-
-  const onAuthTypeChange = (authType: string) => {
-    onOptionsChange({
-      ...options,
-      jsonData: {
-        ...jsonData,
-        authType: authType,
-      },
-    });
-  };
-
-  const onConnectionStringSchemeChange = (scheme: string) => {
-    onOptionsChange({
-      ...options,
-      jsonData: {
-        ...jsonData,
-        connectionStringScheme: scheme,
-      },
-    });
-  };
-
-  const onPasswordChange = (event: ChangeEvent<HTMLInputElement>) => {
-    onOptionsChange({
-      ...options,
-      secureJsonData: {
-        password: event.target.value,
-      },
-    });
-  };
-
-  const onResetPassword = () => {
-    onOptionsChange({
-      ...options,
-      secureJsonFields: {
-        ...options.secureJsonFields,
-        password: false,
-      },
-      secureJsonData: {
-        ...options.secureJsonData,
-        password: '',
-      },
-    });
-  };
-
   return (
     <>
       <Field label="Connection string scheme">
         <RadioButtonGroup
           options={mongoConnectionStringSchemes}
           value={jsonData.connectionStringScheme || ConnectionStringScheme.STANDARD}
-          onChange={onConnectionStringSchemeChange}
+          onChange={(scheme: string) => {
+            onOptionsChange({
+              ...options,
+              jsonData: {
+                ...jsonData,
+                connectionStringScheme: scheme,
+              },
+            });
+          }}
         />
       </Field>
       <InlineFieldRow label="Connection">
         <InlineField label="Host" tooltip="MongoDB host address">
-          <Input required id="config-editor-host" value={jsonData.host} onChange={onHostChange} width={30}></Input>
+          <Input
+            required
+            id="config-editor-host"
+            value={jsonData.host}
+            onChange={(event: ChangeEvent<HTMLInputElement>) => {
+              onOptionsChange({
+                ...options,
+                jsonData: {
+                  ...jsonData,
+                  host: event.target.value,
+                },
+              });
+            }}
+            width={30}
+          ></Input>
         </InlineField>
         {jsonData.connectionStringScheme === ConnectionStringScheme.STANDARD && (
           <InlineField label="Port" tooltip="MongoDB port">
@@ -159,7 +87,15 @@ export function ConfigEditor(props: Props) {
               id="config-editor-port"
               value={jsonData.port}
               type="number"
-              onChange={onPortChange}
+              onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                onOptionsChange({
+                  ...options,
+                  jsonData: {
+                    ...jsonData,
+                    port: event.target.valueAsNumber,
+                  },
+                });
+              }}
               width={15}
               defaultValue={27017}
             ></Input>
@@ -172,7 +108,15 @@ export function ConfigEditor(props: Props) {
             required
             id="config-editor-database"
             value={jsonData.database}
-            onChange={onDatabaseChange}
+            onChange={(event: ChangeEvent<HTMLInputElement>) => {
+              onOptionsChange({
+                ...options,
+                jsonData: {
+                  ...jsonData,
+                  database: event.target.value,
+                },
+              });
+            }}
             width={30}
           ></Input>
         </InlineField>
@@ -185,7 +129,15 @@ export function ConfigEditor(props: Props) {
           required
           id="config-editor-connection-parameters"
           value={jsonData.connectionParameters}
-          onChange={onConnectionParametersChange}
+          onChange={(event: ChangeEvent<HTMLInputElement>) => {
+            onOptionsChange({
+              ...options,
+              jsonData: {
+                ...jsonData,
+                connectionParameters: event.target.value,
+              },
+            });
+          }}
           width={35}
         ></Input>
       </InlineField>
@@ -195,7 +147,15 @@ export function ConfigEditor(props: Props) {
           <RadioButtonGroup
             options={mongoDBAuthMethods}
             value={jsonData.authType || MongoDBAuthMethod.NONE}
-            onChange={onAuthTypeChange}
+            onChange={(authType: string) => {
+              onOptionsChange({
+                ...options,
+                jsonData: {
+                  ...jsonData,
+                  authType: authType,
+                },
+              });
+            }}
           />
         </Field>
       </FieldSet>
@@ -207,7 +167,15 @@ export function ConfigEditor(props: Props) {
               required
               id="config-editor-username"
               value={jsonData.username}
-              onChange={onUsernameChange}
+              onChange={(evt: ChangeEvent<HTMLInputElement>) => {
+                onOptionsChange({
+                  ...options,
+                  jsonData: {
+                    ...jsonData,
+                    username: evt.target.value,
+                  },
+                });
+              }}
               width={35}
             ></Input>
           </InlineField>
@@ -218,8 +186,27 @@ export function ConfigEditor(props: Props) {
               isConfigured={secureJsonFields.password}
               value={secureJsonData?.password || ''}
               width={35}
-              onReset={onResetPassword}
-              onChange={onPasswordChange}
+              onReset={() => {
+                onOptionsChange({
+                  ...options,
+                  secureJsonFields: {
+                    ...options.secureJsonFields,
+                    password: false,
+                  },
+                  secureJsonData: {
+                    ...options.secureJsonData,
+                    password: '',
+                  },
+                });
+              }}
+              onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                onOptionsChange({
+                  ...options,
+                  secureJsonData: {
+                    password: event.target.value,
+                  },
+                });
+              }}
             />
           </InlineField>
         </>
@@ -227,19 +214,20 @@ export function ConfigEditor(props: Props) {
 
       {jsonData.authType === MongoDBAuthMethod.TLS_SSL && (
         <>
-          <Field label="Certificate Authority">
+          <Field label="Certificate Authority" description="Path to Certificate Authority (.pem)">
             <Input
               required
               id="config-editor-tls-ca"
               value={jsonData.caCertPath}
-              onChange={(evt: ChangeEvent<HTMLInputElement>) => onOptionsChange({
-                ...options,
-                jsonData: {
-                  ...jsonData,
-                  caCertPath: evt.target.value,
-                },
-              })}
-
+              onChange={(evt: ChangeEvent<HTMLInputElement>) =>
+                onOptionsChange({
+                  ...options,
+                  jsonData: {
+                    ...jsonData,
+                    caCertPath: evt.target.value,
+                  },
+                })
+              }
             ></Input>
           </Field>
           <Field label="Client Certificate" description="Path to public client certificate (.pem)">
@@ -247,14 +235,15 @@ export function ConfigEditor(props: Props) {
               required
               id="config-editor-tls-cc"
               value={jsonData.clientCertPath}
-              onChange={(evt: ChangeEvent<HTMLInputElement>) => onOptionsChange({
-                ...options,
-                jsonData: {
-                  ...jsonData,
-                  clientCertPath: evt.target.value,
-                },
-              })}
-
+              onChange={(evt: ChangeEvent<HTMLInputElement>) =>
+                onOptionsChange({
+                  ...options,
+                  jsonData: {
+                    ...jsonData,
+                    clientCertPath: evt.target.value,
+                  },
+                })
+              }
             ></Input>
           </Field>
           <Field label="Client Key" description="Path to private client key (.pem)">
@@ -262,13 +251,15 @@ export function ConfigEditor(props: Props) {
               required
               id="config-editor-tls-ck"
               value={jsonData.clientKeyPath}
-              onChange={(evt: ChangeEvent<HTMLInputElement>) => onOptionsChange({
-                ...options,
-                jsonData: {
-                  ...jsonData,
-                  clientKeyPath: evt.target.value,
-                },
-              })}
+              onChange={(evt: ChangeEvent<HTMLInputElement>) =>
+                onOptionsChange({
+                  ...options,
+                  jsonData: {
+                    ...jsonData,
+                    clientKeyPath: evt.target.value,
+                  },
+                })
+              }
             ></Input>
           </Field>
           <Field label="Client Key Password">
@@ -301,29 +292,8 @@ export function ConfigEditor(props: Props) {
               }
             />
           </Field>
-          <Checkbox
-            value={false}
-            label="tlsInsecure"
-            description="This includes tlsAllowInvalidHostnames and tlsAllowInvalidCertificates."
-          />
-          <Checkbox
-            value={false}
-            label="tlsAllowInvalidHostnames"
-            description="Disable the validation of the hostnames in the certificate presented by the mongod/mongos instance."
-          />
-          <Checkbox
-            value={false}
-            label="tlsAllowInvalidCertificates"
-            description="This includes tlsAllowInvalidHostnames and tlsAllowInvalidCertificates."
-          />
-          <Checkbox
-            value={false}
-            label="tlsInsecure"
-            description="Disable the validation of the server certificates."
-          />
         </>
-      )
-      }
+      )}
     </>
   );
 }
