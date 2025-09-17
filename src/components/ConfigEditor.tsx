@@ -220,28 +220,28 @@ export function ConfigEditor(props: Props) {
               required
               id="config-editor-tls-ca"
               value={jsonData.caCertPath}
-              onChange={(evt: ChangeEvent<HTMLInputElement>) =>
+              onChange={(event: ChangeEvent<HTMLInputElement>) =>
                 onOptionsChange({
                   ...options,
                   jsonData: {
                     ...jsonData,
-                    caCertPath: evt.target.value,
+                    caCertPath: event.target.value,
                   },
                 })
               }
             ></Input>
           </Field>
-          <Field label="Client Certificate" description="Path to public client certificate (.pem)">
+          <Field label="Client Certificate" description="Path to public client certificate">
             <Input
               required
               id="config-editor-tls-cc"
               value={jsonData.clientCertPath}
-              onChange={(evt: ChangeEvent<HTMLInputElement>) =>
+              onChange={(event: ChangeEvent<HTMLInputElement>) =>
                 onOptionsChange({
                   ...options,
                   jsonData: {
                     ...jsonData,
-                    clientCertPath: evt.target.value,
+                    clientCertPath: event.target.value,
                   },
                 })
               }
@@ -252,12 +252,12 @@ export function ConfigEditor(props: Props) {
               required
               id="config-editor-tls-ck"
               value={jsonData.clientKeyPath}
-              onChange={(evt: ChangeEvent<HTMLInputElement>) =>
+              onChange={(event: ChangeEvent<HTMLInputElement>) =>
                 onOptionsChange({
                   ...options,
                   jsonData: {
                     ...jsonData,
-                    clientKeyPath: evt.target.value,
+                    clientKeyPath: event.target.value,
                   },
                 })
               }
@@ -283,11 +283,11 @@ export function ConfigEditor(props: Props) {
                   },
                 })
               }
-              onChange={(evt: ChangeEvent<HTMLInputElement>) =>
+              onChange={(event: ChangeEvent<HTMLInputElement>) =>
                 onOptionsChange({
                   ...options,
                   secureJsonData: {
-                    password: evt.target.value,
+                    clientKeyPassword: event.target.value,
                   },
                 })
               }
