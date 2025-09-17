@@ -79,8 +79,6 @@ func MongoUri(config *models.PluginSettings) (string, error) {
 			return uri, errors.New("missing MongoDB username or password")
 		}
 		creds = fmt.Sprintf("%s:%s@", config.Username, config.Secrets.Password)
-	} else if config.AuthMethod != "auth-none" {
-		return uri, errors.New("unsupported auth method")
 	}
 
 	if config.ConnectionParameters != "" {
