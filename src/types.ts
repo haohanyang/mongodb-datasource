@@ -50,7 +50,7 @@ export interface JsQueryResult {
 export const MongoDBAuthMethod = {
   NONE: 'auth-none',
   USERNAME_PASSWORD: 'auth-username-password',
-  TLS_SSL: 'auth-tls-ssl',
+  TLS: 'auth-tls',
 };
 
 export const ConnectionStringScheme = {

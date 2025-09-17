@@ -22,7 +22,7 @@ interface Props extends DataSourcePluginOptionsEditorProps<MongoDataSourceOption
 const mongoDBAuthMethods: SelectableValue[] = [
   { label: 'None', value: MongoDBAuthMethod.NONE },
   { label: 'Username/Password', value: MongoDBAuthMethod.USERNAME_PASSWORD },
-  { label: 'TLS/SSL', value: MongoDBAuthMethod.TLS_SSL },
+  { label: 'TLS/SSL', value: MongoDBAuthMethod.TLS },
 ];
 
 const mongoConnectionStringSchemes: SelectableValue[] = [
@@ -34,6 +34,7 @@ export function ConfigEditor(props: Props) {
   const { onOptionsChange, options } = props;
   const { jsonData, secureJsonFields, secureJsonData } = options;
 
+  // Setup default values
   if (!jsonData.authType) {
     jsonData.authType = MongoDBAuthMethod.NONE;
   }
@@ -212,7 +213,7 @@ export function ConfigEditor(props: Props) {
         </>
       )}
 
-      {jsonData.authType === MongoDBAuthMethod.TLS_SSL && (
+      {jsonData.authType === MongoDBAuthMethod.TLS && (
         <>
           <Field label="Certificate Authority" description="Path to Certificate Authority (.pem)">
             <Input

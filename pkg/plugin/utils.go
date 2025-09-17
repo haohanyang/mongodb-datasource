@@ -86,7 +86,7 @@ func MongoUri(config *models.PluginSettings) (string, error) {
 	}
 
 	// TLS passphrase
-	if config.AuthMethod == "auth-tls-ssl" && config.Secrets.ClientKeyPassword != "" {
+	if config.AuthMethod == "auth-tls" && config.Secrets.ClientKeyPassword != "" {
 		params += "&sslClientCertificateKeyPassword=" + config.Secrets.ClientKeyPassword
 	}
 

@@ -48,7 +48,7 @@ func NewDatasource(ctx context.Context, source backend.DataSourceInstanceSetting
 
 	opts := options.Client().ApplyURI(uri)
 
-	if config.AuthMethod == "auth-tls-ssl" {
+	if config.AuthMethod == "auth-tls" {
 		// TLS setup
 		tlsConfig, err := tlsSetup(config)
 		if err != nil {
@@ -254,7 +254,7 @@ func (d *Datasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRe
 
 	opts := options.Client().ApplyURI(uri).SetTimeout(5 * time.Second)
 
-	if config.AuthMethod == "auth-tls-ssl" {
+	if config.AuthMethod == "auth-tls" {
 		// TLS setup
 		tlsConfig, err := tlsSetup(config)
 		if err != nil {
