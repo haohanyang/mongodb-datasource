@@ -82,6 +82,10 @@ func tlsSetup(config *models.PluginSettings) (*tls.Config, error) {
 	certFile := config.ClientCertPath
 	keyFile := config.ClientKeyPath
 
+	if caFile == "" || certFile == "" || keyFile == "" {
+		return nil, errors.New("CA certificate, client certificate or client key file path is missing")
+	}
+
 	// Loads CA certificate file
 	caCert, err := os.ReadFile(caFile)
 	if err != nil {
@@ -249,6 +253,20 @@ func (d *Datasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRe
 	}
 
 	opts := options.Client().ApplyURI(uri).SetTimeout(5 * time.Second)
+
+	if config.AuthMethod == "auth-tls-ssl" {
+		// TLS setup
+		tlsConfig, err := tlsSetup(config)
+		if err != nil {
+			backend.Logger.Error("Failed to setup TLS", "error", err)
+
+			res.Status = backend.HealthStatusError
+			res.Message = err.Error()
+			return res, nil
+		}
+		opts.SetTLSConfig(tlsConfig)
+	}
+
 	client, err := mongo.Connect(ctx, opts)
 	if err != nil {
 		res.Status = backend.HealthStatusError
