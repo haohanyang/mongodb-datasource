@@ -20,6 +20,7 @@ services:
       - ./dist:/var/lib/grafana/plugins/haohanyang-mongodb-datasource
       - ./provisioning:/etc/grafana/provisioning
       - .:/root/haohanyang-mongodb-datasource
+      - ./certs:/certs
 
     environment:
       NODE_ENV: development
@@ -46,6 +47,18 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: username
       MONGO_INITDB_ROOT_PASSWORD: password
+    networks:
+      - mongodb-datasource
+
+  mongo-tls-auth:
+    image: mongo
+    container_name: mongodb-datasource-mongo-tls-auth
+    command: [--config, /etc/mongo/mongod.conf]
+    ports:
+      - 27020:27017
+    volumes:
+      - ./certs:/certs
+      - ./mongod.conf:/etc/mongo/mongod.conf
     networks:
       - mongodb-datasource
 
