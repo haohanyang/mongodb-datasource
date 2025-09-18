@@ -180,6 +180,7 @@ jobs:
 
       - name: Start Grafana
         run: |
+          bash scripts/cert-gen.sh mongo-tls-auth
           docker compose -f docker-compose.test.yaml pull
           DEVELOPMENT=false GRAFANA_VERSION=${{ matrix.GRAFANA_IMAGE.VERSION }} GRAFANA_IMAGE=${{ matrix.GRAFANA_IMAGE.NAME }} docker compose -f docker-compose.test.yaml up -d
 
@@ -196,7 +197,7 @@ jobs:
 
       - name: Run Playwright tests
         id: run-tests
-        run: bash scripts/cert-gen.sh mongo-tls-auth && npm run e2e
+        run: npm run e2e
 
       - name: Docker logs
         if: ${{ always() && steps.run-tests.outcome == 'failure' }}
