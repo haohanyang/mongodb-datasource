@@ -9,4 +9,8 @@ datasources:
     version: 1
     editable: true
     jsonData:
+      host: mongo-no-auth
+      port: 27017
+      database: test
+      authType: auth-none
     secureJsonData:
