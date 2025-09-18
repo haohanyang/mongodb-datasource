@@ -17,7 +17,7 @@ import {
   ConnectionStringScheme,
 } from '../types';
 
-interface Props extends DataSourcePluginOptionsEditorProps<MongoDataSourceOptions, MongoDataSourceSecureJsonData> {}
+interface Props extends DataSourcePluginOptionsEditorProps<MongoDataSourceOptions, MongoDataSourceSecureJsonData> { }
 
 const mongoDBAuthMethods: SelectableValue[] = [
   { label: 'None', value: MongoDBAuthMethod.NONE },
@@ -219,6 +219,7 @@ export function ConfigEditor(props: Props) {
             <Input
               required
               id="config-editor-tls-ca"
+              placeholder='/path/to/ca.pem'
               value={jsonData.caCertPath}
               onChange={(event: ChangeEvent<HTMLInputElement>) =>
                 onOptionsChange({
@@ -235,6 +236,7 @@ export function ConfigEditor(props: Props) {
             <Input
               required
               id="config-editor-tls-cc"
+              placeholder='/path/to/mongodb.crt'
               value={jsonData.clientCertPath}
               onChange={(event: ChangeEvent<HTMLInputElement>) =>
                 onOptionsChange({
@@ -249,8 +251,8 @@ export function ConfigEditor(props: Props) {
           </Field>
           <Field label="Client Key" description="Path to private client key (.pem)">
             <Input
-              required
               id="config-editor-tls-ck"
+              placeholder='/path/to/mongodb.pem'
               value={jsonData.clientKeyPath}
               onChange={(event: ChangeEvent<HTMLInputElement>) =>
                 onOptionsChange({

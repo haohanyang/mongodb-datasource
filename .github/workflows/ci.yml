@@ -196,7 +196,7 @@ jobs:
 
       - name: Run Playwright tests
         id: run-tests
-        run: npm run e2e
+        run: bash scripts/cert-gen.sh mongo-tls-auth && npm run e2e
 
       - name: Docker logs
         if: ${{ always() && steps.run-tests.outcome == 'failure' }}
