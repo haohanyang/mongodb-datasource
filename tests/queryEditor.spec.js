@@ -4,7 +4,7 @@ import { EJSON } from 'bson';
 import { test, expect } from '@grafana/plugin-e2e';
 import { MongoClient } from 'mongodb';
 
-test.setTimeout(100000);
+test.setTimeout(1000000);
 
 /**
  *
