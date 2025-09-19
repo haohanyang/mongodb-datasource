@@ -1,7 +1,7 @@
 apiVersion: 1
 
 datasources:
-  - name: 'MongoDB Datasource test'
+  - name: 'Test MongoDB DS'
     type: 'haohanyang-mongodb-datasource'
     access: proxy
     isDefault: false

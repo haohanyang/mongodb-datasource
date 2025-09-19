@@ -1,121 +1,117 @@
+import https from 'https';
+import { createInterface } from 'readline';
+import { EJSON } from 'bson';
 import { test, expect } from '@grafana/plugin-e2e';
 import { MongoClient } from 'mongodb';
 
-test.setTimeout(100000);
+test.setTimeout(5000);
+
+/**
+ *
+ * @param {string} url
+ * @param {MongoClient} mongoClient
+ */
+async function downloadAndStoreCustomersData(url, mongoClient) {
+  return new Promise((resolve, reject) => {
+    https.get(url, (res) => {
+      const rl = createInterface({
+        input: res,
+      });
+
+      const docs = [];
+
+      rl.on('line', (line) => {
+        const doc = EJSON.parse(line);
+        docs.push(doc);
+      });
+
+      rl.on('close', () => {
+        mongoClient
+          .db('test')
+          .collection('test_customerData')
+          .insertMany(docs)
+          .then((data) => {
+            resolve(data);
+          })
+          .catch((err) => {
+            reject(err);
+          });
+      });
+
+      rl.on('error', (err) => {
+        reject(err);
+      });
+    });
+  });
+}
 
 test.beforeAll(async ({ createDataSource, readProvisionedDataSource }) => {
   const ds = await readProvisionedDataSource({ fileName: 'test/mongo-default.yml' });
+
   await createDataSource(ds);
 
   const client = new MongoClient('mongodb://localhost:27018');
-  await client.connect();
-  const db = client.db('test');
-  await db.collection('test_temperatureData').drop();
-  await db.collection('test_temperatureData').insertMany([
-    {
-      datetime: new Date('2023-10-24T18:00:00.000Z'),
-      metadata: { city: 'New York' },
-      temperature: 13.1,
-    },
-    {
-      datetime: new Date('2023-10-24T21:00:00.000Z'),
-      metadata: { city: 'New York' },
-      temperature: 12.1,
-    },
-    {
-      datetime: new Date('2023-10-25T07:00:00.000Z'),
-      metadata: { city: 'New York' },
-      temperature: 13.2,
-    },
-    {
-      datetime: new Date('2023-10-25T11:00:00.000Z'),
-      metadata: { city: 'Los Angeles' },
-      temperature: 18.9,
-    },
-    {
-      datetime: new Date('2023-10-26T08:00:00.000Z'),
-      metadata: { city: 'New York' },
-      temperature: 15.2,
-    },
-    {
-      datetime: new Date('2023-10-26T12:00:00.000Z'),
-      metadata: { city: 'New York' },
-      temperature: 18.5,
-    },
-    {
-      datetime: new Date('2023-10-26T16:00:00.000Z'),
-      metadata: { city: 'New York' },
-      temperature: 16.8,
-    },
-    {
-      datetime: new Date('2023-10-26T09:00:00.000Z'),
-      metadata: { city: 'Los Angeles' },
-      temperature: 22.7,
-    },
-    {
-      datetime: new Date('2023-10-26T14:00:00.000Z'),
-      metadata: { city: 'Los Angeles' },
-      temperature: 25.1,
-    },
-    {
-      datetime: new Date('2023-10-27T08:00:00.000Z'),
-      metadata: { city: 'New York' },
-      temperature: 13.9,
-    },
-    {
-      datetime: new Date('2023-10-27T15:00:00.000Z'),
-      metadata: { city: 'Los Angeles' },
-      temperature: 23.3,
-    },
-  ]);
+
+  await client.db('test').collection('test_customerData').drop();
+
+  const customerDataUrl =
+    'https://raw.githubusercontent.com/neelabalan/mongodb-sample-dataset/refs/heads/main/sample_analytics/customers.json';
+
+  await downloadAndStoreCustomersData(customerDataUrl, client);
 
   await client.close();
 });
 
-test('data query should return correct temperature data', async ({
+test('data query should return correct customer data with JSON query', async ({
   panelEditPage,
   readProvisionedDataSource,
   selectors,
+  page,
 }) => {
   const query = `
-  [
-    {
-        "$group": {
-            "_id": {
-                "date": {
-                    "$dateToString": {
-                        "format": "%Y-%m-%d",
-                        "date": "$datetime"
-                    }
-                },
-                "city": "$metadata.city"
-            },
-            "value": {
-                "$count": {}
-            }
-        }
-    },
-    {
-        "$project": {
-            "ts": {
-                "$toDate": "$_id.date"
-            },
-            "name": "$_id.city",
-            "value": 1
-        }
-    },
-    {
-        "$sort": {
-            "ts": 1,
-            "name": 1
-        }
+[
+  {
+    "$project": {
+      "domain": {
+        "$arrayElemAt": [
+          {
+            "$split": [
+              "$email",
+              "@"
+            ]
+          },
+          1
+        ]
+      }
     }
+  },
+  {
+    "$group": {
+      "_id": "$domain",
+      "count": {
+        "$sum": 1
+      }
+    }
+  },
+  {
+    "$project": {
+      "_id": 0,
+      "provider": "$_id",
+      "count": 1
+    }
+  },
+  {
+    "$sort": {
+      "count": 1
+    }
+  }
 ]
   `;
 
   const ds = await readProvisionedDataSource({ fileName: 'test/mongo-default.yml' });
+
   await panelEditPage.datasource.set(ds.name);
-  await panelEditPage.getQueryEditorRow('A').getByLabel('Collection').fill('test_temperatureData');
+  await panelEditPage.getQueryEditorRow('A').getByLabel('Collection').fill('test_customerData');
   const editor = panelEditPage
     .getByGrafanaSelector(selectors.components.CodeEditor.container, {
       root: panelEditPage.getQueryEditorRow('A'),
@@ -126,48 +122,52 @@ test('data query should return correct temperature data', async ({
   await editor.fill(query);
   await panelEditPage.setVisualization('Table');
   await expect(panelEditPage.refreshPanel()).toBeOK();
-  await expect(panelEditPage.panel.data).toContainText(['2', '1', '3', '1']);
+  await expect(panelEditPage.panel.data).toContainText(['164', 'gmail.com', '165', 'yahoo.com', '171', 'hotmail.com']);
 });
 
-test('data query should return correct temperature data with Javascript query', async ({
+test('data query should return correct temperature data with JavaScript query', async ({
   panelEditPage,
   readProvisionedDataSource,
   selectors,
   page,
 }) => {
   const query = `
-  db.test_temperatureData.aggregate([
-    {
-        "$group": {
-            "_id": {
-                "date": {
-                    "$dateToString": {
-                        "format": "%Y-%m-%d",
-                        "date": "$datetime"
-                    }
-                },
-                "city": "$metadata.city"
-            },
-            "value": {
-                "$count": {}
-            }
-        }
-    },
-    {
-        "$project": {
-            "ts": {
-                "$toDate": "$_id.date"
-            },
-            "name": "$_id.city",
-            "value": 1
-        }
-    },
-    {
-        "$sort": {
-            "ts": 1,
-            "name": 1
-        }
+  db.test_customerData.aggregate([
+  {
+    "$project": {
+      "domain": {
+        "$arrayElemAt": [
+          {
+            "$split": [
+              "$email",
+              "@"
+            ]
+          },
+          1
+        ]
+      }
     }
+  },
+  {
+    "$group": {
+      "_id": "$domain",
+      "count": {
+        "$sum": 1
+      }
+    }
+  },
+  {
+    "$project": {
+      "_id": 0,
+      "provider": "$_id",
+      "count": 1
+    }
+  },
+  {
+    "$sort": {
+      "count": 1
+    }
+  }
 ])
   `;
 
@@ -187,10 +187,10 @@ test('data query should return correct temperature data with Javascript query', 
   await editor.fill(query);
   await panelEditPage.setVisualization('Table');
   await expect(panelEditPage.refreshPanel()).toBeOK();
-  await expect(panelEditPage.panel.data).toContainText(['2', '1', '3', '1']);
+  await expect(panelEditPage.panel.data).toContainText(['164', 'gmail.com', '165', 'yahoo.com', '171', 'hotmail.com']);
 });
 
-test('data query should return correct temperature data with javascript function', async ({
+test('data query should return correct temperature data with JavaScript function', async ({
   panelEditPage,
   readProvisionedDataSource,
   selectors,
@@ -199,44 +199,48 @@ test('data query should return correct temperature data with javascript function
   const query = `
     function query() {
       return [
-    {
-        "$group": {
-            "_id": {
-                "date": {
-                    "$dateToString": {
-                        "format": "%Y-%m-%d",
-                        "date": "$datetime"
-                    }
-                },
-                "city": "$metadata.city"
-            },
-            "value": {
-                "$count": {}
-            }
-        }
-    },
-    {
-        "$project": {
-            "ts": {
-                "$toDate": "$_id.date"
-            },
-            "name": "$_id.city",
-            "value": 1
-        }
-    },
-    {
-        "$sort": {
-            "ts": 1,
-            "name": 1
-        }
+  {
+    "$project": {
+      "domain": {
+        "$arrayElemAt": [
+          {
+            "$split": [
+              "$email",
+              "@"
+            ]
+          },
+          1
+        ]
+      }
     }
-] 
+  },
+  {
+    "$group": {
+      "_id": "$domain",
+      "count": {
+        "$sum": 1
+      }
+    }
+  },
+  {
+    "$project": {
+      "_id": 0,
+      "provider": "$_id",
+      "count": 1
+    }
+  },
+  {
+    "$sort": {
+      "count": 1
+    }
+  }
+]
     }
   `;
 
   const ds = await readProvisionedDataSource({ fileName: 'test/mongo-default.yml' });
   await panelEditPage.datasource.set(ds.name);
-  await panelEditPage.getQueryEditorRow('A').getByLabel('Collection').fill('test_temperatureData');
+  await panelEditPage.getQueryEditorRow('A').getByLabel('Collection').fill('test_customerData');
   // get toggle switch
   const selectLanguage = panelEditPage.getQueryEditorRow('A').getByRole('combobox').last();
   await selectLanguage.click();
@@ -254,67 +258,61 @@ test('data query should return correct temperature data with javascript function
   await editor.fill(query);
   await panelEditPage.setVisualization('Table');
   await expect(panelEditPage.refreshPanel()).toBeOK();
-  await expect(panelEditPage.panel.data).toContainText(['2', '1', '3', '1']);
+  await page.screenshot({ path: 'query.png', fullPage: true });
+  await expect(panelEditPage.panel.data).toContainText(['164', 'gmail.com', '165', 'yahoo.com', '171', 'hotmail.com']);
 });
+
 test('data query should return correct temperature data with javascript function with variables', async ({
   panelEditPage,
   readProvisionedDataSource,
   selectors,
   page,
-  createDataSource,
-  dashboardPage,
 }) => {
   const query = `
     function query() {
       return [
-    {
-      "$match": {
-        "datetime": {
-                    "$gte": {
-                        "$date": {
-                            "$numberLong": "$__from"
-                        }
-                    },
-                    "$lt": {
-                        "$date": {
-                            "$numberLong": "$__to"
-                        }
-                    }
-                },      
+  {
+    "$project": {
+      "domain": {
+        "$arrayElemAt": [
+          {
+            "$split": [
+              "$email",
+              "@"
+            ]
+          },
+          1
+        ]
       }
-    },
-    {
-        "$group": {
-            "_id": {
-                "date": {
-                    "$dateToString": {
-                        "format": "%Y-%m-%d",
-                        "date": "$datetime"
-                    }
-                },
-                "city": "$metadata.city"
-            },
-            "value": {
-                "$count": {}
-            }
-        }
-    },
-    {
-        "$project": {
-            "ts": {
-                "$toDate": "$_id.date"
-            },
-            "name": "$_id.city",
-            "value": 1
-        }
     }
-] 
+  },
+  {
+    "$group": {
+      "_id": "$domain",
+      "count": {
+        "$sum": 1
+      }
+    }
+  },
+  {
+    "$project": {
+      "_id": 0,
+      "provider": "$_id",
+      "count": 1
+    }
+  },
+  {
+    "$sort": {
+      "count": 1
+    }
+  }
+]
     }
   `;
 
   const ds = await readProvisionedDataSource({ fileName: 'test/mongo-default.yml' });
   await panelEditPage.datasource.set(ds.name);
-  await panelEditPage.getQueryEditorRow('A').getByLabel('Collection').fill('test_temperatureData');
+  await panelEditPage.getQueryEditorRow('A').getByLabel('Collection').fill('test_customerData');
   const selectLanguage = panelEditPage.getQueryEditorRow('A').getByRole('combobox').last();
   await selectLanguage.click();
   await page.getByText('JavaScript Shadow', { exact: true }).click();
@@ -335,5 +333,5 @@ test('data query should return correct temperature data with javascript function
   await editor.fill(query);
   await panelEditPage.setVisualization('Table');
   await expect(panelEditPage.refreshPanel()).toBeOK();
-  await expect(panelEditPage.panel.data).toContainText(['2', '1']);
+  await expect(panelEditPage.panel.data).toContainText(['164', 'gmail.com', '165', 'yahoo.com', '171', 'hotmail.com']);
 });
