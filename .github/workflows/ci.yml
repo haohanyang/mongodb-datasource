@@ -142,12 +142,19 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Create fake plugin metadata
+        id: create-fake-metadata
+        run: |
+          tmpfile=$(mktemp)
+          sed 's/>=10.4.0/\^11.x/g' src/plugin.json > $tmpfile/plugin.json
+          echo "fake_plugin_dir=$tmpfile" >> $GITHUB_OUTPUT
       - name: Resolve Grafana E2E versions
         id: resolve-versions
         uses: grafana/plugin-actions/e2e-version@main
         with:
           skip-grafana-dev-image: true
           limit: 1
+          plugin-directory: ${{ steps.create-fake-metadata.outputs.fake_plugin_dir }}
 
   playwright-tests:
     needs: [resolve-versions, build]
