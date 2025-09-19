@@ -145,6 +145,9 @@ jobs:
       - name: Resolve Grafana E2E versions
         id: resolve-versions
         uses: grafana/plugin-actions/e2e-version@main
+        with:
+          skip-grafana-dev-image: true
+          limit: 1
 
   playwright-tests:
     needs: [resolve-versions, build]
