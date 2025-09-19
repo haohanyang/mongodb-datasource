@@ -145,7 +145,7 @@ jobs:
       - name: Create fake plugin metadata
         id: create-fake-metadata
         run: |
-          tmpfile=$(mktemp)
+          tmpfile=$(mktemp -d)
           sed 's/>=10.4.0/\^11.x/g' src/plugin.json > $tmpfile/plugin.json
           echo "fake_plugin_dir=$tmpfile" >> $GITHUB_OUTPUT
       - name: Resolve Grafana E2E versions
