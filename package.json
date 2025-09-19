@@ -1,6 +1,6 @@
 {
   "name": "mongodb-datasource",
-  "version": "0.3.2",
+  "version": "0.4.0-alpha.0",
   "scripts": {
     "build": "webpack -c ./webpack.config.ts --env production",
     "dev": "webpack -w -c ./webpack.config.ts --env development",
@@ -32,6 +32,7 @@
     "@types/react-router-dom": "^5.2.0",
     "@types/testing-library__jest-dom": "5.14.8",
     "@types/validator": "^13.15.0",
+    "bson": "^6.10.4",
     "copy-webpack-plugin": "^11.0.0",
     "css-loader": "^6.7.3",
     "eslint-plugin-deprecation": "^2.0.0",
