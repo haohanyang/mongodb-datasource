@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.0 - 2025-09-24
+
+### Added
+
+- TLS/SSL support
+
 ## 0.3.2 - 2025-05-17
 
 ### Added
