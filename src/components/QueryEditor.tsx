@@ -8,7 +8,7 @@ import {
   InlineSwitch,
   Modal,
   useTheme2,
-  AsyncSelect,
+  SegmentAsync,
 } from '@grafana/ui';
 import { EditorHeader, InlineSelect, FlexItem } from '@grafana/plugin-ui';
 import { CoreApp, QueryEditorProps, SelectableValue, LoadingState } from '@grafana/data';
@@ -191,19 +191,11 @@ export function QueryEditor(props: Props) {
           invalid={query.queryLanguage !== QueryLanguage.JAVASCRIPT && !collection}
           tooltip="Name of MongoDB collection to query"
         >
-          <AsyncSelect
-            width={25}
+          <SegmentAsync
+            inputMinWidth={25}
             id="query-editor-collection"
+            placeholder="Collection"
             loadOptions={() => {
-              if (collectionNames) {
-                return Promise.resolve(
-                  collectionNames.map((name) => ({
-                    value: name,
-                    label: name,
-                  })),
-                );
-              }
-
               return props.datasource.getCollectionNames().then((names) => {
                 setCollectionNames(names);
 
@@ -214,14 +206,10 @@ export function QueryEditor(props: Props) {
               });
             }}
             value={{ value: collection, label: collection }}
-            defaultOptions={collectionNames ? collectionNames.map((name) => ({ value: name, label: name })) : []}
             onChange={(e) => {
-              console.log('Selected collection:', e);
               props.onChange({ ...query, collection: e.value });
             }}
-            allowCreateWhileLoading
             allowCustomValue
-            createOptionPosition="first"
             disabled={query.queryLanguage === QueryLanguage.JAVASCRIPT}
           />
         </InlineField>
