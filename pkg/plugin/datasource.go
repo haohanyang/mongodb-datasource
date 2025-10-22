@@ -7,12 +7,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/resource/httpadapter"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/haohanyang/mongodb-datasource/pkg/models"
 
@@ -64,10 +66,18 @@ func NewDatasource(ctx context.Context, source backend.DataSourceInstanceSetting
 		return nil, err
 	}
 
-	return &Datasource{
+	datasource := &Datasource{
 		client:   client,
 		database: config.Database,
-	}, nil
+	}
+
+	// Setup resource handlers
+	mux := http.NewServeMux()
+	mux.HandleFunc("/collections", datasource.listCollections)
+
+	datasource.resourceHandler = httpadapter.New(mux)
+
+	return datasource, nil
 }
 
 // Dispose here tells plugin SDK that plugin wants to clean up resources when a new instance
@@ -130,6 +140,31 @@ func (d *Datasource) QueryData(ctx context.Context, req *backend.QueryDataReques
 	}
 
 	return response, nil
+}
+
+func (d *Datasource) CallResource(ctx context.Context, req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
+	return d.resourceHandler.CallResource(ctx, req, sender)
+}
+
+func (d *Datasource) listCollections(rw http.ResponseWriter, req *http.Request) {
+	collections, err := d.client.Database(d.database).ListCollectionNames(req.Context(), bson.D{})
+	if err != nil {
+		backend.Logger.Error("Failed to list collections", "error", err)
+		return
+	}
+
+	bytes, err := json.Marshal(collections)
+	if err != nil {
+		backend.Logger.Error("Failed to marshal collections", "error", err)
+		return
+	}
+	_, err = rw.Write(bytes)
+	if err != nil {
+		backend.Logger.Error("Failed to write response", "error", err)
+		return
+	}
+	rw.WriteHeader(http.StatusOK)
+
 }
 
 func (d *Datasource) query(ctx context.Context, _ backend.PluginContext, query backend.DataQuery) backend.DataResponse {

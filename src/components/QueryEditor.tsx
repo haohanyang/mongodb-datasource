@@ -1,4 +1,4 @@
-import React, { ChangeEvent, useState } from 'react';
+import React, { ChangeEvent, useEffect, useState } from 'react';
 import {
   Button,
   InlineField,
@@ -8,6 +8,7 @@ import {
   InlineSwitch,
   Modal,
   useTheme2,
+  AsyncSelect,
 } from '@grafana/ui';
 import { EditorHeader, InlineSelect, FlexItem } from '@grafana/plugin-ui';
 import { CoreApp, QueryEditorProps, SelectableValue, LoadingState } from '@grafana/data';
@@ -44,9 +45,39 @@ export function QueryEditor(props: Props) {
 
   const theme = useTheme2();
 
+  const [collection, setCollection] = useState<string>('');
+  const [queryText, setQueryText] = useState<string>('');
+  const [queryType, setQueryType] = useState<string>(QueryType.TABLE);
+  const [queryLanguage, setQueryLanguage] = useState<string>(QueryLanguage.JSON);
+
   const [queryTextError, setQueryTextError] = useState<string | null>(null);
   const [isAggregateOptionExpanded, setIsAggregateOptionExpanded] = useState(false);
   const [isEditorExpanded, setIsEditorExpanded] = useState(false);
+  const [collectionNames, setCollectionNames] = useState<string[] | null>(null);
+
+  useEffect(() => {
+    if (query.collection) {
+      setCollection(query.collection);
+    }
+  }, [query.collection]);
+
+  useEffect(() => {
+    if (query.queryText) {
+      setQueryText(query.queryText);
+    }
+  }, [query.queryText]);
+
+  useEffect(() => {
+    if (query.queryType) {
+      setQueryType(query.queryType);
+    }
+  }, [query.queryType]);
+
+  useEffect(() => {
+    if (query.queryLanguage) {
+      setQueryLanguage(query.queryLanguage);
+    }
+  }, [query.queryLanguage]);
 
   const renderCodeEditor = (showTools: boolean, width?: number, height?: number) => {
     return (
@@ -55,7 +86,7 @@ export function QueryEditor(props: Props) {
           <EditorHeader>
             <InlineSelect
               label="Format"
-              value={query.queryType}
+              value={queryType}
               placeholder="Select format"
               menuShouldPortal
               onChange={(val) => props.onChange({ ...query, queryType: val.value })}
@@ -66,7 +97,7 @@ export function QueryEditor(props: Props) {
               label="Language"
               placeholder="Select query language"
               options={languageOptions}
-              value={query.queryLanguage}
+              value={queryLanguage}
               onChange={(val) => props.onChange({ ...query, queryLanguage: val.value })}
             />
             <FlexItem grow={1} />
@@ -84,7 +115,7 @@ export function QueryEditor(props: Props) {
           </EditorHeader>
         )}
         <QueryEditorRaw
-          query={query.queryText ?? ''}
+          query={queryText}
           language={
             query.queryLanguage === QueryLanguage.JAVASCRIPT || query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW
               ? 'javascript'
@@ -157,16 +188,40 @@ export function QueryEditor(props: Props) {
         <InlineField
           label="Collection"
           error="Collection is required"
-          invalid={query.queryLanguage !== QueryLanguage.JAVASCRIPT && !query.collection}
+          invalid={query.queryLanguage !== QueryLanguage.JAVASCRIPT && !collection}
           tooltip="Name of MongoDB collection to query"
         >
-          <Input
+          <AsyncSelect
             width={25}
             id="query-editor-collection"
-            value={query.collection}
-            onChange={(evt: ChangeEvent<HTMLInputElement>) =>
-              props.onChange({ ...query, collection: evt.target.value })
-            }
+            loadOptions={() => {
+              if (collectionNames) {
+                return Promise.resolve(
+                  collectionNames.map((name) => ({
+                    value: name,
+                    label: name,
+                  })),
+                );
+              }
+
+              return props.datasource.getCollectionNames().then((names) => {
+                setCollectionNames(names);
+
+                return names.map((name) => ({
+                  value: name,
+                  label: name,
+                }));
+              });
+            }}
+            value={{ value: collection, label: collection }}
+            defaultOptions={collectionNames ? collectionNames.map((name) => ({ value: name, label: name })) : []}
+            onChange={(e) => {
+              console.log('Selected collection:', e);
+              props.onChange({ ...query, collection: e.value });
+            }}
+            allowCreateWhileLoading
+            allowCustomValue
+            createOptionPosition="first"
             disabled={query.queryLanguage === QueryLanguage.JAVASCRIPT}
           />
         </InlineField>

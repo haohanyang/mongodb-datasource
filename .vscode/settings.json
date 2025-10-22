@@ -1,5 +1,8 @@
 {
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.formatOnSave": true,
-  "go.testFlags": ["-v"]
+  "go.testFlags": ["-v"],
+  "[go]": {
+    "editor.defaultFormatter": "golang.go"
+  }
 }
