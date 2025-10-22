@@ -206,6 +206,14 @@ export function QueryEditor(props: Props) {
             onChange={(e) => {
               props.onChange({ ...query, collection: e.value });
             }}
+            noOptionMessageHandler={(s) => {
+              if (s.loading) {
+                return 'Loading collections...';
+              } else if (s.error) {
+                return 'Failed to fetch collections';
+              }
+              return 'No collection found';
+            }}
             allowCustomValue
             disabled={queryLanguage === QueryLanguage.JAVASCRIPT}
           />

@@ -148,23 +148,22 @@ func (d *Datasource) CallResource(ctx context.Context, req *backend.CallResource
 
 func (d *Datasource) listCollections(rw http.ResponseWriter, req *http.Request) {
 	collections, err := d.client.Database(d.database).ListCollectionNames(req.Context(), bson.D{})
+
 	if err != nil {
 		backend.Logger.Error("Failed to list collections", "error", err)
+		rw.Write([]byte(`[]`))
 		return
 	}
 
 	bytes, err := json.Marshal(collections)
 	if err != nil {
 		backend.Logger.Error("Failed to marshal collections", "error", err)
+		rw.Write([]byte(`[]`))
 		return
 	}
-	_, err = rw.Write(bytes)
-	if err != nil {
-		backend.Logger.Error("Failed to write response", "error", err)
-		return
-	}
-	rw.WriteHeader(http.StatusOK)
 
+	rw.Write(bytes)
+	rw.WriteHeader(http.StatusOK)
 }
 
 func (d *Datasource) query(ctx context.Context, _ backend.PluginContext, query backend.DataQuery) backend.DataResponse {
