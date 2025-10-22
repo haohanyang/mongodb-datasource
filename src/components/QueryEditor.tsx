@@ -48,12 +48,12 @@ export function QueryEditor(props: Props) {
   const [collection, setCollection] = useState<string>('');
   const [queryText, setQueryText] = useState<string>('');
   const [queryType, setQueryType] = useState<string>(QueryType.TABLE);
-  const [queryLanguage, setQueryLanguage] = useState<string>(QueryLanguage.JSON);
+  const [queryLanguage, setQueryLanguage] = useState<string>(DEFAULT_QUERY.queryLanguage!);
+  const [isStreaming, setIsStreaming] = useState<boolean>(false);
 
   const [queryTextError, setQueryTextError] = useState<string | null>(null);
   const [isAggregateOptionExpanded, setIsAggregateOptionExpanded] = useState(false);
   const [isEditorExpanded, setIsEditorExpanded] = useState(false);
-  const [collectionNames, setCollectionNames] = useState<string[] | null>(null);
 
   useEffect(() => {
     if (query.collection) {
@@ -79,6 +79,12 @@ export function QueryEditor(props: Props) {
     }
   }, [query.queryLanguage]);
 
+  useEffect(() => {
+    if (query.isStreaming !== undefined) {
+      setIsStreaming(query.isStreaming);
+    }
+  }, [query.isStreaming]);
+
   const renderCodeEditor = (showTools: boolean, width?: number, height?: number) => {
     return (
       <>
@@ -101,7 +107,7 @@ export function QueryEditor(props: Props) {
               onChange={(val) => props.onChange({ ...query, queryLanguage: val.value })}
             />
             <FlexItem grow={1} />
-            {!query.isStreaming && (
+            {!isStreaming && (
               <Button
                 icon="play"
                 variant="primary"
@@ -117,18 +123,15 @@ export function QueryEditor(props: Props) {
         <QueryEditorRaw
           query={queryText}
           language={
-            query.queryLanguage === QueryLanguage.JAVASCRIPT || query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW
+            queryLanguage === QueryLanguage.JAVASCRIPT || queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW
               ? 'javascript'
               : 'json'
           }
           onBlur={(queryText: string) => {
-            if (
-              query.queryLanguage === QueryLanguage.JAVASCRIPT ||
-              query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW
-            ) {
+            if (queryLanguage === QueryLanguage.JAVASCRIPT || queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW) {
               // parse the JavaScript query
               const { error, collection } =
-                query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW
+                queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW
                   ? parseJsQuery(queryText)
                   : parseJsQueryLegacy(queryText);
               // let the same query text as it is
@@ -178,17 +181,13 @@ export function QueryEditor(props: Props) {
     );
   };
 
-  if (!query.queryLanguage) {
-    query.queryLanguage = DEFAULT_QUERY.queryLanguage;
-  }
-
   return (
     <>
       <InlineFieldRow>
         <InlineField
           label="Collection"
           error="Collection is required"
-          invalid={query.queryLanguage !== QueryLanguage.JAVASCRIPT && !collection}
+          invalid={queryLanguage !== QueryLanguage.JAVASCRIPT && !collection}
           tooltip="Name of MongoDB collection to query"
         >
           <SegmentAsync
@@ -197,8 +196,6 @@ export function QueryEditor(props: Props) {
             placeholder="Collection"
             loadOptions={() => {
               return props.datasource.getCollectionNames().then((names) => {
-                setCollectionNames(names);
-
                 return names.map((name) => ({
                   value: name,
                   label: name,
@@ -210,14 +207,14 @@ export function QueryEditor(props: Props) {
               props.onChange({ ...query, collection: e.value });
             }}
             allowCustomValue
-            disabled={query.queryLanguage === QueryLanguage.JAVASCRIPT}
+            disabled={queryLanguage === QueryLanguage.JAVASCRIPT}
           />
         </InlineField>
         {app !== CoreApp.Explore && (
           <InlineField label="Streaming" tooltip="(Experimental) Watch MongoDB change streams">
             <InlineSwitch
               id="query-editor-collection-streaming"
-              value={query.isStreaming === true}
+              value={isStreaming === true}
               onChange={(evt) => props.onChange({ ...query, isStreaming: evt.currentTarget.checked })}
             />
           </InlineField>
