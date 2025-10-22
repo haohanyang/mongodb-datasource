@@ -82,9 +82,12 @@ export class MongoDBDataSource extends DataSourceWithBackend<MongoDBQuery, Mongo
     }
 
     const text = this.templateSrv.replace(queryText, variables);
+    const collection = query.collection ? this.templateSrv.replace(query.collection, variables) : query.collection;
+
     return {
       ...query,
       queryText: text,
+      collection,
     };
   }
 
