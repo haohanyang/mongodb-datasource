@@ -8,4 +8,4 @@ import { MongoDBQuery, MongoDataSourceOptions } from './types';
 export const plugin = new DataSourcePlugin<MongoDBDataSource, MongoDBQuery, MongoDataSourceOptions>(MongoDBDataSource)
   .setConfigEditor(ConfigEditor)
   .setQueryEditor(QueryEditor)
-  .setQueryEditorHelp(QueryHelper)
+  .setQueryEditorHelp(QueryHelper);

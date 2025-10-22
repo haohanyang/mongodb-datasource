@@ -1,11 +1,17 @@
 import { useRef, useEffect } from 'react';
 import { type Monaco, type monacoTypes, type MonacoEditor } from '@grafana/ui';
 import { languages } from 'monaco-editor';
-import { STAGE_OPERATORS, EXPRESSION_OPERATORS, ACCUMULATORS, CONVERSION_OPERATORS, QUERY_OPERATORS } from '@mongodb-js/mongodb-constants'
+import {
+  STAGE_OPERATORS,
+  EXPRESSION_OPERATORS,
+  ACCUMULATORS,
+  CONVERSION_OPERATORS,
+  QUERY_OPERATORS,
+} from '@mongodb-js/mongodb-constants';
 
 // Supports JSON only right now
 class CompletionProvider implements monacoTypes.languages.CompletionItemProvider {
-  constructor(private readonly editor: MonacoEditor) { }
+  constructor(private readonly editor: MonacoEditor) {}
 
   provideCompletionItems(
     model: monacoTypes.editor.ITextModel,
@@ -51,10 +57,15 @@ class CompletionProvider implements monacoTypes.languages.CompletionItemProvider
         detail: stage.meta,
         documentation: stage.description,
         insertTextRules: languages.CompletionItemInsertTextRule.InsertAsSnippet,
-      }
+      };
     });
 
-    const expressionSuggestions: languages.CompletionItem[] = [...EXPRESSION_OPERATORS, ...ACCUMULATORS, ...CONVERSION_OPERATORS, ...QUERY_OPERATORS].map((expression) => ({
+    const expressionSuggestions: languages.CompletionItem[] = [
+      ...EXPRESSION_OPERATORS,
+      ...ACCUMULATORS,
+      ...CONVERSION_OPERATORS,
+      ...QUERY_OPERATORS,
+    ].map((expression) => ({
       label: `"${expression.name}"`,
       kind: languages.CompletionItemKind.Function,
       insertText: `"\\${expression.name}": \${1:expression}`,

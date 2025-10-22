@@ -11,7 +11,8 @@
     "lint:fix": "npm run lint -- --fix",
     "e2e": "playwright test",
     "server": "docker compose up --build",
-    "sign": "npx --yes @grafana/sign-plugin@latest"
+    "sign": "npx --yes @grafana/sign-plugin@latest",
+    "format": "prettier --write ."
   },
   "author": "Haohan Yang",
   "license": "Apache-2.0",

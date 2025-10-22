@@ -82,9 +82,9 @@ class CodeLensVisitor implements JSONVisitor {
 
   onSeparator = (character: string, offset: number, _length: number, _startLine: number, _startCharacter: number) => {
     if (character === ',' && this._currentLevel === 0) {
-      this._seperators.push(offset)
+      this._seperators.push(offset);
     }
-  }
+  };
 
   onError = (_error: ParseErrorCode, _offset: number, _length: number, _startLine: number, _startCharacter: number) => {
     this._hasError = true;
@@ -104,7 +104,10 @@ class CodeLensVisitor implements JSONVisitor {
 }
 
 class CodeLensProvider implements monacoTypes.languages.CodeLensProvider {
-  constructor(private readonly editor: MonacoEditor, private readonly updateTextCommandId: string) { }
+  constructor(
+    private readonly editor: MonacoEditor,
+    private readonly updateTextCommandId: string,
+  ) {}
 
   provideCodeLenses(
     model: monacoTypes.editor.ITextModel,
@@ -114,7 +117,7 @@ class CodeLensProvider implements monacoTypes.languages.CodeLensProvider {
       return null;
     }
 
-    const lenses: monacoTypes.languages.CodeLens[] = []
+    const lenses: monacoTypes.languages.CodeLens[] = [];
 
     const text = model.getValue();
     const visitor = new CodeLensVisitor();
@@ -134,14 +137,14 @@ class CodeLensProvider implements monacoTypes.languages.CodeLensProvider {
         startLineNumber: stage.startLine + 1,
         startColumn: stage.startColumn,
         endLineNumber: stage.startLine + 2,
-        endColumn: stage.startColumn
-      }
+        endColumn: stage.startColumn,
+      };
 
       lenses.push({
         range,
         // @ts-ignore
         command: {
-          title: `Stage ${stage.name}`
+          title: `Stage ${stage.name}`,
         },
       });
 
@@ -163,15 +166,15 @@ class CodeLensProvider implements monacoTypes.languages.CodeLensProvider {
         range,
         command: {
           id: this.updateTextCommandId,
-          title: "Delete",
-          arguments: [text.slice(0, start) + text.slice(end)]
+          title: 'Delete',
+          arguments: [text.slice(0, start) + text.slice(end)],
         },
       });
     }
 
     return {
       lenses: lenses,
-      dispose: () => { },
+      dispose: () => {},
     };
   }
 
