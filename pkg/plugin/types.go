@@ -3,6 +3,7 @@ package plugin
 import (
 	"time"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -11,6 +12,7 @@ import (
 type Datasource struct {
 	database string
 	client   *mongo.Client
+	resourceHandler backend.CallResourceHandler
 }
 
 type queryModel struct {

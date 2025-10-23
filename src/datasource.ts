@@ -145,4 +145,10 @@ export class MongoDBDataSource extends DataSourceWithBackend<MongoDBQuery, Mongo
       });
     }
   }
+
+  getCollectionNames(): Promise<string[]> {
+    return this.getResource('collections').catch((err) => {
+      return [];
+    });
+  }
 }

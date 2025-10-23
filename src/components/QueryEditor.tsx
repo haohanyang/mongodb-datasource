@@ -1,4 +1,4 @@
-import React, { ChangeEvent, useState } from 'react';
+import React, { ChangeEvent, useEffect, useState } from 'react';
 import {
   Button,
   InlineField,
@@ -8,6 +8,7 @@ import {
   InlineSwitch,
   Modal,
   useTheme2,
+  SegmentAsync,
 } from '@grafana/ui';
 import { EditorHeader, InlineSelect, FlexItem } from '@grafana/plugin-ui';
 import { CoreApp, QueryEditorProps, SelectableValue, LoadingState } from '@grafana/data';
@@ -44,9 +45,45 @@ export function QueryEditor(props: Props) {
 
   const theme = useTheme2();
 
+  const [collection, setCollection] = useState<string>('');
+  const [queryText, setQueryText] = useState<string>('');
+  const [queryType, setQueryType] = useState<string>(QueryType.TABLE);
+  const [queryLanguage, setQueryLanguage] = useState<string>(DEFAULT_QUERY.queryLanguage!);
+  const [isStreaming, setIsStreaming] = useState<boolean>(false);
+
   const [queryTextError, setQueryTextError] = useState<string | null>(null);
   const [isAggregateOptionExpanded, setIsAggregateOptionExpanded] = useState(false);
   const [isEditorExpanded, setIsEditorExpanded] = useState(false);
+
+  useEffect(() => {
+    if (query.collection) {
+      setCollection(query.collection);
+    }
+  }, [query.collection]);
+
+  useEffect(() => {
+    if (query.queryText) {
+      setQueryText(query.queryText);
+    }
+  }, [query.queryText]);
+
+  useEffect(() => {
+    if (query.queryType) {
+      setQueryType(query.queryType);
+    }
+  }, [query.queryType]);
+
+  useEffect(() => {
+    if (query.queryLanguage) {
+      setQueryLanguage(query.queryLanguage);
+    }
+  }, [query.queryLanguage]);
+
+  useEffect(() => {
+    if (query.isStreaming !== undefined) {
+      setIsStreaming(query.isStreaming);
+    }
+  }, [query.isStreaming]);
 
   const renderCodeEditor = (showTools: boolean, width?: number, height?: number) => {
     return (
@@ -55,7 +92,7 @@ export function QueryEditor(props: Props) {
           <EditorHeader>
             <InlineSelect
               label="Format"
-              value={query.queryType}
+              value={queryType}
               placeholder="Select format"
               menuShouldPortal
               onChange={(val) => props.onChange({ ...query, queryType: val.value })}
@@ -66,11 +103,11 @@ export function QueryEditor(props: Props) {
               label="Language"
               placeholder="Select query language"
               options={languageOptions}
-              value={query.queryLanguage}
+              value={queryLanguage}
               onChange={(val) => props.onChange({ ...query, queryLanguage: val.value })}
             />
             <FlexItem grow={1} />
-            {!query.isStreaming && (
+            {!isStreaming && (
               <Button
                 icon="play"
                 variant="primary"
@@ -84,20 +121,17 @@ export function QueryEditor(props: Props) {
           </EditorHeader>
         )}
         <QueryEditorRaw
-          query={query.queryText ?? ''}
+          query={queryText}
           language={
-            query.queryLanguage === QueryLanguage.JAVASCRIPT || query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW
+            queryLanguage === QueryLanguage.JAVASCRIPT || queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW
               ? 'javascript'
               : 'json'
           }
           onBlur={(queryText: string) => {
-            if (
-              query.queryLanguage === QueryLanguage.JAVASCRIPT ||
-              query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW
-            ) {
+            if (queryLanguage === QueryLanguage.JAVASCRIPT || queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW) {
               // parse the JavaScript query
               const { error, collection } =
-                query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW
+                queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW
                   ? parseJsQuery(queryText)
                   : parseJsQueryLegacy(queryText);
               // let the same query text as it is
@@ -147,34 +181,48 @@ export function QueryEditor(props: Props) {
     );
   };
 
-  if (!query.queryLanguage) {
-    query.queryLanguage = DEFAULT_QUERY.queryLanguage;
-  }
-
   return (
     <>
       <InlineFieldRow>
         <InlineField
           label="Collection"
           error="Collection is required"
-          invalid={query.queryLanguage !== QueryLanguage.JAVASCRIPT && !query.collection}
+          invalid={queryLanguage !== QueryLanguage.JAVASCRIPT && !collection}
           tooltip="Name of MongoDB collection to query"
         >
-          <Input
-            width={25}
+          <SegmentAsync
             id="query-editor-collection"
-            value={query.collection}
-            onChange={(evt: ChangeEvent<HTMLInputElement>) =>
-              props.onChange({ ...query, collection: evt.target.value })
-            }
-            disabled={query.queryLanguage === QueryLanguage.JAVASCRIPT}
+            placeholder="Enter your collection"
+            allowEmptyValue={false}
+            loadOptions={() => {
+              return props.datasource.getCollectionNames().then((names) => {
+                return names.map((name) => ({
+                  value: name,
+                  label: name,
+                }));
+              });
+            }}
+            value={{ value: collection, label: collection }}
+            onChange={(e) => {
+              props.onChange({ ...query, collection: e.value });
+            }}
+            noOptionMessageHandler={(s) => {
+              if (s.loading) {
+                return 'Loading collections...';
+              } else if (s.error) {
+                return 'Failed to fetch collections';
+              }
+              return 'No collection found';
+            }}
+            allowCustomValue
+            disabled={queryLanguage === QueryLanguage.JAVASCRIPT}
           />
         </InlineField>
         {app !== CoreApp.Explore && (
           <InlineField label="Streaming" tooltip="(Experimental) Watch MongoDB change streams">
             <InlineSwitch
               id="query-editor-collection-streaming"
-              value={query.isStreaming === true}
+              value={isStreaming === true}
               onChange={(evt) => props.onChange({ ...query, isStreaming: evt.currentTarget.checked })}
             />
           </InlineField>
