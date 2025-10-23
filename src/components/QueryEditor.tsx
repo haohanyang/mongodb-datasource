@@ -191,9 +191,9 @@ export function QueryEditor(props: Props) {
           tooltip="Name of MongoDB collection to query"
         >
           <SegmentAsync
-            inputMinWidth={25}
             id="query-editor-collection"
-            placeholder="Collection"
+            placeholder="Enter your collection"
+            allowEmptyValue={false}
             loadOptions={() => {
               return props.datasource.getCollectionNames().then((names) => {
                 return names.map((name) => ({

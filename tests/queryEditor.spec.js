@@ -111,7 +111,11 @@ test('data query should return correct customer data with JSON query', async ({
   const ds = await readProvisionedDataSource({ fileName: 'test/mongo-default.yml' });
 
   await panelEditPage.datasource.set(ds.name);
-  await panelEditPage.getQueryEditorRow('A').getByLabel('Collection').fill('test_customerData');
+
+  await panelEditPage.getQueryEditorRow('A').getByText('Enter your collection').click();
+  await page.keyboard.type('test_customerData');
+  await page.keyboard.press('Enter');
+
   const editor = panelEditPage
     .getByGrafanaSelector(selectors.components.CodeEditor.container, {
       root: panelEditPage.getQueryEditorRow('A'),
@@ -173,7 +177,11 @@ test('data query should return correct temperature data with JavaScript query', 
 
   const ds = await readProvisionedDataSource({ fileName: 'test/mongo-default.yml' });
   await panelEditPage.datasource.set(ds.name);
-  await panelEditPage.getQueryEditorRow('A').getByLabel('Collection').fill('test_temperatureData');
+
+  await panelEditPage.getQueryEditorRow('A').getByText('Enter your collection').click();
+  await page.keyboard.type('test_customerData');
+  await page.keyboard.press('Enter');
+
   const selectLanguage = panelEditPage.getQueryEditorRow('A').getByRole('combobox').last();
   await selectLanguage.click();
   await page.getByText('JavaScript', { exact: true }).click();
@@ -240,7 +248,11 @@ test('data query should return correct temperature data with JavaScript function
 
   const ds = await readProvisionedDataSource({ fileName: 'test/mongo-default.yml' });
   await panelEditPage.datasource.set(ds.name);
-  await panelEditPage.getQueryEditorRow('A').getByLabel('Collection').fill('test_customerData');
+
+  await panelEditPage.getQueryEditorRow('A').getByText('Enter your collection').click();
+  await page.keyboard.type('test_customerData');
+  await page.keyboard.press('Enter');
+
   // get toggle switch
   const selectLanguage = panelEditPage.getQueryEditorRow('A').getByRole('combobox').last();
   await selectLanguage.click();
@@ -311,7 +323,11 @@ test('data query should return correct temperature data with javascript function
 
   const ds = await readProvisionedDataSource({ fileName: 'test/mongo-default.yml' });
   await panelEditPage.datasource.set(ds.name);
-  await panelEditPage.getQueryEditorRow('A').getByLabel('Collection').fill('test_customerData');
+
+  await panelEditPage.getQueryEditorRow('A').getByText('Enter your collection').click();
+  await page.keyboard.type('test_customerData');
+  await page.keyboard.press('Enter');
+
   const selectLanguage = panelEditPage.getQueryEditorRow('A').getByRole('combobox').last();
   await selectLanguage.click();
   await page.getByText('JavaScript Shadow', { exact: true }).click();
