@@ -118,7 +118,32 @@ export class MongoDBDataSource extends DataSourceWithBackend<MongoDBQuery, Mongo
     const streamQueries = request.targets.filter((query) => query.isStreaming);
 
     if (streamQueries.length === 0) {
-      return super.query(request);
+      // Variable $__local_from and $__local_to
+
+      return super.query({
+        ...request,
+        targets: request.targets.map((target) => {
+          const queryText = target
+            .queryText!.replaceAll(
+              /"\$__local_from"/g,
+              JSON.stringify({
+                $date: {
+                  $numberLong: request.range.from.toDate().getTime().toString(),
+                },
+              }),
+            )
+            .replaceAll(
+              /"\$__local_to"/g,
+              JSON.stringify({
+                $date: {
+                  $numberLong: request.range.to.toDate().getTime().toString(),
+                },
+              }),
+            );
+
+          return { ...target, queryText };
+        }),
+      });
     } else if (streamQueries.length === request.targets.length) {
       const observables = request.targets.map((query) => {
         return getGrafanaLiveSrv().getDataStream({
