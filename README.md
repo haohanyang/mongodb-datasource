@@ -267,6 +267,15 @@ If the a new document was inserted which contains `value` field, the query will 
 
 **Note**: Change streams are only available for [replica sets](https://www.mongodb.com/docs/manual/replication/#std-label-replication) and [sharded clusters](https://www.mongodb.com/docs/manual/sharding/#std-label-sharding-background).
 
+## Special variables
+
+In addition to Grafana's built-in variables, the plugin provides the following special variables:
+
+- `$__local_from`, `$__local_to`
+  Time ranges that respect local overrides
+- `$__from_oid`, `$__to_oid`
+  Mongo ObjectIds that correspond to time ranges
+
 ## Supported Data Types
 
 | BSON Type      | Support | Go Type         | Notes                                   |
