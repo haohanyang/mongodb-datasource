@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.4.1 - 2025-10-25
+
+### Added
+
+- Added special variables `$__local_from` and `$__local_to` that respect local timestamp overrides
+
+### Changed
+
+- Provided option to select collection names in collection input in query editor.
+
 ## 0.4.0 - 2025-09-24
 
 ### Added
