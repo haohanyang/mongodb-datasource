@@ -1,9 +1,9 @@
 {
   "name": "mongodb-datasource",
-  "version": "0.3.1",
+  "version": "0.4.1",
   "scripts": {
-    "build": "webpack -c ./.config/webpack/webpack.config.ts --env production",
-    "dev": "webpack -w -c ./.config/webpack/webpack.config.ts --env development",
+    "build": "webpack -c ./webpack.config.ts --env production",
+    "dev": "webpack -w -c ./webpack.config.ts --env development",
     "test": "jest --watch --onlyChanged",
     "test:ci": "jest --passWithNoTests --maxWorkers 4",
     "typecheck": "tsc --noEmit",
@@ -11,7 +11,8 @@
     "lint:fix": "npm run lint -- --fix",
     "e2e": "playwright test",
     "server": "docker compose up --build",
-    "sign": "npx --yes @grafana/sign-plugin@latest"
+    "sign": "npx --yes @grafana/sign-plugin@latest",
+    "format": "prettier --write ."
   },
   "author": "Haohan Yang",
   "license": "Apache-2.0",
@@ -31,6 +32,8 @@
     "@types/node": "^20.8.7",
     "@types/react-router-dom": "^5.2.0",
     "@types/testing-library__jest-dom": "5.14.8",
+    "@types/validator": "^13.15.0",
+    "bson": "^6.10.4",
     "copy-webpack-plugin": "^11.0.0",
     "css-loader": "^6.7.3",
     "eslint-plugin-deprecation": "^2.0.0",
@@ -63,13 +66,17 @@
   "dependencies": {
     "@emotion/css": "11.10.6",
     "@grafana/data": "^11.2.0",
+    "@grafana/plugin-ui": "^0.10.5",
     "@grafana/runtime": "^11.2.0",
     "@grafana/schema": "^10.4.0",
     "@grafana/ui": "^11.2.0",
+    "@mongodb-js/mongodb-constants": "^0.11.1",
+    "jsonc-parser": "^3.3.1",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "shadowrealm-api": "^0.8.3",
-    "tslib": "2.5.3"
+    "tslib": "2.5.3",
+    "validator": "^13.15.0"
   },
   "packageManager": "npm@9.6.7"
 }

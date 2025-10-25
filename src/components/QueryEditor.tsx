@@ -1,28 +1,25 @@
-import React, { ChangeEvent, FormEventHandler, useRef, useState } from 'react';
+import React, { ChangeEvent, useEffect, useState } from 'react';
 import {
   Button,
-  CodeEditor,
-  Field,
   InlineField,
   InlineFieldRow,
   Input,
-  Select,
   ControlledCollapse,
   InlineSwitch,
-  RadioButtonGroup,
-  Stack,
-  FeatureBadge,
-  Switch,
-  type monacoTypes,
+  Modal,
+  useTheme2,
+  SegmentAsync,
 } from '@grafana/ui';
-import { CoreApp, FeatureState, QueryEditorProps, SelectableValue } from '@grafana/data';
-import { DataSource } from '../datasource';
-import { MongoDataSourceOptions, MongoQuery, QueryLanguage, QueryType, DEFAULT_QUERY } from '../types';
-import { parseJsQuery, parseJsQueryLegacy, validateJsonQueryText, validatePositiveNumber } from '../utils';
-import { useAutocomplete } from '../autocomplete';
-import './QueryEditor.css';
+import { EditorHeader, InlineSelect, FlexItem } from '@grafana/plugin-ui';
+import { CoreApp, QueryEditorProps, SelectableValue, LoadingState } from '@grafana/data';
+import { MongoDBDataSource } from '../datasource';
+import { MongoDataSourceOptions, MongoDBQuery, QueryLanguage, QueryType, DEFAULT_QUERY } from '../types';
+import { parseJsQuery, parseJsQueryLegacy } from '../utils';
+import { QueryEditorRaw } from './QueryEditorRaw';
+import { QueryToolbox } from './QueryToolbox';
+import validator from 'validator';
 
-type Props = QueryEditorProps<DataSource, MongoQuery, MongoDataSourceOptions>;
+type Props = QueryEditorProps<MongoDBDataSource, MongoDBQuery, MongoDataSourceOptions>;
 
 const queryTypes: Array<SelectableValue<string>> = [
   {
@@ -31,7 +28,7 @@ const queryTypes: Array<SelectableValue<string>> = [
     icon: 'chart-line',
   },
   {
-    label: 'Data Table',
+    label: 'Table',
     value: QueryType.TABLE,
     icon: 'table',
   },
@@ -43,184 +40,233 @@ const languageOptions: Array<SelectableValue<string>> = [
   { label: 'JavaScript Shadow', value: QueryLanguage.JAVASCRIPT_SHADOW, description: 'JavaScript with Evaluation' },
 ];
 
-export function QueryEditor({ query, onChange, app }: Props) {
-  const codeEditorRef = useRef<monacoTypes.editor.IStandaloneCodeEditor | null>(null);
+export function QueryEditor(props: Props) {
+  const { query, app, data, onRunQuery } = props;
+
+  const theme = useTheme2();
+
+  const [collection, setCollection] = useState<string>('');
+  const [queryText, setQueryText] = useState<string>('');
+  const [queryType, setQueryType] = useState<string>(QueryType.TABLE);
+  const [queryLanguage, setQueryLanguage] = useState<string>(DEFAULT_QUERY.queryLanguage!);
+  const [isStreaming, setIsStreaming] = useState<boolean>(false);
+
   const [queryTextError, setQueryTextError] = useState<string | null>(null);
-  const [isOpen, setIsOpen] = useState(false);
-  const setupAutocompleteFn = useAutocomplete();
+  const [isAggregateOptionExpanded, setIsAggregateOptionExpanded] = useState(false);
+  const [isEditorExpanded, setIsEditorExpanded] = useState(false);
 
-  const [maxTimeMSText, setMaxTimeMSText] = useState<string>(
-    query.aggregateMaxTimeMS ? query.aggregateMaxTimeMS.toString() : '',
-  );
-  const [maxAwaitTimeMSText, setMaxAwaitTimeMSText] = useState<string>(
-    query.aggregateMaxAwaitTime ? query.aggregateMaxAwaitTime.toString() : '',
-  );
-  const [batchSizeText, setBatchSizeText] = useState<string>(
-    query.aggregateBatchSize ? query.aggregateBatchSize.toString() : '',
-  );
-
-  const onQueryTextChange = (queryText: string) => {
-    if (query.queryLanguage === QueryLanguage.JAVASCRIPT || query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW) {
-      // parse the JavaScript query
-      const { error, collection } =
-        query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW
-          ? parseJsQuery(queryText)
-          : parseJsQueryLegacy(queryText);
-      // let the same query text as it is
-      onChange({ ...query, queryText: queryText, ...(collection ? { collection } : {}) });
-      setQueryTextError(error);
-    } else {
-      onChange({ ...query, queryText: queryText });
-      const error = validateJsonQueryText(queryText);
-      setQueryTextError(error);
+  useEffect(() => {
+    if (query.collection) {
+      setCollection(query.collection);
     }
-  };
+  }, [query.collection]);
 
-  const onQueryLanguageChange = (value: SelectableValue<string>) => {
-    onChange({ ...query, queryLanguage: value.value });
-  };
-
-  const onQueryTypeChange = (value: string) => {
-    onChange({ ...query, queryType: value });
-  };
-
-  const onCollectionChange = (event: ChangeEvent<HTMLInputElement>) => {
-    onChange({ ...query, collection: event.target.value });
-  };
-
-  const onMaxTimeMSChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setMaxTimeMSText(event.target.value);
-
-    if (!event.target.value) {
-      onChange({ ...query, aggregateMaxTimeMS: undefined });
-    } else if (validatePositiveNumber(event.target.value)) {
-      onChange({ ...query, aggregateMaxTimeMS: parseInt(event.target.value, 10) });
+  useEffect(() => {
+    if (query.queryText) {
+      setQueryText(query.queryText);
     }
-  };
+  }, [query.queryText]);
 
-  const onMaxAwaitTimeMSChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setMaxAwaitTimeMSText(event.target.value);
-    if (!event.target.value) {
-      onChange({ ...query, aggregateMaxAwaitTime: undefined });
-    } else if (validatePositiveNumber(event.target.value)) {
-      onChange({ ...query, aggregateMaxAwaitTime: parseInt(event.target.value, 10) });
+  useEffect(() => {
+    if (query.queryType) {
+      setQueryType(query.queryType);
     }
-  };
+  }, [query.queryType]);
 
-  const onAllowDiskUseChange = (event: ChangeEvent<HTMLInputElement>) => {
-    onChange({
-      ...query,
-      aggregateAllowDiskUse: event.target.checked,
-    });
-  };
-
-  const onBatchSizeChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setBatchSizeText(event.target.value);
-    if (!event.target.value) {
-      onChange({ ...query, aggregateBatchSize: undefined });
-    } else if (validatePositiveNumber(event.target.value)) {
-      onChange({ ...query, aggregateBatchSize: parseInt(event.target.value, 10) });
+  useEffect(() => {
+    if (query.queryLanguage) {
+      setQueryLanguage(query.queryLanguage);
     }
-  };
+  }, [query.queryLanguage]);
 
-  const onBypassDocumentValidationChange = (event: ChangeEvent<HTMLInputElement>) => {
-    onChange({ ...query, aggregateBypassDocumentValidation: event.target.checked });
-  };
-
-  const onCommentChange = (event: ChangeEvent<HTMLInputElement>) => {
-    onChange({ ...query, aggregateComment: event.target.value });
-  };
-
-  const onFormatQueryText = () => {
-    if (codeEditorRef.current) {
-      codeEditorRef.current.getAction('editor.action.formatDocument').run();
+  useEffect(() => {
+    if (query.isStreaming !== undefined) {
+      setIsStreaming(query.isStreaming);
     }
+  }, [query.isStreaming]);
+
+  const renderCodeEditor = (showTools: boolean, width?: number, height?: number) => {
+    return (
+      <>
+        {!isEditorExpanded && (
+          <EditorHeader>
+            <InlineSelect
+              label="Format"
+              value={queryType}
+              placeholder="Select format"
+              menuShouldPortal
+              onChange={(val) => props.onChange({ ...query, queryType: val.value })}
+              options={queryTypes}
+            />
+            <InlineSelect
+              id="query-editor-query-language"
+              label="Language"
+              placeholder="Select query language"
+              options={languageOptions}
+              value={queryLanguage}
+              onChange={(val) => props.onChange({ ...query, queryLanguage: val.value })}
+            />
+            <FlexItem grow={1} />
+            {!isStreaming && (
+              <Button
+                icon="play"
+                variant="primary"
+                size="sm"
+                onClick={() => onRunQuery()}
+                disabled={data?.state === LoadingState.Loading}
+              >
+                Run query
+              </Button>
+            )}
+          </EditorHeader>
+        )}
+        <QueryEditorRaw
+          query={queryText}
+          language={
+            queryLanguage === QueryLanguage.JAVASCRIPT || queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW
+              ? 'javascript'
+              : 'json'
+          }
+          onBlur={(queryText: string) => {
+            if (queryLanguage === QueryLanguage.JAVASCRIPT || queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW) {
+              // parse the JavaScript query
+              const { error, collection } =
+                queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW
+                  ? parseJsQuery(queryText)
+                  : parseJsQueryLegacy(queryText);
+              // let the same query text as it is
+              props.onChange({ ...query, queryText: queryText, ...(collection ? { collection } : {}) });
+              setQueryTextError(error);
+            } else {
+              props.onChange({ ...query, queryText: queryText });
+              if (!validator.isJSON(queryText)) {
+                setQueryTextError('Query should be a valid JSON');
+              } else {
+                setQueryTextError(null);
+              }
+            }
+          }}
+          width={width}
+          height={height}
+          fontSize={14}
+        >
+          {({ formatQuery }) => {
+            return (
+              <QueryToolbox
+                isExpanded={isEditorExpanded}
+                onExpand={setIsEditorExpanded}
+                onFormatCode={formatQuery}
+                showTools={showTools}
+                error={queryTextError ?? undefined}
+              />
+            );
+          }}
+        </QueryEditorRaw>
+      </>
+    );
   };
 
-  const onIsStreamingChange: FormEventHandler<HTMLInputElement> = (e) => {
-    onChange({ ...query, isStreaming: e.currentTarget.checked });
+  const renderPlaceholder = () => {
+    return (
+      <div
+        style={{
+          background: theme.colors.background.primary,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        Editing in expanded code editor
+      </div>
+    );
   };
-
-  if (!query.queryLanguage) {
-    query.queryLanguage = DEFAULT_QUERY.queryLanguage;
-  }
 
   return (
     <>
-      <Field label="Query Type" description="Choose to query time series or table">
-        <RadioButtonGroup
-          id="query-editor-query-type"
-          options={queryTypes}
-          onChange={onQueryTypeChange}
-          value={query.queryType || QueryType.TIMESERIES}
-        />
-      </Field>
-      {app !== CoreApp.Explore && (
-        <div className="query-editor-collection-streaming-container">
-          <Field
-            className="query-editor-collection-streaming-field"
-            label={
-              <>
-                <Stack direction="row" gap={1} alignItems="center">
-                  <div className="field-label">Streaming</div>
-                  <FeatureBadge featureState={FeatureState.experimental} />
-                </Stack>
-              </>
-            }
-            horizontal={true}
-          >
-            <Switch
-              id="query-editor-collection-streaming"
-              value={query.isStreaming === true}
-              onChange={onIsStreamingChange}
-            />
-          </Field>
-          <div className="field-description">Watch MongoDB Change Streams</div>
-        </div>
-      )}
-
       <InlineFieldRow>
         <InlineField
           label="Collection"
           error="Collection is required"
-          invalid={query.queryLanguage !== QueryLanguage.JAVASCRIPT && !query.collection}
-          tooltip="Name of the MongoDB collection to query"
+          invalid={queryLanguage !== QueryLanguage.JAVASCRIPT && !collection}
+          tooltip="Name of MongoDB collection to query"
         >
-          <Input
-            width={25}
+          <SegmentAsync
             id="query-editor-collection"
-            onChange={onCollectionChange}
-            value={query.collection}
-            disabled={query.queryLanguage === QueryLanguage.JAVASCRIPT}
+            placeholder="Enter your collection"
+            allowEmptyValue={false}
+            loadOptions={() => {
+              return props.datasource.getCollectionNames().then((names) => {
+                return names.map((name) => ({
+                  value: name,
+                  label: name,
+                }));
+              });
+            }}
+            value={{ value: collection, label: collection }}
+            onChange={(e) => {
+              props.onChange({ ...query, collection: e.value });
+            }}
+            noOptionMessageHandler={(s) => {
+              if (s.loading) {
+                return 'Loading collections...';
+              } else if (s.error) {
+                return 'Failed to fetch collections';
+              }
+              return 'No collection found';
+            }}
+            allowCustomValue
+            disabled={queryLanguage === QueryLanguage.JAVASCRIPT}
           />
         </InlineField>
-        <InlineField label="Query language">
-          <Select
-            id="query-editor-query-language"
-            onChange={onQueryLanguageChange}
-            options={languageOptions}
-            value={query.queryLanguage}
-            width={25}
-          />
-        </InlineField>
+        {app !== CoreApp.Explore && (
+          <InlineField label="Streaming" tooltip="(Experimental) Watch MongoDB change streams">
+            <InlineSwitch
+              id="query-editor-collection-streaming"
+              value={isStreaming === true}
+              onChange={(evt) => props.onChange({ ...query, isStreaming: evt.currentTarget.checked })}
+            />
+          </InlineField>
+        )}
       </InlineFieldRow>
-      <ControlledCollapse label="Aggregate Options" isOpen={isOpen} onToggle={() => setIsOpen(!isOpen)}>
+      {isEditorExpanded ? renderPlaceholder() : renderCodeEditor(true, undefined, 300)}
+
+      <ControlledCollapse
+        label="Aggregate options"
+        isOpen={isAggregateOptionExpanded}
+        onToggle={() => setIsAggregateOptionExpanded(!isAggregateOptionExpanded)}
+      >
         <InlineFieldRow>
           <InlineField
             label="Max time(ms)"
             tooltip="The maximum amount of time that the query can run on the server. The default value is nil, meaning that there is no time limit for query execution."
-            error="Invalid time"
-            invalid={maxTimeMSText !== '' && !validatePositiveNumber(maxTimeMSText)}
           >
-            <Input id="query-editor-max-time-ms" onChange={onMaxTimeMSChange} value={maxTimeMSText} />
+            <Input
+              id="query-editor-max-time-ms"
+              value={query.aggregateMaxTimeMS}
+              onChange={(evt: ChangeEvent<HTMLInputElement>) => {
+                if (!evt.target.value) {
+                  props.onChange({ ...query, aggregateMaxTimeMS: undefined });
+                } else if (validator.isInt(evt.target.value, { gt: 0 })) {
+                  props.onChange({ ...query, aggregateMaxTimeMS: parseInt(evt.target.value, 10) });
+                }
+              }}
+            />
           </InlineField>
-        </InlineFieldRow>
-        <InlineFieldRow>
           <InlineField
-            label="Max Await Time(ms)"
+            label="Max await time(ms)"
             tooltip="The maximum amount of time that the server should wait for new documents to satisfy a tailable cursor query."
           >
-            <Input id="query-editor-max-await-time-ms" onChange={onMaxAwaitTimeMSChange} value={maxAwaitTimeMSText} />
+            <Input
+              id="query-editor-max-await-time-ms"
+              value={query.aggregateMaxAwaitTime}
+              onChange={(evt: ChangeEvent<HTMLInputElement>) => {
+                if (!evt.target.value) {
+                  props.onChange({ ...query, aggregateMaxAwaitTime: undefined });
+                } else if (validator.isInt(evt.target.value, { gt: 0 })) {
+                  props.onChange({ ...query, aggregateMaxAwaitTime: parseInt(evt.target.value, 10) });
+                }
+              }}
+            />
           </InlineField>
         </InlineFieldRow>
         <InlineFieldRow>
@@ -228,76 +274,63 @@ export function QueryEditor({ query, onChange, app }: Props) {
             label="Comment"
             tooltip="A string that will be included in server logs, profiling logs, and currentOp queries to help trace the operation."
           >
-            <Input id="query-editor-comment" onChange={onCommentChange} value={query.aggregateComment} />
+            <Input
+              id="query-editor-comment"
+              value={query.aggregateComment}
+              onChange={(evt: ChangeEvent<HTMLInputElement>) => {
+                if (evt.target.value) {
+                  props.onChange({ ...query, aggregateComment: evt.target.value });
+                }
+              }}
+            />
           </InlineField>
-        </InlineFieldRow>
-        <InlineFieldRow>
           <InlineField
-            label="Batch Size"
+            label="Batch size"
             tooltip="The maximum number of documents to be included in each batch returned by the server."
-            error="Invalid batch size"
-            invalid={batchSizeText !== '' && !validatePositiveNumber(batchSizeText)}
           >
-            <Input id="query-editor-batch-size" onChange={onBatchSizeChange} value={batchSizeText} />
+            <Input
+              id="query-editor-batch-size"
+              value={query.aggregateBatchSize}
+              onChange={(evt: ChangeEvent<HTMLInputElement>) => {
+                if (validator.isInt(evt.target.value, { gt: 0 })) {
+                  props.onChange({ ...query, aggregateBatchSize: parseInt(evt.target.value, 10) });
+                }
+              }}
+            />
           </InlineField>
         </InlineFieldRow>
         <InlineFieldRow>
           <InlineField
-            label="Allow Disk Use"
+            label="Allow disk use"
             tooltip="If true, the operation can write to temporary files in the _tmp subdirectory of the database directory path on the server. The default value is false."
           >
             <InlineSwitch
               id="query-editor-allow-disk-use"
-              onChange={onAllowDiskUseChange}
               value={query.aggregateAllowDiskUse}
+              onChange={(evt: ChangeEvent<HTMLInputElement>) =>
+                props.onChange({ ...query, aggregateAllowDiskUse: evt.target.checked })
+              }
             />
           </InlineField>
-        </InlineFieldRow>
-        <InlineFieldRow>
           <InlineField
-            label="Bypass Document Validation"
+            label="Bypass document validation"
             tooltip="If true, writes executed as part of the operation will opt out of document-level validation on the server. This option is valid for MongoDB versions >= 3.2 and is ignored for previous server versions. The default value is false."
           >
             <InlineSwitch
               id="query-editor-bypass-document-validation"
-              onChange={onBypassDocumentValidationChange}
               value={query.aggregateBypassDocumentValidation}
+              onChange={(evt: ChangeEvent<HTMLInputElement>) =>
+                props.onChange({ ...query, aggregateBypassDocumentValidation: evt.target.checked })
+              }
             />
           </InlineField>
         </InlineFieldRow>
       </ControlledCollapse>
-      <Field
-        label="Query Text"
-        description={`Enter the Mongo Aggregation Pipeline (${
-          query.queryLanguage === QueryLanguage.JSON ? 'JSON' : 'JavaScript'
-        })`}
-        error={queryTextError}
-        invalid={queryTextError != null}
-      >
-        <CodeEditor
-          onEditorDidMount={(editor, monaco) => {
-            codeEditorRef.current = editor;
-            setupAutocompleteFn(editor, monaco);
-          }}
-          width="100%"
-          height={300}
-          language={
-            query.queryLanguage === QueryLanguage.JAVASCRIPT || query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW
-              ? 'javascript'
-              : 'json'
-          }
-          onBlur={onQueryTextChange}
-          value={query.queryText || ''}
-          showMiniMap={false}
-          showLineNumbers={true}
-          monacoOptions={{ fontSize: 14 }}
-        />
-      </Field>
-      <Stack direction="row" wrap alignItems="flex-start" justifyContent="start" gap={1}>
-        <Button onClick={onFormatQueryText} variant="secondary">
-          Format
-        </Button>
-      </Stack>
+      {isEditorExpanded && (
+        <Modal title="Query Text" isOpen={isEditorExpanded} onDismiss={() => setIsEditorExpanded(false)}>
+          {renderCodeEditor(true, undefined, 500)}
+        </Modal>
+      )}
     </>
   );
 }

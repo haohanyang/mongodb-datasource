@@ -1,7 +1,7 @@
 import { DataSourceJsonData } from '@grafana/data';
 import { DataQuery } from '@grafana/schema';
 
-export interface MongoQuery extends DataQuery {
+export interface MongoDBQuery extends DataQuery {
   queryText?: string;
   collection?: string;
   queryType?: string;
@@ -18,6 +18,11 @@ export interface MongoQuery extends DataQuery {
   aggregateBypassDocumentValidation?: boolean;
 }
 
+export interface MongoDBVariableQuery extends DataQuery {
+  queryText?: string;
+  collection?: string;
+}
+
 export const QueryType = {
   TIMESERIES: 'timeseries',
   TABLE: 'table',
@@ -29,7 +34,7 @@ export const QueryLanguage = {
   JAVASCRIPT_SHADOW: 'javascriptShadow',
 };
 
-export const DEFAULT_QUERY: Partial<MongoQuery> = {
+export const DEFAULT_QUERY: Partial<MongoDBQuery> = {
   queryText: '',
   queryType: QueryType.TABLE,
   queryLanguage: QueryLanguage.JSON,
@@ -45,6 +50,7 @@ export interface JsQueryResult {
 export const MongoDBAuthMethod = {
   NONE: 'auth-none',
   USERNAME_PASSWORD: 'auth-username-password',
+  TLS: 'auth-tls',
 };
 
 export const ConnectionStringScheme = {
@@ -52,14 +58,6 @@ export const ConnectionStringScheme = {
   DNS_SEED_LIST: 'dns_seed_list',
 };
 
-export interface VariableQuery {
-  collection?: string;
-  queryText?: string;
-}
-
-/**
- * These are options configured for each DataSource instance
- */
 export interface MongoDataSourceOptions extends DataSourceJsonData {
   connectionStringScheme?: string;
   host?: string;
@@ -67,11 +65,12 @@ export interface MongoDataSourceOptions extends DataSourceJsonData {
   database?: string;
   username?: string;
   connectionParameters?: string;
+  caCertPath?: string;
+  clientCertPath?: string;
+  clientKeyPath?: string;
 }
 
-/**
- * Value that is used in the backend, but never sent over HTTP to the frontend
- */
-export interface MySecureJsonData {
+export interface MongoDataSourceSecureJsonData {
   password?: string;
+  clientKeyPassword?: string;
 }

@@ -1,0 +1,94 @@
+name: 'Grafana Build Plugin'
+description: 'Builds a Grafana plugin'
+
+outputs:
+  archive:
+    description: 'The path to the plugin archive (zip).'
+    value: ${{ steps.package-plugin.outputs.archive }}
+  archive-sha1sum:
+    description: 'The path to the plugin archive sha1sum.'
+    value: ${{ steps.package-plugin.outputs.archive-sha1sum }}
+
+inputs:
+  token:
+    description: 'Token for the repository. Can be passed in using `{{ secrets.GITHUB_TOKEN }}`.'
+    required: false
+    default: '${{ github.token }}'
+  policy_token:
+    description: 'Grafana access policy token. https://grafana.com/developers/plugin-tools/publish-a-plugin/sign-a-plugin#generate-an-access-policy-token'
+    required: false
+    default: ''
+  grafana_token:
+    description: '[deprecated] Grafana API Key to sign a plugin. Prefer `policy_token`.'
+    required: false
+    default: ''
+  go-version:
+    description: 'Version of go'
+    required: false
+    default: '1.21'
+  node-version:
+    description: 'Version of node'
+    required: false
+    default: '20'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Package plugin
+      id: 'package-plugin'
+      uses: grafana/plugin-actions/package-plugin@main
+      with:
+        policy_token: ${{ inputs.policy_token }}
+        node-version: '${{ inputs.node-version }}'
+        go-version: '${{ inputs.go-version }}'
+
+    - name: Print outputs from package-plugin
+      shell: bash
+      run: |
+        printf "archive=%s\n" "${{ steps.package-plugin.outputs.archive }}"
+        printf "archive-sha1sum=%s\n" "${{ steps.package-plugin.outputs.archive-sha1sum }}"
+        printf "plugin-id=%s\n" "${{ steps.package-plugin.outputs.plugin-id }}"
+        printf "plugin-version=%s\n" "${{ steps.package-plugin.outputs.plugin-version }}"
+
+    - name: Create and push git tag
+      run: |
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "GitHub Actions [Bot]"
+        version=${{ steps.package-plugin.outputs.plugin-version }}
+        git tag -a "v$version" -m "Version $version"
+        git push origin "v$version"
+      shell: bash
+
+    - name: Read changelog
+      id: changelog
+      run: |
+        awk '/^## / {s++} s == 1 {print}' CHANGELOG.md > release_notes.md
+        echo "path=release_notes.md" >> $GITHUB_OUTPUT
+      shell: bash
+
+    - name: Create Github release
+      uses: softprops/action-gh-release@v2
+      with:
+        draft: true
+        generate_release_notes: true
+        token: ${{ inputs.token }}
+        files: |
+          ./${{ steps.package-plugin.outputs.archive }}
+          ./${{ steps.package-plugin.outputs.archive-sha1sum }}
+        body: |
+          **This Github draft release has been created for your plugin.**
+
+          _Note: if this is the first release for your plugin please consult the [distributing-your-plugin section](https://github.com/${{github.repository}}/blob/main/README.md#distributing-your-plugin) of the README_
+
+          If you would like to submit this release to Grafana please consider the following steps:
+
+          - Check the Validate plugin step in the [release workflow](https://github.com/${{github.repository}}/commit/${{github.sha}}/checks/${{github.run_id}}) for any warnings that need attention
+          - **Edit this draft release**, adjust these notes accordingly and click **Publish Release**
+          - Navigate to https://grafana.com/auth/sign-in/ to sign into your account
+          - Once logged in click **My Plugins** in the admin navigation
+          - Click the **Submit Plugin** button
+          - Fill in the Plugin Submission form:
+            - Paste this [.zip asset link](https://github.com/${{ github.repository }}/releases/download/v${{ steps.package-plugin.outputs.plugin-version }}/${{ steps.package-plugin.outputs.archive }}) in the Plugin URL field
+            - Paste this [.zip.sha1 link](https://github.com/${{ github.repository }}/releases/download/v${{ steps.package-plugin.outputs.plugin-version }}/${{ steps.package-plugin.outputs.archive-sha1sum }}) in the SHA1 field
+
+          If the links above are not working, you must first edit this draft release and publish it.

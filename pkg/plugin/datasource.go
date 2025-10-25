@@ -2,13 +2,19 @@ package plugin
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"net/http"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/resource/httpadapter"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/haohanyang/mongodb-datasource/pkg/models"
 
@@ -44,16 +50,34 @@ func NewDatasource(ctx context.Context, source backend.DataSourceInstanceSetting
 
 	opts := options.Client().ApplyURI(uri)
 
+	if config.AuthMethod == "auth-tls" {
+		// TLS setup
+		tlsConfig, err := tlsSetup(config)
+		if err != nil {
+			backend.Logger.Error("Failed to setup TLS", "error", err)
+			return nil, err
+		}
+		opts.SetTLSConfig(tlsConfig)
+	}
+
 	client, err := mongo.Connect(ctx, opts)
 	if err != nil {
 		backend.Logger.Error(fmt.Sprintf("Failed to connect to db: %s", err.Error()))
 		return nil, err
 	}
 
-	return &Datasource{
+	datasource := &Datasource{
 		client:   client,
 		database: config.Database,
-	}, nil
+	}
+
+	// Setup resource handlers
+	mux := http.NewServeMux()
+	mux.HandleFunc("/collections", datasource.listCollections)
+
+	datasource.resourceHandler = httpadapter.New(mux)
+
+	return datasource, nil
 }
 
 // Dispose here tells plugin SDK that plugin wants to clean up resources when a new instance
@@ -61,6 +85,39 @@ func NewDatasource(ctx context.Context, source backend.DataSourceInstanceSetting
 // be disposed and a new one will be created using NewSampleDatasource factory function.
 func (d *Datasource) Dispose() {
 	d.client.Disconnect(context.TODO())
+}
+
+func tlsSetup(config *models.PluginSettings) (*tls.Config, error) {
+	caFile := config.CaCertPath
+	certFile := config.ClientCertPath
+	keyFile := config.ClientKeyPath
+
+	if caFile == "" || certFile == "" || keyFile == "" {
+		return nil, errors.New("CA certificate, client certificate or client key file path is missing")
+	}
+
+	// Loads CA certificate file
+	caCert, err := os.ReadFile(caFile)
+	if err != nil {
+		return nil, err
+	}
+	caCertPool := x509.NewCertPool()
+	if ok := caCertPool.AppendCertsFromPEM(caCert); !ok {
+		return nil, errors.New("CA file must be in PEM format")
+	}
+	// Loads client certificate files
+	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+
+	if err != nil {
+		return nil, err
+	}
+
+	tlsConfig := &tls.Config{
+		RootCAs:      caCertPool,
+		Certificates: []tls.Certificate{cert},
+	}
+
+	return tlsConfig, nil
 }
 
 // QueryData handles multiple queries and returns multiple responses.
@@ -83,6 +140,30 @@ func (d *Datasource) QueryData(ctx context.Context, req *backend.QueryDataReques
 	}
 
 	return response, nil
+}
+
+func (d *Datasource) CallResource(ctx context.Context, req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
+	return d.resourceHandler.CallResource(ctx, req, sender)
+}
+
+func (d *Datasource) listCollections(rw http.ResponseWriter, req *http.Request) {
+	collections, err := d.client.Database(d.database).ListCollectionNames(req.Context(), bson.D{})
+
+	if err != nil {
+		backend.Logger.Error("Failed to list collections", "error", err)
+		rw.Write([]byte(`[]`))
+		return
+	}
+
+	bytes, err := json.Marshal(collections)
+	if err != nil {
+		backend.Logger.Error("Failed to marshal collections", "error", err)
+		rw.Write([]byte(`[]`))
+		return
+	}
+
+	rw.Write(bytes)
+	rw.WriteHeader(http.StatusOK)
 }
 
 func (d *Datasource) query(ctx context.Context, _ backend.PluginContext, query backend.DataQuery) backend.DataResponse {
@@ -206,6 +287,20 @@ func (d *Datasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRe
 	}
 
 	opts := options.Client().ApplyURI(uri).SetTimeout(5 * time.Second)
+
+	if config.AuthMethod == "auth-tls" {
+		// TLS setup
+		tlsConfig, err := tlsSetup(config)
+		if err != nil {
+			backend.Logger.Error("Failed to setup TLS", "error", err)
+
+			res.Status = backend.HealthStatusError
+			res.Message = err.Error()
+			return res, nil
+		}
+		opts.SetTLSConfig(tlsConfig)
+	}
+
 	client, err := mongo.Connect(ctx, opts)
 	if err != nil {
 		res.Status = backend.HealthStatusError

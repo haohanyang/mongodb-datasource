@@ -79,12 +79,15 @@ func MongoUri(config *models.PluginSettings) (string, error) {
 			return uri, errors.New("missing MongoDB username or password")
 		}
 		creds = fmt.Sprintf("%s:%s@", config.Username, config.Secrets.Password)
-	} else if config.AuthMethod != "auth-none" {
-		return uri, errors.New("unsupported auth method")
 	}
 
 	if config.ConnectionParameters != "" {
 		params = "?" + config.ConnectionParameters
+	}
+
+	// TLS passphrase
+	if config.AuthMethod == "auth-tls" && config.Secrets.ClientKeyPassword != "" {
+		params += "&sslClientCertificateKeyPassword=" + config.Secrets.ClientKeyPassword
 	}
 
 	if config.ConnectionStringScheme == "dns_seed_list" {

@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.4.1 - 2025-10-25
+
+### Added
+
+- Added special variables `$__local_from` and `$__local_to` that respect local timestamp overrides
+
+### Changed
+
+- Provided option to select collection names in collection input in query editor.
+
+## 0.4.0 - 2025-09-24
+
+### Added
+
+- TLS/SSL support
+
+## 0.3.2 - 2025-05-17
+
+### Added
+
+- More autocomplete support.
+- IntelliSense: Hover on stage operator will display stage description and parameters. CodeLens on stage operator with "Delete" action. Editor validaton that displays warning if query is invalid.
+
+### Changed
+
+- Editor UI was updated to resemble the standard SQL editor
+
 ## 0.3.1 - 2025-02-18
 
 ### Added

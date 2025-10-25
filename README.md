@@ -10,7 +10,7 @@ This plugin enables you to query and visualize data from your MongoDB databases 
 
 #### Ordinary Query
 
-![screenshot](/static/screenshot-4.png)
+![screenshot](/static/screenshot.gif)
 
 #### Live Streaming
 
@@ -19,7 +19,9 @@ This plugin enables you to query and visualize data from your MongoDB databases 
 ## Features
 
 - **Flexible Querying:** Query data using MongoDB's aggregation pipeline syntax in JSON or JavaScript. Support query variables & annotation queries to create rich dynamic dashboards.
-- **Time Series & Table Data:** Visualize time-based data or display results in tabular format for various Grafana panels.
+- **Time Series & Table Data:** Visualize time-based data or display results in
+  tabular format for various Grafana panels.
+- **Rich Language Support** IntelliSense for MongoDB query in editor: Code completion, Hover, CodeLense, etc.
 - **Live Streaming Support** (Experimental) Watch [MongoDB Change Streams](https://www.mongodb.com/docs/manual/changeStreams/) to monitor MongoDB operations and data in real-time.
 - **MongoDB Atlas Support** Connect to MongoDB Atlas Services.
 - **Grafana Alerting Support** Set up alerting rules based on query result
@@ -34,6 +36,7 @@ This plugin enables you to query and visualize data from your MongoDB databases 
 
 - No authentication
 - Username/Password authentication
+- TLS/SSL
 
 ## Getting Started
 
@@ -61,6 +64,18 @@ Refer to the [example docker-compose.prod.yaml](/docker-compose.prod.yaml) file 
 3. **Start Querying:**
    - Select your MongoDB data source in a Grafana panel.
    - Use the query editor to write your aggregation pipeline queries (see Query Language below).
+
+### Installing with the Grafana CLI
+
+1. **Download:** Use the Grafana CLI, from within your Grafana instance, to download and install the plugin.
+
+   ```sh
+     grafana cli --pluginUrl https://github.com/haohanyang/mongodb-datasource/releases/download/v0.3.2/haohanyang-mongodb-datasource-0.3.2.zip plugins install haohanyang-mongodb-datasource
+   ```
+
+2. **Setup:** Configure the plugin as a data source within Grafana, providing your MongoDB connection details.
+
+3. **Start Querying!**
 
 ## Query Language
 
@@ -251,6 +266,15 @@ If the a new document was inserted which contains `value` field, the query will 
 ```
 
 **Note**: Change streams are only available for [replica sets](https://www.mongodb.com/docs/manual/replication/#std-label-replication) and [sharded clusters](https://www.mongodb.com/docs/manual/sharding/#std-label-sharding-background).
+
+## Special variables
+
+In addition to Grafana's built-in variables, the plugin provides the following special variables:
+
+- `$__local_from`, `$__local_to`
+  Time ranges that respect local overrides
+- `$__from_oid`, `$__to_oid`
+  Mongo ObjectIds that correspond to time ranges
 
 ## Supported Data Types
 
