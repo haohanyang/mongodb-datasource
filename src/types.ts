@@ -1,4 +1,4 @@
-import { DataSourceJsonData } from '@grafana/data';
+import { DataSourceJsonData, DateTime } from '@grafana/data';
 import { DataQuery } from '@grafana/schema';
 
 export interface MongoDBQuery extends DataQuery {
@@ -16,6 +16,9 @@ export interface MongoDBQuery extends DataQuery {
   aggregateAllowDiskUse?: boolean;
   aggregateMaxAwaitTime?: number;
   aggregateBypassDocumentValidation?: boolean;
+
+  localFrom?: DateTime;
+  localTo?: DateTime;
 }
 
 export interface MongoDBVariableQuery extends DataQuery {
@@ -31,7 +34,6 @@ export const QueryType = {
 export const QueryLanguage = {
   JSON: 'json',
   JAVASCRIPT: 'javascript',
-  JAVASCRIPT_SHADOW: 'javascriptShadow',
 };
 
 export const DEFAULT_QUERY: Partial<MongoDBQuery> = {

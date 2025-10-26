@@ -8,10 +8,12 @@ import {
   LoadingState,
 } from '@grafana/data';
 import { DataSourceWithBackend, getGrafanaLiveSrv, getTemplateSrv, TemplateSrv } from '@grafana/runtime';
-import { parseJsQuery, parseJsQueryLegacy, base64UrlEncode, unixTsToMongoID } from './utils';
-import { MongoDBQuery, MongoDataSourceOptions, DEFAULT_QUERY, QueryLanguage } from './types';
+import { EJSON } from 'bson';
+import { parseFilter } from 'mongodb-query-parser';
 import { merge, Observable, of } from 'rxjs';
-import { MongoDBVariableSupport } from 'variables';
+import { base64UrlEncode, unixTsToMongoID } from './utils';
+import { MongoDBQuery, MongoDataSourceOptions, DEFAULT_QUERY, QueryLanguage } from './types';
+import { MongoDBVariableSupport } from './variables';
 
 export class MongoDBDataSource extends DataSourceWithBackend<MongoDBQuery, MongoDataSourceOptions> {
   constructor(
@@ -29,59 +31,50 @@ export class MongoDBDataSource extends DataSourceWithBackend<MongoDBQuery, Mongo
   applyTemplateVariables(query: MongoDBQuery, scopedVars: ScopedVars) {
     const variables = { ...scopedVars };
 
+    console.log('applyTemplateVariables', variables);
+
+    let from: number | undefined = undefined;
+    let to: number | undefined = undefined;
+
+    if (query.localFrom) {
+      from = query.localFrom.toDate().getTime();
+
+      const localFromText = JSON.stringify({
+        $date: {
+          $numberLong: from.toString(),
+        },
+      });
+      variables['__local_from'] = { value: localFromText };
+      variables['__from_oid'] = { value: unixTsToMongoID(from, '0') };
+    }
+
+    if (query.localTo) {
+      to = query.localTo.toDate().getTime();
+      const localToText = JSON.stringify({
+        $date: {
+          $numberLong: to.toString(),
+        },
+      });
+      variables['__local_to'] = { value: localToText };
+      variables['__to_oid'] = { value: unixTsToMongoID(to, '0') };
+    }
+
     let queryText = query.queryText!;
-    if (query.queryLanguage === QueryLanguage.JAVASCRIPT || query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW) {
-      const { jsonQuery } =
-        query.queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW
-          ? parseJsQuery(queryText)
-          : parseJsQueryLegacy(queryText);
-      queryText = jsonQuery!;
-    }
-
-    // Get time range
-    let from_ms: number | undefined = undefined;
-    let to_ms: number | undefined = undefined;
-
-    const from = this.templateSrv.replace('$__from', variables);
-    const to = this.templateSrv.replace('$__to', variables);
-
-    if (from !== '$__from') {
-      from_ms = parseInt(from, 10);
-      // $__from_oid
-      variables.__from_oid = { value: unixTsToMongoID(from_ms, '0') };
-      // $from
-      queryText = queryText.replaceAll(
-        /"\$from"/g,
-        JSON.stringify({
-          $date: {
-            $numberLong: from,
-          },
-        }),
-      );
-    }
-
-    if (to !== '$__to') {
-      to_ms = parseInt(to, 10);
-      // $__to_oid
-      variables.__to_oid = { value: unixTsToMongoID(to_ms, 'f') };
-      // $to
-      queryText = queryText.replaceAll(
-        /"\$to"/g,
-        JSON.stringify({
-          $date: {
-            $numberLong: to,
-          },
-        }),
-      );
-    }
 
     const interval_ms: number | undefined = scopedVars['__interval_ms']?.value;
+
     // $dateBucketCount
-    if (interval_ms && from_ms && to_ms) {
-      variables.dateBucketCount = { value: Math.ceil((parseInt(to, 10) - parseInt(from, 10)) / interval_ms) };
+    if (interval_ms && from && to) {
+      variables.dateBucketCount = { value: Math.ceil((to - from) / interval_ms) };
     }
 
-    const text = this.templateSrv.replace(queryText, variables);
+    let text = this.templateSrv.replace(queryText, variables);
+
+    if (query.queryLanguage === QueryLanguage.JAVASCRIPT) {
+      // Convert JS to JSON
+      // TODO: handle errors
+      text = EJSON.stringify(parseFilter(text));
+    }
     const collection = query.collection ? this.templateSrv.replace(query.collection, variables) : query.collection;
 
     return {
@@ -98,6 +91,8 @@ export class MongoDBDataSource extends DataSourceWithBackend<MongoDBQuery, Mongo
   }
 
   query(request: DataQueryRequest<MongoDBQuery>): Observable<DataQueryResponse> {
+    console.log('query');
+
     if (request.liveStreaming) {
       const observables = request.targets.map((query) => {
         return getGrafanaLiveSrv().getDataStream({
@@ -118,30 +113,10 @@ export class MongoDBDataSource extends DataSourceWithBackend<MongoDBQuery, Mongo
     const streamQueries = request.targets.filter((query) => query.isStreaming);
 
     if (streamQueries.length === 0) {
-      // Variable $__local_from and $__local_to
-
       return super.query({
         ...request,
-        targets: request.targets.map((target) => {
-          const queryText = target
-            .queryText!.replaceAll(
-              /"\$__local_from"/g,
-              JSON.stringify({
-                $date: {
-                  $numberLong: request.range.from.toDate().getTime().toString(),
-                },
-              }),
-            )
-            .replaceAll(
-              /"\$__local_to"/g,
-              JSON.stringify({
-                $date: {
-                  $numberLong: request.range.to.toDate().getTime().toString(),
-                },
-              }),
-            );
-
-          return { ...target, queryText };
+        targets: request.targets.map((query) => {
+          return { ...query, localFrom: request.range.from, localTo: request.range.to };
         }),
       });
     } else if (streamQueries.length === request.targets.length) {

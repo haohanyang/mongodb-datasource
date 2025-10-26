@@ -14,7 +14,6 @@ import { EditorHeader, InlineSelect, FlexItem } from '@grafana/plugin-ui';
 import { CoreApp, QueryEditorProps, SelectableValue, LoadingState } from '@grafana/data';
 import { MongoDBDataSource } from '../datasource';
 import { MongoDataSourceOptions, MongoDBQuery, QueryLanguage, QueryType, DEFAULT_QUERY } from '../types';
-import { parseJsQuery, parseJsQueryLegacy } from '../utils';
 import { QueryEditorRaw } from './QueryEditorRaw';
 import { QueryToolbox } from './QueryToolbox';
 import validator from 'validator';
@@ -36,8 +35,7 @@ const queryTypes: Array<SelectableValue<string>> = [
 
 const languageOptions: Array<SelectableValue<string>> = [
   { label: 'JSON', value: QueryLanguage.JSON },
-  { label: 'JavaScript', value: QueryLanguage.JAVASCRIPT, description: 'JavaScript Legacy' },
-  { label: 'JavaScript Shadow', value: QueryLanguage.JAVASCRIPT_SHADOW, description: 'JavaScript with Evaluation' },
+  { label: 'JavaScript', value: QueryLanguage.JAVASCRIPT, description: 'JavaScript' },
 ];
 
 export function QueryEditor(props: Props) {
@@ -51,7 +49,6 @@ export function QueryEditor(props: Props) {
   const [queryLanguage, setQueryLanguage] = useState<string>(DEFAULT_QUERY.queryLanguage!);
   const [isStreaming, setIsStreaming] = useState<boolean>(false);
 
-  const [queryTextError, setQueryTextError] = useState<string | null>(null);
   const [isAggregateOptionExpanded, setIsAggregateOptionExpanded] = useState(false);
   const [isEditorExpanded, setIsEditorExpanded] = useState(false);
 
@@ -122,29 +119,10 @@ export function QueryEditor(props: Props) {
         )}
         <QueryEditorRaw
           query={queryText}
-          language={
-            queryLanguage === QueryLanguage.JAVASCRIPT || queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW
-              ? 'javascript'
-              : 'json'
-          }
+          language={queryLanguage === QueryLanguage.JAVASCRIPT ? 'javascript' : 'json'}
           onBlur={(queryText: string) => {
-            if (queryLanguage === QueryLanguage.JAVASCRIPT || queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW) {
-              // parse the JavaScript query
-              const { error, collection } =
-                queryLanguage === QueryLanguage.JAVASCRIPT_SHADOW
-                  ? parseJsQuery(queryText)
-                  : parseJsQueryLegacy(queryText);
-              // let the same query text as it is
-              props.onChange({ ...query, queryText: queryText, ...(collection ? { collection } : {}) });
-              setQueryTextError(error);
-            } else {
-              props.onChange({ ...query, queryText: queryText });
-              if (!validator.isJSON(queryText)) {
-                setQueryTextError('Query should be a valid JSON');
-              } else {
-                setQueryTextError(null);
-              }
-            }
+            props.onChange({ ...query, queryText });
+            // TODO: validate
           }}
           width={width}
           height={height}
@@ -157,7 +135,6 @@ export function QueryEditor(props: Props) {
                 onExpand={setIsEditorExpanded}
                 onFormatCode={formatQuery}
                 showTools={showTools}
-                error={queryTextError ?? undefined}
               />
             );
           }}
@@ -187,7 +164,7 @@ export function QueryEditor(props: Props) {
         <InlineField
           label="Collection"
           error="Collection is required"
-          invalid={queryLanguage !== QueryLanguage.JAVASCRIPT && !collection}
+          invalid={!collection}
           tooltip="Name of MongoDB collection to query"
         >
           <SegmentAsync
