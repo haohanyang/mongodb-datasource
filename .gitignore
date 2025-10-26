@@ -45,3 +45,5 @@ grafana-storage/
 
 mongo-docs/
 certs/
+
+dist-editor/
