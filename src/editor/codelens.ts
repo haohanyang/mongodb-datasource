@@ -103,7 +103,7 @@ class CodeLensVisitor implements JSONVisitor {
   }
 }
 
-class CodeLensProvider implements monacoTypes.languages.CodeLensProvider {
+export class CodeLensProvider implements monacoTypes.languages.CodeLensProvider {
   constructor(
     private readonly editor: MonacoEditor,
     private readonly updateTextCommandId: string,

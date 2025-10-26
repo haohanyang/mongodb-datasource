@@ -4,7 +4,7 @@ import { STAGE_OPERATORS } from '@mongodb-js/mongodb-constants';
 
 const stages = Object.fromEntries(STAGE_OPERATORS.map((stage) => [stage.name, [stage.description, stage.comment]]));
 
-class HoverProvider implements monacoTypes.languages.HoverProvider {
+export class HoverProvider implements monacoTypes.languages.HoverProvider {
   constructor(private readonly editor: MonacoEditor) {}
   provideHover(
     model: monacoTypes.editor.ITextModel,
