@@ -1,10 +1,13 @@
 import React, { useState, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import { CodeEditor } from '@grafana/ui';
+import { parseFilter } from 'mongodb-query-parser';
+import { EJSON } from 'bson';
 import { useAutocomplete } from './autocomplete';
 import { useHover } from './hover';
 import { useValidation } from './validation';
 import { useCodeLens } from './codelens';
+import { useMongoLibs } from './mongolibs';
 
 self.MonacoEnvironment = {
   getWorkerUrl: function (moduleId, label) {
@@ -22,11 +25,22 @@ function App() {
   const monacoRef = useRef(null);
   const [text, setText] = useState('');
   const [language, setLanguage] = useState(0);
+  const [parseResult, setParseResult] = useState('');
 
   const setupAutocompleteFn = useAutocomplete();
   const setupHoverFn = useHover();
   const setupValidationFn = useValidation();
   const setupCodeLensFn = useCodeLens();
+  const setupMongoLibsFn = useMongoLibs();
+
+  const parseFilterHandler = () => {
+    try {
+      const result = EJSON.stringify(parseFilter(text));
+      setParseResult(result);
+    } catch (err) {
+      setParseResult(err.message);
+    }
+  };
 
   return (
     <main>
@@ -36,10 +50,13 @@ function App() {
           setupValidationFn(editor, monaco);
           setupAutocompleteFn(editor, monaco);
           setupHoverFn(editor, monaco);
+          setupMongoLibsFn(editor, monaco);
+
           const updateTextCommandId = editor.addCommand(0, (_ctx, ...args) => {
             const text = args[0];
             setText(text);
           });
+
           setupCodeLensFn(editor, monaco, updateTextCommandId);
         }}
         height="600px"
@@ -58,6 +75,14 @@ function App() {
           <option value={1}>JavaScript</option>
         </select>
       </div>
+      {language == 1 && (
+        <>
+          <div>
+            <button onClick={parseFilterHandler}>Parse filter</button>
+          </div>
+          <code>{parseResult}</code>
+        </>
+      )}
     </main>
   );
 }

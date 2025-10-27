@@ -18,7 +18,6 @@ export class CompletionProvider implements monacoTypes.languages.CompletionItemP
     model: monacoTypes.editor.ITextModel,
     position: monacoTypes.Position,
   ): monacoTypes.languages.ProviderResult<monacoTypes.languages.CompletionList> {
-    console.log('provideCompletionItems');
     if (this.editor.getModel()?.id !== model.id) {
       return { suggestions: [] };
     }
@@ -30,7 +29,6 @@ export class CompletionProvider implements monacoTypes.languages.CompletionItemP
     for (let i = currentOffset - 1; i >= 0; i--) {
       if (allText[i].trim()) {
         if (allText[i] !== '{') {
-          console.log(`not in bracket ${allText[i]}`);
           return { suggestions: [] };
         }
         break;
@@ -40,7 +38,6 @@ export class CompletionProvider implements monacoTypes.languages.CompletionItemP
     for (let i = currentOffset + 1; i < allText.length; i++) {
       if (allText[i].trim()) {
         if (allText[i] !== '}') {
-          console.log(`not in bracket ${allText[i]}`);
           return { suggestions: [] };
         }
         break;

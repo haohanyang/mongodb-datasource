@@ -4,6 +4,7 @@ import { useAutocomplete } from '../editor/autocomplete';
 import { useValidation } from '../editor/validation';
 import { useHover } from '../editor/hover';
 import { useCodeLens } from '../editor/codelens';
+import { useMongoLibs } from 'editor/mongolibs';
 
 interface QueryEditorRawProps {
   query: string;
@@ -22,6 +23,7 @@ export function QueryEditorRaw({ query, onBlur, language, width, height, fontSiz
   const setupHoverFn = useHover();
   const setupValidationFn = useValidation();
   const setupCodeLensFn = useCodeLens();
+  const setupMongoLibsFn = useMongoLibs();
 
   const formatQuery = useCallback(() => {
     if (monacoRef.current) {
@@ -37,6 +39,7 @@ export function QueryEditorRaw({ query, onBlur, language, width, height, fontSiz
           setupValidationFn(editor, monaco);
           setupAutocompleteFn(editor, monaco);
           setupHoverFn(editor, monaco);
+          setupMongoLibsFn(editor, monaco);
 
           const updateTextCommandId = editor.addCommand(0, (_ctx, ...args) => {
             const text = args[0];

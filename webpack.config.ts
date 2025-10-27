@@ -9,6 +9,14 @@ const pluginConfig = async (env: any): Promise<Configuration> => {
 
   return merge(baseConfig, {
     name: 'plugin',
+    module: {
+      rules: [
+        {
+          test: path.resolve(__dirname, 'src/editor/mongo-constructors.txt'),
+          use: 'raw-loader',
+        },
+      ],
+    },
   });
 };
 
@@ -38,6 +46,10 @@ const editorConfig = (env: any): Configuration => {
     },
     module: {
       rules: [
+        {
+          test: path.resolve(__dirname, 'src/editor/mongo-constructors.txt'),
+          use: 'raw-loader',
+        },
         {
           test: /\.(js|jsx|tsx|ts)$/,
           exclude: /node_modules/,
