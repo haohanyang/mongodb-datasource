@@ -103,7 +103,7 @@ export function useAutocomplete() {
 
   return (editor: MonacoEditor, monaco: Monaco) => {
     const provider = new CompletionProvider(editor);
-    const { dispose } = monaco.languages.registerCompletionItemProvider('json', provider);
+    const { dispose } = monaco.languages.registerCompletionItemProvider(['json', 'javascript'], provider);
     autocompleteDisposeFun.current = dispose;
   };
 }

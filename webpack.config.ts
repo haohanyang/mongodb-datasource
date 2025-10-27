@@ -18,14 +18,18 @@ const editorConfig = (env: any): Configuration => {
     mode: 'development',
     devtool: 'source-map',
     target: 'web',
-    entry: {
-      app: './src/editor/index.js',
-      'editor.worker': 'monaco-editor/esm/vs/editor/editor.worker.js',
-      'json.worker': 'monaco-editor/esm/vs/language/json/json.worker',
-      'ts.worker': 'monaco-editor/esm/vs/language/typescript/ts.worker',
-    },
+    entry: './src/editor/index.jsx',
     resolve: {
-      extensions: ['.js', '.ts'],
+      extensions: ['.js', '.ts', '.tsx', '.jsx'],
+      alias: {
+        'react-use/lib/useClickAway': require.resolve('react-use/lib/useClickAway'),
+        'rc-picker/lib/locale/en_US': require.resolve('rc-picker/lib/locale/en_US'),
+        'rc-picker/lib/generate/moment': require.resolve('rc-picker/lib/generate/moment'),
+        'ol/format/WKT': require.resolve('ol/format/WKT'),
+        'ol/geom': require.resolve('ol/geom'),
+        'react-use/lib/useMeasure': require.resolve('react-use/lib/useMeasure'),
+        'react-use/lib/usePrevious': require.resolve('react-use/lib/usePrevious'),
+      },
     },
     output: {
       globalObject: 'self',
@@ -35,25 +39,23 @@ const editorConfig = (env: any): Configuration => {
     module: {
       rules: [
         {
-          test: /\.ts?$/,
-          use: 'ts-loader',
+          test: /\.(js|jsx|tsx|ts)$/,
           exclude: /node_modules/,
+          use: [
+            {
+              loader: require.resolve('babel-loader'),
+              options: {
+                presets: ['@babel/preset-env', '@babel/preset-typescript', '@babel/preset-react'],
+              },
+            },
+          ],
         },
         {
           test: /\.css$/,
           use: ['style-loader', 'css-loader'],
         },
-        {
-          test: /\.ttf$/,
-          use: ['file-loader'],
-        },
       ],
     },
-    plugins: [
-      new HtmlWebPackPlugin({
-        title: 'Query Editor',
-      }),
-    ],
     devServer: {
       static: {
         directory: path.join(__dirname, 'dist-editor'),
@@ -62,6 +64,11 @@ const editorConfig = (env: any): Configuration => {
       port: 8001,
       open: false,
     },
+    plugins: [
+      new HtmlWebPackPlugin({
+        template: './src/editor/index.html',
+      }),
+    ],
   };
 };
 
