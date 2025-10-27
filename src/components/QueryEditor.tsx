@@ -12,6 +12,8 @@ import {
 } from '@grafana/ui';
 import { EditorHeader, InlineSelect, FlexItem } from '@grafana/plugin-ui';
 import { CoreApp, QueryEditorProps, SelectableValue, LoadingState } from '@grafana/data';
+import { EJSON } from 'bson';
+import { parseFilter } from 'mongodb-query-parser';
 import { MongoDBDataSource } from '../datasource';
 import { MongoDataSourceOptions, MongoDBQuery, QueryLanguage, QueryType, DEFAULT_QUERY } from '../types';
 import { QueryEditorRaw } from './QueryEditorRaw';
@@ -48,7 +50,8 @@ export function QueryEditor(props: Props) {
   const [queryType, setQueryType] = useState<string>(QueryType.TABLE);
   const [queryLanguage, setQueryLanguage] = useState<string>(DEFAULT_QUERY.queryLanguage!);
   const [isStreaming, setIsStreaming] = useState<boolean>(false);
-
+  const [queryTextError, setQueryTextError] = useState<string | undefined>(undefined);
+  const [parsedQuery, setParsedQuery] = useState<string>('');
   const [isAggregateOptionExpanded, setIsAggregateOptionExpanded] = useState(false);
   const [isEditorExpanded, setIsEditorExpanded] = useState(false);
 
@@ -122,7 +125,22 @@ export function QueryEditor(props: Props) {
           language={queryLanguage === QueryLanguage.JAVASCRIPT ? 'javascript' : 'json'}
           onBlur={(queryText: string) => {
             props.onChange({ ...query, queryText });
-            // TODO: validate
+            if (queryLanguage === QueryLanguage.JSON) {
+              if (!validator.isJSON(queryText)) {
+                setQueryTextError('Query should be a valid JSON');
+              } else {
+                setQueryTextError(undefined);
+              }
+            } else {
+              try {
+                const parsed = EJSON.stringify(parseFilter(queryText));
+                setParsedQuery(parsed);
+                setQueryTextError(undefined);
+              } catch (e) {
+                setParsedQuery((e as Error).toString());
+                setQueryTextError(`Query should be a valid JavaScript: ${(e as Error).message}`);
+              }
+            }
           }}
           width={width}
           height={height}
@@ -135,6 +153,7 @@ export function QueryEditor(props: Props) {
                 onExpand={setIsEditorExpanded}
                 onFormatCode={formatQuery}
                 showTools={showTools}
+                error={queryTextError}
               />
             );
           }}
@@ -303,6 +322,9 @@ export function QueryEditor(props: Props) {
           </InlineField>
         </InlineFieldRow>
       </ControlledCollapse>
+      {process.env.NODE_ENV === 'development' && queryLanguage === QueryLanguage.JAVASCRIPT && (
+        <code>{parsedQuery}</code>
+      )}
       {isEditorExpanded && (
         <Modal title="Query Text" isOpen={isEditorExpanded} onDismiss={() => setIsEditorExpanded(false)}>
           {renderCodeEditor(true, undefined, 500)}

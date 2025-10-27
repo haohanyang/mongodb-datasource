@@ -1,5 +1,5 @@
 import path from 'path';
-import type { Configuration, Compiler } from 'webpack';
+import { type Configuration, DefinePlugin } from 'webpack';
 import { merge } from 'webpack-merge';
 import grafanaConfig from './.config/webpack/webpack.config';
 import HtmlWebPackPlugin from 'html-webpack-plugin';
@@ -17,6 +17,11 @@ const pluginConfig = async (env: any): Promise<Configuration> => {
         },
       ],
     },
+    plugins: [
+      new DefinePlugin({
+        'process.env.NODE_ENV': env.production ? JSON.stringify('production') : JSON.stringify('development'),
+      }),
+    ],
   });
 };
 
