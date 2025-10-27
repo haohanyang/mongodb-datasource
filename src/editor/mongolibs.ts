@@ -18,6 +18,13 @@ export function useMongoLibs() {
       noSemanticValidation: true,
       noSyntaxValidation: false,
     });
+
+    monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
+      ...monaco.languages.typescript.javascriptDefaults.getCompilerOptions(),
+      lib: ['es5'],
+      allowUnusedLabels: true,
+    });
+
     const { dispose } = monaco.languages.typescript.javascriptDefaults.addExtraLib(mongoLibSource, libUri);
     mongoLibsDisposeFun.current = dispose;
   };
