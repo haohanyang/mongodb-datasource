@@ -37,7 +37,7 @@ const queryTypes: Array<SelectableValue<string>> = [
 
 const languageOptions: Array<SelectableValue<string>> = [
   { label: 'JSON', value: QueryLanguage.JSON },
-  { label: 'JavaScript', value: QueryLanguage.JAVASCRIPT, description: 'JavaScript' },
+  { label: 'JavaScript', value: QueryLanguage.JAVASCRIPT },
 ];
 
 export function QueryEditor(props: Props) {
