@@ -5,6 +5,7 @@ import { useValidation } from '../editor/validation';
 import { useHover } from '../editor/hover';
 import { useCodeLens } from '../editor/codelens';
 import { useMongoLibs } from 'editor/mongolibs';
+import { setupTheme } from '../editor/theme';
 
 interface QueryEditorRawProps {
   query: string;
@@ -37,12 +38,7 @@ export function QueryEditorRaw({ query, onBlur, language, width, height, fontSiz
     <div style={{ width }}>
       <CodeEditor
         onBeforeEditorMount={(monaco) => {
-          monaco.editor.defineTheme('code-editor-theme', {
-            base: theme.isDark ? 'vs-dark' : 'vs',
-            inherit: true,
-            rules: [{ token: 'identifier.js', foreground: theme.isDark ? '#00c04b' : '#00ab41' }],
-            colors: {},
-          });
+          setupTheme(monaco, theme.isDark);
         }}
         onEditorDidMount={(editor, monaco) => {
           monacoRef.current = editor;

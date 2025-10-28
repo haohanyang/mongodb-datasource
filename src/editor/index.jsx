@@ -8,6 +8,8 @@ import { useHover } from './hover';
 import { useValidation } from './validation';
 import { useCodeLens } from './codelens';
 import { useMongoLibs } from './mongolibs';
+import { useSemanticTokens } from './semantic-tokens';
+import { setupTheme } from './theme';
 
 self.MonacoEnvironment = {
   getWorkerUrl: function (moduleId, label) {
@@ -32,6 +34,7 @@ function App() {
   const setupValidationFn = useValidation();
   const setupCodeLensFn = useCodeLens();
   const setupMongoLibsFn = useMongoLibs();
+  const setupSemanticTokensFn = useSemanticTokens();
 
   const parseFilterHandler = () => {
     try {
@@ -45,12 +48,16 @@ function App() {
   return (
     <main>
       <CodeEditor
+        onBeforeEditorMount={(monaco) => {
+          setupTheme(monaco, true);
+        }}
         onEditorDidMount={(editor, monaco) => {
           monacoRef.current = editor;
           setupValidationFn(editor, monaco);
           setupAutocompleteFn(editor, monaco);
           setupHoverFn(editor, monaco);
           setupMongoLibsFn(editor, monaco);
+          setupSemanticTokensFn(editor, monaco);
 
           const updateTextCommandId = editor.addCommand(0, (_ctx, ...args) => {
             const text = args[0];
@@ -66,8 +73,14 @@ function App() {
         value={text}
         showMiniMap={false}
         showLineNumbers={true}
-        monacoOptions={{ codeLens: true, showUnused: false }}
+        monacoOptions={{
+          codeLens: true,
+          showUnused: false,
+          theme: 'code-editor-theme',
+          'semanticHighlighting.enabled': true,
+        }}
       />
+
       <div>
         <label htmlFor="language-select">Language:</label>
         <select id="language-select" value={language} onChange={(e) => setLanguage(Number(e.target.value))}>
