@@ -5,6 +5,7 @@ import { useValidation } from '../editor/validation';
 import { useHover } from '../editor/hover';
 import { useCodeLens } from '../editor/codelens';
 import { useMongoLibs } from 'editor/mongolibs';
+import { useSemanticTokens } from '../editor/semantic-tokens';
 import { setupTheme } from '../editor/theme';
 
 interface QueryEditorRawProps {
@@ -14,7 +15,7 @@ interface QueryEditorRawProps {
   children?: (props: { formatQuery: () => void }) => React.ReactNode;
   width?: number;
   height?: number;
-  fontSize?: number;
+  fontSize: number;
 }
 
 export function QueryEditorRaw({ query, onBlur, language, width, height, fontSize, children }: QueryEditorRawProps) {
@@ -27,6 +28,7 @@ export function QueryEditorRaw({ query, onBlur, language, width, height, fontSiz
   const setupValidationFn = useValidation();
   const setupCodeLensFn = useCodeLens();
   const setupMongoLibsFn = useMongoLibs();
+  const useSemanticTokensFn = useSemanticTokens();
 
   const formatQuery = useCallback(() => {
     if (monacoRef.current) {
@@ -46,6 +48,7 @@ export function QueryEditorRaw({ query, onBlur, language, width, height, fontSiz
           setupAutocompleteFn(editor, monaco);
           setupHoverFn(editor, monaco);
           setupMongoLibsFn(editor, monaco);
+          useSemanticTokensFn(editor, monaco);
 
           const updateTextCommandId = editor.addCommand(0, (_ctx, ...args) => {
             const text = args[0];
@@ -61,7 +64,12 @@ export function QueryEditorRaw({ query, onBlur, language, width, height, fontSiz
         value={query}
         showMiniMap={false}
         showLineNumbers={true}
-        monacoOptions={fontSize ? { fontSize: fontSize, codeLens: true, theme: 'code-editor-theme' } : undefined}
+        monacoOptions={{
+          fontSize: fontSize,
+          codeLens: true,
+          theme: 'code-editor-theme',
+          'semanticHighlighting.enabled': true,
+        }}
       />
       {children && children({ formatQuery })}
     </div>

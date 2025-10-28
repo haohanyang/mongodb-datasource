@@ -31,8 +31,6 @@ export class MongoDBDataSource extends DataSourceWithBackend<MongoDBQuery, Mongo
   applyTemplateVariables(query: MongoDBQuery, scopedVars: ScopedVars) {
     const variables = { ...scopedVars };
 
-    console.log('applyTemplateVariables', variables);
-
     let from: number | undefined = undefined;
     let to: number | undefined = undefined;
 
@@ -91,8 +89,6 @@ export class MongoDBDataSource extends DataSourceWithBackend<MongoDBQuery, Mongo
   }
 
   query(request: DataQueryRequest<MongoDBQuery>): Observable<DataQueryResponse> {
-    console.log('query');
-
     if (request.liveStreaming) {
       const observables = request.targets.map((query) => {
         return getGrafanaLiveSrv().getDataStream({

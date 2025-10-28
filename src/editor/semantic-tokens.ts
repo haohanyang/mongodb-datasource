@@ -57,7 +57,7 @@ export class SemanticTokensProvider implements monacoTypes.languages.DocumentSem
     const language = model.getLanguageId();
     const lines = model.getLinesContent();
 
-    const tokenPattern = language == 'javascript' ? tokenPatternJS : tokenPatternJSON;
+    const tokenPattern = language === 'javascript' ? tokenPatternJS : tokenPatternJSON;
 
     let prevLine = 0;
     let prevChar = 0;
@@ -66,7 +66,7 @@ export class SemanticTokensProvider implements monacoTypes.languages.DocumentSem
       const line = lines[i];
 
       for (let match = null; (match = tokenPattern.exec(line)); ) {
-        const type = language == 'javascript' ? getType('identifier') : getType('string');
+        const type = language === 'javascript' ? getType('identifier') : getType('string');
         const modifier = getModifier('op');
 
         data.push(
@@ -81,6 +81,7 @@ export class SemanticTokensProvider implements monacoTypes.languages.DocumentSem
         prevChar = match.index;
       }
     }
+    console.log('Semantic tokens computed:', data);
     return {
       data: new Uint32Array(data),
     };
