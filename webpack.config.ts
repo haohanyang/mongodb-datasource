@@ -12,7 +12,7 @@ const pluginConfig = async (env: any): Promise<Configuration> => {
     module: {
       rules: [
         {
-          test: path.resolve(__dirname, 'src/editor/mongo-constructors.txt'),
+          test: path.resolve(__dirname, 'src/editor/lib-source.txt'),
           use: 'raw-loader',
         },
       ],
@@ -52,7 +52,7 @@ const editorConfig = (env: any): Configuration => {
     module: {
       rules: [
         {
-          test: path.resolve(__dirname, 'src/editor/mongo-constructors.txt'),
+          test: path.resolve(__dirname, 'src/editor/lib-source.txt'),
           use: 'raw-loader',
         },
         {

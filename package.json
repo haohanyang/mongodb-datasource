@@ -3,6 +3,7 @@
   "version": "0.4.1",
   "scripts": {
     "build": "webpack -c ./webpack.config.ts --config-name plugin --env production",
+    "build:dev": "webpack -c ./webpack.config.ts --config-name plugin --env development",
     "dev": "webpack -w -c ./webpack.config.ts --config-name plugin --env development",
     "test": "jest --watch --onlyChanged",
     "test:ci": "jest --passWithNoTests --maxWorkers 4",

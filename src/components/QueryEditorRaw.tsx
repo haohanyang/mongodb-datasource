@@ -1,10 +1,10 @@
 import React, { useRef, useCallback } from 'react';
-import { CodeEditor, type MonacoEditor, useTheme2, type monacoTypes } from '@grafana/ui';
+import { CodeEditor, type MonacoEditor, type monacoTypes } from '@grafana/ui';
 import { useAutocomplete } from '../editor/autocomplete';
 import { useValidation } from '../editor/validation';
 import { useHover } from '../editor/hover';
 import { useCodeLens } from '../editor/codelens';
-import { useMongoLibs } from '../editor/mongolibs';
+import { useJsLibs } from '../editor/jslibs';
 import { useSemanticTokens } from '../editor/semantic-tokens';
 
 interface QueryEditorRawProps {
@@ -18,15 +18,13 @@ interface QueryEditorRawProps {
 }
 
 export function QueryEditorRaw({ query, onBlur, language, width, height, fontSize, children }: QueryEditorRawProps) {
-  const theme = useTheme2();
-
   const monacoRef = useRef<MonacoEditor | null>(null);
 
   const setupAutocompleteFn = useAutocomplete();
   const setupHoverFn = useHover();
   const setupValidationFn = useValidation();
   const setupCodeLensFn = useCodeLens();
-  const setupMongoLibsFn = useMongoLibs();
+  const setupMongoLibsFn = useJsLibs();
   const setupSemanticTokensFn = useSemanticTokens();
 
   const formatQuery = useCallback(() => {
@@ -47,8 +45,8 @@ export function QueryEditorRaw({ query, onBlur, language, width, height, fontSiz
               ...themeData.rules,
               { token: 'identifier.op', foreground: '#00ab41', fontStyle: 'bold' },
               { token: 'string.op', foreground: '#00ab41', fontStyle: 'bold' },
-            ]
-          })
+            ],
+          });
 
           monacoRef.current = editor;
           setupValidationFn(editor, monaco);
@@ -64,7 +62,7 @@ export function QueryEditorRaw({ query, onBlur, language, width, height, fontSiz
 
           setupCodeLensFn(editor, monaco, updateTextCommandId!);
 
-          monaco.editor.setTheme('code-editor-theme')
+          monaco.editor.setTheme('code-editor-theme');
         }}
         height={height || '240px'}
         width={width ? `${width - 2}px` : undefined}

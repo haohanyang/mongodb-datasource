@@ -1,11 +1,11 @@
 import { Monaco, MonacoEditor } from '@grafana/ui';
 // @ts-ignore
-import mongoLibSource from './mongo-constructors.txt';
+import libSource from './lib-source.txt';
 import { useEffect, useRef } from 'react';
 
-const libUri = 'ts:filename/mongo.d.ts';
+const libUri = 'ts:filename/mongodb-datasource.d.ts';
 
-export function useMongoLibs() {
+export function useJsLibs() {
   const mongoLibsDisposeFun = useRef<(() => void) | null>(null);
   useEffect(() => {
     return () => {
@@ -25,7 +25,7 @@ export function useMongoLibs() {
       allowUnusedLabels: true,
     });
 
-    const { dispose } = monaco.languages.typescript.javascriptDefaults.addExtraLib(mongoLibSource, libUri);
+    const { dispose } = monaco.languages.typescript.javascriptDefaults.addExtraLib(libSource, libUri);
     mongoLibsDisposeFun.current = dispose;
   };
 }

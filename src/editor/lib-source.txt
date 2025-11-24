@@ -1,3 +1,29 @@
+// Built-in variables
+// Reference: https://docs.aws.amazon.com/grafana/latest/userguide/variables-types.html
+/**
+ * Beginning of time range in Unix millisecond epoch, e.g., "1594671549254"
+ */
+declare const $__from: string;
+
+/**
+ * End of time range in Unix millisecond epoch, e.g., "1594671549254"
+ */
+declare const $__to: string;
+
+/**
+ * Beginning of time range in Unix millisecond epoch that respects local dashboard overrides, e.g., "1594671549254"
+ */
+declare const $__local_from: string;
+
+/**
+ * End of time range in Unix millisecond epoch that respects local dashboard overrides, e.g., "1594671549254"
+ */
+declare const $__local_to: string;
+
+declare const $__from_oid: string;
+declare const $__to_oid: string;
+
+// MongoDB constructors
 // Reference: https://www.mongodb.com/docs/manual/reference/method/js-constructor/
 
 declare class ObjectId {
