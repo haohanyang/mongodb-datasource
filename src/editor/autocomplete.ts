@@ -10,7 +10,7 @@ import {
 } from '@mongodb-js/mongodb-constants';
 
 export class CompletionProvider implements monacoTypes.languages.CompletionItemProvider {
-  constructor(private readonly editor: MonacoEditor) {}
+  constructor(private readonly editor: MonacoEditor) { }
 
   triggerCharacters = ['$'];
 
