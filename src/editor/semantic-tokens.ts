@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { type Monaco, type monacoTypes, type MonacoEditor } from '@grafana/ui';
-import { getFilteredCompletions } from '@mongodb-js/mongodb-constants';
+import { STAGE_OPERATORS } from '@mongodb-js/mongodb-constants';
 
 const legend = {
   tokenTypes: ['identifier', 'string'],
@@ -28,7 +28,7 @@ function getModifier(modifiers: string[] | string) {
     return 0;
   }
 }
-const ops = Array.from(new Set(getFilteredCompletions().map((op) => op.value)));
+const ops = Array.from(new Set(STAGE_OPERATORS.map((op) => op.value)));
 const opsJS = ops.map((op) => `\\${op}`);
 const opsJSON = ops.map((op) => `\\"\\${op}\\"`);
 
@@ -36,7 +36,7 @@ const tokenPatternJS = new RegExp(`(${opsJS.join('|')}):`, 'g');
 const tokenPatternJSON = new RegExp(`(${opsJSON.join('|')}):`, 'g');
 
 export class SemanticTokensProvider implements monacoTypes.languages.DocumentSemanticTokensProvider {
-  constructor(private readonly editor: MonacoEditor) {}
+  constructor(private readonly editor: MonacoEditor) { }
 
   getLegend(): monacoTypes.languages.SemanticTokensLegend {
     return legend;
@@ -65,7 +65,7 @@ export class SemanticTokensProvider implements monacoTypes.languages.DocumentSem
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
 
-      for (let match = null; (match = tokenPattern.exec(line)); ) {
+      for (let match = null; (match = tokenPattern.exec(line));) {
         const type = language === 'javascript' ? getType('identifier') : getType('string');
         const modifier = getModifier('op');
 
@@ -85,7 +85,7 @@ export class SemanticTokensProvider implements monacoTypes.languages.DocumentSem
       data: new Uint32Array(data),
     };
   }
-  releaseDocumentSemanticTokens(resultId?: string): void {}
+  releaseDocumentSemanticTokens(resultId?: string): void { }
 }
 
 export function useSemanticTokens() {
