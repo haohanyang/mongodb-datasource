@@ -8,17 +8,20 @@ import (
 )
 
 type PluginSettings struct {
-	Host                   string                `json:"host"`
-	Port                   int                   `json:"port"`
-	Database               string                `json:"database"`
-	AuthMethod             string                `json:"authType"`
-	Username               string                `json:"username"`
-	ConnectionStringScheme string                `json:"connectionStringScheme"`
-	ConnectionParameters   string                `json:"connectionParameters"`
-	CaCertPath             string                `json:"caCertPath"`
-	ClientCertPath         string                `json:"clientCertPath"` // public client certificate
-	ClientKeyPath          string                `json:"clientKeyPath"`  // private client key
-	Secrets                *SecretPluginSettings `json:"-"`
+	Host                        string                `json:"host"`
+	Port                        int                   `json:"port"`
+	Database                    string                `json:"database"`
+	AuthMethod                  string                `json:"authType"`
+	Username                    string                `json:"username"`
+	ConnectionStringScheme      string                `json:"connectionStringScheme"`
+	ConnectionParameters        string                `json:"connectionParameters"`
+	CaCertPath                  string                `json:"caCertPath"`
+	ClientCertPath              string                `json:"clientCertPath"` // public client certificate
+	ClientKeyPath               string                `json:"clientKeyPath"`  // private client key
+	TlsInsecure                 bool                  `json:"tlsInsecure"`
+	TlsAllowInvalidHostnames    bool                  `json:"tlsAllowInvalidHostnames"`
+	TlsAllowInvalidCertificates bool                  `json:"tlsAllowInvalidCertificates"`
+	Secrets                     *SecretPluginSettings `json:"-"`
 }
 
 type SecretPluginSettings struct {

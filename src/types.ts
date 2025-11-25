@@ -59,15 +59,21 @@ export const ConnectionStringScheme = {
 };
 
 export interface MongoDataSourceOptions extends DataSourceJsonData {
+  // Connection settings
   connectionStringScheme?: string;
   host?: string;
-  port?: number;
   database?: string;
-  username?: string;
   connectionParameters?: string;
+  // Authentication settings
+  // Username/password auth
+  username?: string;
+  // TLS/SSL auth
   caCertPath?: string;
   clientCertPath?: string;
   clientKeyPath?: string;
+  tlsInsecure?: boolean;
+  tlsAllowInvalidHostnames?: boolean;
+  tlsAllowInvalidCertificates?: boolean;
 }
 
 export interface MongoDataSourceSecureJsonData {
