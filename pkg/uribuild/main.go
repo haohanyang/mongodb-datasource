@@ -8,16 +8,29 @@ import (
 )
 
 func main() {
-	u := url.URL{}
-	u.Scheme = connstring.SchemeMongoDB
-	u.Host = "localhost:27017"
-	u.User = url.UserPassword("username", "password")
-	u.Path = "mydatabase"
-	u.RawQuery = "tls=true&tlsAllowInvalidCertificates=true&sslClientCertificateKeyPassword=123"
+	u := url.URL{
+		Scheme: connstring.SchemeMongoDB,
+		Host:   "localhost:27017",
+		User:   url.UserPassword("username", "password"),
+		Path:   "mydatabase",
+	}
 
-	conn, err := connstring.ParseAndValidate(u.String())
+	options := "tls=true&tlsAllowInvalidCertificates=true&sslClientCertificateKeyPassword=123&replicaSet=rs0"
+
+	// Parse connection string options
+	connOptions, err := url.ParseQuery(options)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("Parsed ConnString:", conn.String())
+
+	query := u.Query()
+
+	for key, values := range connOptions {
+		for _, value := range values {
+			query.Add(key, value)
+		}
+	}
+
+	u.RawQuery = query.Encode()
+	fmt.Println("Parsed ConnString:", u.String())
 }

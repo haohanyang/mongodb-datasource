@@ -43,12 +43,12 @@ func NewDatasource(ctx context.Context, source backend.DataSourceInstanceSetting
 		return nil, err
 	}
 
-	uri, err := MongoUri(config)
+	uri, err := BuildMongoConnectionString(config)
 	if err != nil {
 		return nil, err
 	}
 
-	opts := options.Client().ApplyURI(uri)
+	opts := options.Client().ApplyURI(uri.String())
 
 	if config.AuthMethod == "auth-tls" {
 		// TLS setup
@@ -280,13 +280,13 @@ func (d *Datasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRe
 		return res, nil
 	}
 
-	uri, err := MongoUri(config)
+	uri, err := BuildMongoConnectionString(config)
 	if err != nil {
 		res.Status = backend.HealthStatusError
 		res.Message = err.Error()
 	}
 
-	opts := options.Client().ApplyURI(uri).SetTimeout(5 * time.Second)
+	opts := options.Client().ApplyURI(uri.String()).SetTimeout(5 * time.Second)
 
 	if config.AuthMethod == "auth-tls" {
 		// TLS setup

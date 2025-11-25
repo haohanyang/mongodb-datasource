@@ -14,7 +14,7 @@ type PluginSettings struct {
 	AuthMethod                  string                `json:"authType"`
 	Username                    string                `json:"username"`
 	ConnectionStringScheme      string                `json:"connectionStringScheme"`
-	ConnectionParameters        string                `json:"connectionParameters"`
+	ConnectionOptions           string                `json:"connectionOptions"`
 	CaCertPath                  string                `json:"caCertPath"`
 	ClientCertPath              string                `json:"clientCertPath"` // public client certificate
 	ClientKeyPath               string                `json:"clientKeyPath"`  // private client key
