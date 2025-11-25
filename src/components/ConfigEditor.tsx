@@ -21,12 +21,20 @@ interface Props extends DataSourcePluginOptionsEditorProps<MongoDataSourceOption
 const mongoDBAuthMethods: SelectableValue[] = [
   { label: 'None', value: MongoDBAuthMethod.NONE },
   { label: 'Username/Password', value: MongoDBAuthMethod.USERNAME_PASSWORD },
-  { label: 'TLS/SSL', value: MongoDBAuthMethod.TLS },
+  { label: 'TLS/SSL', value: MongoDBAuthMethod.TLS_SSL },
 ];
 
 const mongoConnectionStringSchemes: SelectableValue[] = [
-  { label: 'mongodb', value: ConnectionStringScheme.STANDARD, description: 'Standard Connection String Format' },
-  { label: 'mongodb+srv', value: ConnectionStringScheme.DNS_SEED_LIST, description: 'DNS Seed List Connection Format' },
+  {
+    label: ConnectionStringScheme.MONGODB,
+    value: ConnectionStringScheme.MONGODB,
+    description: descriptions.mongodb,
+  },
+  {
+    label: ConnectionStringScheme.MONGODBSRV,
+    value: ConnectionStringScheme.MONGODBSRV,
+    description: descriptions.mongodbSrv,
+  },
 ];
 
 export function ConfigEditor(props: Props) {
@@ -63,7 +71,7 @@ export function ConfigEditor(props: Props) {
         <Field label="Scheme" description={descriptions.scheme} required>
           <RadioButtonGroup
             options={mongoConnectionStringSchemes}
-            value={jsonData.connectionStringScheme || ConnectionStringScheme.STANDARD}
+            value={jsonData.connectionStringScheme || ConnectionStringScheme.MONGODB}
             onChange={onInputChanged('connectionStringScheme')}
           />
         </Field>
@@ -133,7 +141,7 @@ export function ConfigEditor(props: Props) {
           </>
         )}
 
-        {jsonData.authType === MongoDBAuthMethod.TLS && (
+        {jsonData.authType === MongoDBAuthMethod.TLS_SSL && (
           <>
             <Field label="Certificate Authority" description={descriptions.certificateAuthority}>
               <Input

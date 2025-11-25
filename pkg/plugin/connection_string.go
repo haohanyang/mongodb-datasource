@@ -23,13 +23,13 @@ func BuildMongoConnectionString(config *models.PluginSettings) (*url.URL, error)
 		u.Path = "/"
 	}
 
-	if config.ConnectionStringScheme == "dns_seed_list" {
+	if config.ConnectionStringScheme == connstring.SchemeMongoDBSRV {
 		u.Scheme = connstring.SchemeMongoDBSRV
 	} else {
 		u.Scheme = connstring.SchemeMongoDB
 	}
 
-	if config.AuthMethod == "auth-username-password" {
+	if config.AuthMethod == MongoAuthUsernamePassword {
 		if config.Username == "" || config.Secrets.Password == "" {
 			return nil, errors.New("missing MongoDB username or password")
 		}
@@ -56,7 +56,7 @@ func BuildMongoConnectionString(config *models.PluginSettings) (*url.URL, error)
 	}
 
 	// TLS passphrase
-	if config.AuthMethod == "auth-tls" && config.Secrets.ClientKeyPassword != "" {
+	if config.AuthMethod == MongoAuthTLSSSL && config.Secrets.ClientKeyPassword != "" {
 		query.Add("sslClientCertificateKeyPassword", config.Secrets.ClientKeyPassword)
 	}
 
