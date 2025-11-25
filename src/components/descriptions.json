@@ -1,0 +1,8 @@
+{
+    "host": "The hostname and port of the MongoDB server (e.g., localhost:27017 or mycluster.mongodb.net). Multiple hosts should be comma-separated for replica sets, e.g., mongo1:27017,mongo2:27017.",
+    "scheme": "Prefix the connection string with mongodb:// or mongodb+srv://",
+    "connectionStringOptions": "Parameters appended to the connection string, e.g., retryWrites=true&w=majority&appName=default-cluster",
+    "certificateAuthority": "Path to Certificate Authority (.pem)",
+    "clientCertificate": "Path to public client certificate",
+    "clientKey": "Path to private client key (.pem)"
+}
