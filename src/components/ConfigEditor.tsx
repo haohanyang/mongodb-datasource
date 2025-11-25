@@ -30,18 +30,18 @@ const mongoConnectionStringSchemes: SelectableValue[] = [
 ];
 
 export function ConfigEditor(props: Props) {
-  const { onOptionsChange, options } = props;
+  const { options } = props;
   const { jsonData, secureJsonFields, secureJsonData } = options;
 
   const onDataSourceOptionChanged = (property: keyof MongoDataSourceOptions) => {
     return (event: SyntheticEvent<HTMLInputElement>) => {
-      onOptionsChange({ ...options, ...{ [property]: event.currentTarget.value } });
+      updateDatasourcePluginJsonDataOption(props, property, event.currentTarget.value);
     };
   };
 
   const onInputChanged = (property: keyof MongoDataSourceOptions) => {
     return (value: string) => {
-      onOptionsChange({ ...options, ...{ [property]: value } });
+      updateDatasourcePluginJsonDataOption(props, property, value);
     };
   };
 
@@ -92,8 +92,8 @@ export function ConfigEditor(props: Props) {
           <Input
             required
             id="config-editor-connection-parameters"
-            value={jsonData.connectionParameters}
-            onChange={onDataSourceOptionChanged('connectionParameters')}
+            value={jsonData.connectionOptions}
+            onChange={onDataSourceOptionChanged('connectionOptions')}
             width={80}
           ></Input>
         </Field>
@@ -171,10 +171,6 @@ export function ConfigEditor(props: Props) {
                 onReset={() => updateDatasourcePluginResetOption(props, 'clientKeyPassword')}
                 onBlur={onUpdateDatasourceSecureJsonDataOption(props, 'clientKeyPassword')}
               />
-            </Field>
-
-            <Field label="tlsInsecure" description={descriptions.tlsInsecure}>
-              <Switch onChange={onSwitchChanged('tlsInsecure')} value={jsonData.tlsInsecure} />
             </Field>
 
             <Field label="tlsInsecure" description={descriptions.tlsInsecure}>
