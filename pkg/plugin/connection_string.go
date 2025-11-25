@@ -19,6 +19,10 @@ func BuildMongoConnectionString(config *models.PluginSettings) (*url.URL, error)
 		Path: config.Database,
 	}
 
+	if config.Database == "" {
+		u.Path = "/"
+	}
+
 	if config.ConnectionStringScheme == "dns_seed_list" {
 		u.Scheme = connstring.SchemeMongoDBSRV
 	} else {
