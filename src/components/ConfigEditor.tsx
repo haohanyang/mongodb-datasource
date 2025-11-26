@@ -1,41 +1,24 @@
 import React, { SyntheticEvent } from 'react';
-import { Divider, Field, Input, RadioButtonGroup, SecretInput, Switch } from '@grafana/ui';
+import { Divider, Field, Input, RadioButtonGroup, SecretInput, Switch, Alert } from '@grafana/ui';
 import { ConfigSection, DataSourceDescription } from '@grafana/plugin-ui';
 import {
   DataSourcePluginOptionsEditorProps,
-  SelectableValue,
   updateDatasourcePluginJsonDataOption,
   onUpdateDatasourceSecureJsonDataOption,
   updateDatasourcePluginResetOption,
 } from '@grafana/data';
+import { MongoDataSourceOptions, MongoDataSourceSecureJsonData } from '../types';
+import descriptions from '../config-descriptions.json';
 import {
-  MongoDataSourceOptions,
-  MongoDataSourceSecureJsonData,
+  authOptions,
+  connectionStringSchemeOptions,
   MongoDBAuthMethod,
   ConnectionStringScheme,
-} from '../types';
-import descriptions from './descriptions.json';
+  tlsOptions,
+  TlsOption,
+} from '../constants';
 
 interface Props extends DataSourcePluginOptionsEditorProps<MongoDataSourceOptions, MongoDataSourceSecureJsonData> {}
-
-const mongoDBAuthMethods: SelectableValue[] = [
-  { label: 'None', value: MongoDBAuthMethod.NONE },
-  { label: 'Username/Password', value: MongoDBAuthMethod.USERNAME_PASSWORD },
-  { label: 'TLS/SSL', value: MongoDBAuthMethod.TLS_SSL },
-];
-
-const mongoConnectionStringSchemes: SelectableValue[] = [
-  {
-    label: ConnectionStringScheme.MONGODB,
-    value: ConnectionStringScheme.MONGODB,
-    description: descriptions.mongodb,
-  },
-  {
-    label: ConnectionStringScheme.MONGODBSRV,
-    value: ConnectionStringScheme.MONGODBSRV,
-    description: descriptions.mongodbSrv,
-  },
-];
 
 export function ConfigEditor(props: Props) {
   const { options } = props;
@@ -70,8 +53,12 @@ export function ConfigEditor(props: Props) {
       <ConfigSection title="Connection">
         <Field label="Scheme" description={descriptions.scheme} required>
           <RadioButtonGroup
-            options={mongoConnectionStringSchemes}
-            value={jsonData.connectionStringScheme || ConnectionStringScheme.MONGODB}
+            options={connectionStringSchemeOptions}
+            value={
+              jsonData.connectionStringScheme === ConnectionStringScheme.MONGODBSRV
+                ? ConnectionStringScheme.MONGODBSRV
+                : ConnectionStringScheme.MONGODB
+            }
             onChange={onInputChanged('connectionStringScheme')}
           />
         </Field>
@@ -110,7 +97,7 @@ export function ConfigEditor(props: Props) {
       <ConfigSection title="Authentication">
         <Field label="Authentication method">
           <RadioButtonGroup
-            options={mongoDBAuthMethods}
+            options={authOptions}
             value={jsonData.authType || MongoDBAuthMethod.NONE}
             onChange={onInputChanged('authType')}
           />
@@ -141,65 +128,79 @@ export function ConfigEditor(props: Props) {
           </>
         )}
 
-        {jsonData.authType === MongoDBAuthMethod.TLS_SSL && (
-          <>
-            <Field label="Certificate Authority" description={descriptions.certificateAuthority}>
-              <Input
-                id="config-editor-tls-ca"
-                placeholder="/path/to/ca.pem"
-                value={jsonData.caCertPath}
-                onChange={onDataSourceOptionChanged('caCertPath')}
-                width={40}
-              ></Input>
-            </Field>
-            <Field label="Client Certificate" description={descriptions.clientCertificate}>
-              <Input
-                id="config-editor-tls-cc"
-                placeholder="/path/to/mongodb.crt"
-                value={jsonData.clientCertPath}
-                onChange={onDataSourceOptionChanged('clientCertPath')}
-                width={40}
-              ></Input>
-            </Field>
-            <Field label="Client Key" description={descriptions.clientKey}>
-              <Input
-                id="config-editor-tls-ck"
-                placeholder="/path/to/mongodb.pem"
-                value={jsonData.clientKeyPath}
-                width={40}
-                onChange={onDataSourceOptionChanged('clientKeyPath')}
-              ></Input>
-            </Field>
-            <Field label="Client Key Password">
-              <SecretInput
-                id="config-editor-client-key-password"
-                isConfigured={secureJsonFields?.clientKeyPassword}
-                value={secureJsonData?.clientKeyPassword}
-                width={40}
-                onReset={() => updateDatasourcePluginResetOption(props, 'clientKeyPassword')}
-                onBlur={onUpdateDatasourceSecureJsonDataOption(props, 'clientKeyPassword')}
-              />
-            </Field>
-
-            <Field label="tlsInsecure" description={descriptions.tlsInsecure}>
-              <Switch onChange={onSwitchChanged('tlsInsecure')} value={jsonData.tlsInsecure} />
-            </Field>
-
-            <Field label="tlsAllowInvalidHostnames" description={descriptions.tlsAllowInvalidHostnames}>
-              <Switch
-                onChange={onSwitchChanged('tlsAllowInvalidHostnames')}
-                value={jsonData.tlsAllowInvalidHostnames}
-              />
-            </Field>
-
-            <Field label="tlsAllowInvalidCertificates" description={descriptions.tlsAllowInvalidCertificates}>
-              <Switch
-                onChange={onSwitchChanged('tlsAllowInvalidCertificates')}
-                value={jsonData.tlsAllowInvalidCertificates}
-              />
-            </Field>
-          </>
+        {jsonData.authType === MongoDBAuthMethod.X509 && (
+          <Alert severity="info" title="Enable TLS">
+            {descriptions.x509}{' '}
+          </Alert>
         )}
+      </ConfigSection>
+      <Divider />
+      <ConfigSection title="TLS/SSL">
+        <Field label="SSL/TLS Connection">
+          <RadioButtonGroup
+            options={tlsOptions}
+            value={jsonData.tlsOption || TlsOption.DEFAULT}
+            onChange={onInputChanged('tlsOption')}
+          />
+        </Field>
+
+        <Field label="Certificate Authority (.pem)" description={'Optional'}>
+          <Input
+            id="config-editor-tls-ca"
+            placeholder="/path/to/ca.pem"
+            value={jsonData.caCertPath}
+            onChange={onDataSourceOptionChanged('caCertPath')}
+            disabled={jsonData.tlsOption === TlsOption.DISABLED}
+            width={40}
+          ></Input>
+        </Field>
+
+        <Field label="Client Certificate and Key (.pem)" description={'Optional (required with X.509 auth)'}>
+          <Input
+            id="config-editor-tls-cc"
+            placeholder="/path/to/mongodb.crt"
+            value={jsonData.clientCertAndKeyPath}
+            onChange={onDataSourceOptionChanged('clientCertAndKeyPath')}
+            disabled={jsonData.tlsOption === TlsOption.DISABLED}
+            width={40}
+          ></Input>
+        </Field>
+
+        <Field label="Client Key Password">
+          <SecretInput
+            id="config-editor-client-key-password"
+            isConfigured={secureJsonFields?.clientKeyPassword}
+            value={secureJsonData?.clientKeyPassword}
+            width={40}
+            onReset={() => updateDatasourcePluginResetOption(props, 'clientKeyPassword')}
+            onBlur={onUpdateDatasourceSecureJsonDataOption(props, 'clientKeyPassword')}
+            disabled={jsonData.tlsOption === TlsOption.DISABLED}
+          />
+        </Field>
+
+        <Field label="tlsInsecure" description={descriptions.tlsInsecure}>
+          <Switch
+            onChange={onSwitchChanged('tlsInsecure')}
+            value={jsonData.tlsInsecure}
+            disabled={jsonData.tlsOption === TlsOption.DISABLED}
+          />
+        </Field>
+
+        <Field label="tlsAllowInvalidHostnames" description={descriptions.tlsAllowInvalidHostnames}>
+          <Switch
+            onChange={onSwitchChanged('tlsAllowInvalidHostnames')}
+            value={jsonData.tlsAllowInvalidHostnames}
+            disabled={jsonData.tlsOption === TlsOption.DISABLED}
+          />
+        </Field>
+
+        <Field label="tlsAllowInvalidCertificates" description={descriptions.tlsAllowInvalidCertificates}>
+          <Switch
+            onChange={onSwitchChanged('tlsAllowInvalidCertificates')}
+            value={jsonData.tlsAllowInvalidCertificates}
+            disabled={jsonData.tlsOption === TlsOption.DISABLED}
+          />
+        </Field>
       </ConfigSection>
     </>
   );

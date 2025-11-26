@@ -47,30 +47,18 @@ export interface JsQueryResult {
   error: string | null;
 }
 
-export const MongoDBAuthMethod = {
-  NONE: 'none',
-  USERNAME_PASSWORD: 'username-password',
-  TLS_SSL: 'tls-ssl',
-};
-
-export const ConnectionStringScheme = {
-  MONGODB: 'mongodb',
-  MONGODBSRV: 'mongodb+srv',
-};
-
 export interface MongoDataSourceOptions extends DataSourceJsonData {
   // Connection settings
   connectionStringScheme?: string;
   host?: string;
   database?: string;
   connectionOptions?: string;
-  // Authentication settings
-  // Username/password auth
+  // Authentication
   username?: string;
-  // TLS/SSL auth
+  // TLS/SSL
+  tlsOption?: string;
   caCertPath?: string;
-  clientCertPath?: string;
-  clientKeyPath?: string;
+  clientCertAndKeyPath?: string;
   tlsInsecure?: boolean;
   tlsAllowInvalidHostnames?: boolean;
   tlsAllowInvalidCertificates?: boolean;

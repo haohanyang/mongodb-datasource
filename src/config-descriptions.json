@@ -9,5 +9,6 @@
   "clientKey": "Path to private client key(.pem).",
   "tlsInsecure": "This includes tlsAllowInvalidHostnames and tlsAllowInvalidCertificates.",
   "tlsAllowInvalidHostnames": "Disable the validation of the hostnames in the certificate presented by the mongod/mongos instance.",
-  "tlsAllowInvalidCertificates": "Disable the validation of the server certificates."
+  "tlsAllowInvalidCertificates": "Disable the validation of the server certificates.",
+  "x509": "X.509 Authentication type requires a Client Certificate to work. Make sure to enable TLS and add one in the TLS/SSL section."
 }

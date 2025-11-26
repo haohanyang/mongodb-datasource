@@ -4,5 +4,11 @@ package plugin
 const (
 	MongoAuthNone             = "none"
 	MongoAuthUsernamePassword = "username-password"
-	MongoAuthTLSSSL           = "tls-ssl"
+	MongoAuthX509             = "x509"
+)
+
+const (
+	tlsDefault  = "default"
+	tlsEnabled  = "enabled"
+	tlsDisabled = "disabled"
 )

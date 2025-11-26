@@ -9,9 +9,21 @@ import (
 )
 
 func BuildMongoConnectionString(config *models.PluginSettings) (*url.URL, error) {
-
 	if config.Host == "" {
 		return nil, errors.New("missing MongoDB host")
+	}
+
+	// Apply defaults
+	if config.ConnectionStringScheme == "" {
+		config.ConnectionStringScheme = connstring.SchemeMongoDB
+	}
+
+	if config.TlsOption == "" {
+		config.TlsOption = tlsDefault
+	}
+
+	if config.AuthMethod == "" {
+		config.AuthMethod = MongoAuthNone
 	}
 
 	u := &url.URL{
@@ -55,20 +67,31 @@ func BuildMongoConnectionString(config *models.PluginSettings) (*url.URL, error)
 		}
 	}
 
-	// TLS passphrase
-	if config.AuthMethod == MongoAuthTLSSSL && config.Secrets.ClientKeyPassword != "" {
-		query.Add("sslClientCertificateKeyPassword", config.Secrets.ClientKeyPassword)
+	// Ref: https://github.com/mongodb-js/compass/blob/ffbe6d0b9c4401342de5222e066efff6d77ee455/packages/connection-form/src/utils/tls-handler.ts#L42
+	if config.TlsOption == tlsEnabled {
+		query.Del("ssl")
+		query.Add("tls", "true")
+	} else if config.TlsOption == tlsDisabled {
+		query.Del("tls")
+		query.Add("ssl", "false")
+	} else if config.TlsOption == tlsDefault {
+		query.Del("tls")
+		query.Del("ssl")
 	}
 
-	if config.TlsInsecure {
+	if config.AuthMethod == MongoAuthX509 {
+		query.Add("authMechanism", "MONGODB-X509")
+	}
+
+	if config.TlsOption != tlsDisabled && config.TlsInsecure {
 		query.Add("tlsInsecure", "true")
 	}
 
-	if config.TlsAllowInvalidHostnames {
+	if config.TlsOption != tlsDisabled && config.TlsAllowInvalidHostnames {
 		query.Add("tlsAllowInvalidHostnames", "true")
 	}
 
-	if config.TlsAllowInvalidCertificates {
+	if config.TlsOption != tlsDisabled && config.TlsAllowInvalidCertificates {
 		query.Add("tlsAllowInvalidCertificates", "true")
 	}
 

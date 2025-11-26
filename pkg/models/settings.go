@@ -15,9 +15,9 @@ type PluginSettings struct {
 	Username                    string                `json:"username"`
 	ConnectionStringScheme      string                `json:"connectionStringScheme"`
 	ConnectionOptions           string                `json:"connectionOptions"`
+	TlsOption                   string                `json:"tlsOption"`
 	CaCertPath                  string                `json:"caCertPath"`
-	ClientCertPath              string                `json:"clientCertPath"` // public client certificate
-	ClientKeyPath               string                `json:"clientKeyPath"`  // private client key
+	ClientCertAndKeyPath        string                `json:"clientCertAndKeyPath"`
 	TlsInsecure                 bool                  `json:"tlsInsecure"`
 	TlsAllowInvalidHostnames    bool                  `json:"tlsAllowInvalidHostnames"`
 	TlsAllowInvalidCertificates bool                  `json:"tlsAllowInvalidCertificates"`
