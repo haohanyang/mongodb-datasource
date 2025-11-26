@@ -12,13 +12,13 @@ import (
 )
 
 // Username/Password with TLS (CA cert + Client cert)
-// go run pkg/tlsconn/main.go -caFile=certs/ca-cert.pem -certKeyFile=certs/client.pem -username=user -password=pass
+// go run pkg/tlsconn/main.go -caFile=certs/ca-cert.pem -certKeyFile=certs/client.pem -username=user -password=pass -clientKeyPassword=myclientpass
 
 func main() {
 
 	caFile := flag.String("caFile", "", "Path to CA certificate file")
 	certKeyFile := flag.String("certKeyFile", "", "Path to client certificate and key file")
-	clientPassword := flag.String("clientPassword", "", "Client certificate password")
+	clientKeyPassword := flag.String("clientKeyPassword", "", "Client certificate password")
 
 	username := flag.String("username", "", "MongoDB username")
 	password := flag.String("password", "", "MongoDB password")
@@ -38,8 +38,8 @@ func main() {
 		tlsOpts["tlsCertificateKeyFile"] = *certKeyFile
 	}
 
-	if *clientPassword != "" {
-		tlsOpts["tlsCertificateKeyFilePassword"] = *clientPassword
+	if *clientKeyPassword != "" {
+		tlsOpts["tlsCertificateKeyFilePassword"] = *clientKeyPassword
 	}
 
 	if len(tlsOpts) > 0 {

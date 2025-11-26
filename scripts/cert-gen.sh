@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Client key password
+PASSWORD=myclientpass
+
 # Create directory for certificates
 rm -rf certs
 mkdir certs
@@ -34,11 +37,11 @@ openssl x509 -req -in mongodb-server.csr -CA ca-cert.pem -CAkey ca-key.pem \
 # Combine server cert and key into single PEM file
 cat mongodb-server-cert.pem mongodb-server-key.pem > mongodb-server.pem
 
-# 3. Generate Client Certificate
+# Generate encrypted client certificate
 echo "Generating client certificate..."
-openssl genrsa -out client-key.pem 4096
+openssl genrsa -aes256 -out client-key.pem -passout pass:$PASSWORD 4096
 
-openssl req -new -key client-key.pem -out client.csr \
+openssl req -new -key client-key.pem -passin pass:$PASSWORD -out client.csr \
   -subj "/C=US/ST=State/L=City/O=Organization/OU=Client/CN=client"
 
 openssl x509 -req -in client.csr -CA ca-cert.pem -CAkey ca-key.pem \
@@ -48,7 +51,7 @@ openssl x509 -req -in client.csr -CA ca-cert.pem -CAkey ca-key.pem \
 cat client-cert.pem client-key.pem > client.pem
 
 echo "Certificates generated successfully!"
-echo ""
+echo "Client key password: $PASSWORD"
 echo "Files created:"
 echo "  ca-cert.pem           - CA certificate (share this with clients)"
 echo "  mongodb-server.pem    - MongoDB server certificate + key"
