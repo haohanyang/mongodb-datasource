@@ -55,6 +55,7 @@ export interface MongoDataSourceOptions extends DataSourceJsonData {
   connectionOptions?: string;
   // Authentication
   username?: string;
+  authDb?: string;
   // TLS/SSL
   tlsOption?: string;
   caCertPath?: string;

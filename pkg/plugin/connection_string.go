@@ -83,6 +83,10 @@ func BuildMongoConnectionString(config *models.PluginSettings) (*url.URL, error)
 		query.Add("authMechanism", "MONGODB-X509")
 	}
 
+	if config.AuthDatabase != "" {
+		query.Add("authSource", config.AuthDatabase)
+	}
+
 	if config.TlsOption != tlsDisabled && config.TlsInsecure {
 		query.Add("tlsInsecure", "true")
 	}

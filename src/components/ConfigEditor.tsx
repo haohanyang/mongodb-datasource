@@ -53,6 +53,7 @@ export function ConfigEditor(props: Props) {
       <ConfigSection title="Connection">
         <Field label="Scheme" description={descriptions.scheme} required>
           <RadioButtonGroup
+            id="config-editor-connection-scheme"
             options={connectionStringSchemeOptions}
             value={
               jsonData.connectionStringScheme === ConnectionStringScheme.MONGODBSRV
@@ -86,7 +87,7 @@ export function ConfigEditor(props: Props) {
         <Field label="Connection String Options" description={descriptions.connectionStringOptions}>
           <Input
             required
-            id="config-editor-connection-parameters"
+            id="config-editor-connection-options"
             value={jsonData.connectionOptions}
             onChange={onDataSourceOptionChanged('connectionOptions')}
             width={80}
@@ -97,6 +98,7 @@ export function ConfigEditor(props: Props) {
       <ConfigSection title="Authentication">
         <Field label="Authentication method">
           <RadioButtonGroup
+            id="config-editor-auth-type"
             options={authOptions}
             value={jsonData.authType || MongoDBAuthMethod.NONE}
             onChange={onInputChanged('authType')}
@@ -125,6 +127,15 @@ export function ConfigEditor(props: Props) {
                 onBlur={onUpdateDatasourceSecureJsonDataOption(props, 'password')}
               />
             </Field>
+            <Field label="Authentication Database">
+              <Input
+                required
+                id="config-editor-auth-db"
+                value={jsonData.authDb}
+                onChange={onDataSourceOptionChanged('authDb')}
+                width={40}
+              ></Input>
+            </Field>
           </>
         )}
 
@@ -138,6 +149,7 @@ export function ConfigEditor(props: Props) {
       <ConfigSection title="TLS/SSL">
         <Field label="SSL/TLS Connection">
           <RadioButtonGroup
+            id="config-editor-tls-option"
             options={tlsOptions}
             value={jsonData.tlsOption || TlsOption.DEFAULT}
             onChange={onInputChanged('tlsOption')}
@@ -158,7 +170,7 @@ export function ConfigEditor(props: Props) {
         <Field label="Client Certificate and Key (.pem)" description={'Optional (required with X.509 auth)'}>
           <Input
             id="config-editor-tls-cc"
-            placeholder="/path/to/mongodb.crt"
+            placeholder="/path/to/client.pem"
             value={jsonData.clientCertAndKeyPath}
             onChange={onDataSourceOptionChanged('clientCertAndKeyPath')}
             disabled={jsonData.tlsOption === TlsOption.DISABLED}

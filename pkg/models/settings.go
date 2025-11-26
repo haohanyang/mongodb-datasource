@@ -13,6 +13,7 @@ type PluginSettings struct {
 	Database                    string                `json:"database"`
 	AuthMethod                  string                `json:"authType"`
 	Username                    string                `json:"username"`
+	AuthDatabase                string                `json:"authDb"`
 	ConnectionStringScheme      string                `json:"connectionStringScheme"`
 	ConnectionOptions           string                `json:"connectionOptions"`
 	TlsOption                   string                `json:"tlsOption"`
