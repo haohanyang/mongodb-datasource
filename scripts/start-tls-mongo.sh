@@ -8,4 +8,6 @@ docker run --rm --name mongodb-ds-mongo-tls \
     -v ./mongod.conf:/etc/mongo/mongod.conf \
     -v ./certs:/certs \
     -p 27017:27017 \
-    mongo --config /etc/mongo/mongod.conf
+    mongo --tlsMode requireTLS \
+    --tlsCertificateKeyFile /certs/mongodb-server.pem \
+    --tlsCAFile /certs/ca-cert.pem
