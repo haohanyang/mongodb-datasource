@@ -2,45 +2,60 @@ package main
 
 import (
 	"context"
-	"crypto/tls"
-	"crypto/x509"
+	"flag"
 	"fmt"
-	"os"
+	"time"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+// Username/Password with TLS (CA cert + Client cert)
+// go run pkg/tlsconn/main.go -caFile=certs/ca-cert.pem -certKeyFile=certs/client.pem -username=user -password=pass
+
 func main() {
 
-	caFile := "certs/ca.pem"
-	certFile := "certs/mongodb.crt" // public client certificate
-	keyFile := "certs/mongodb.pem"  // private client key
-	passPhrase := "123"             // private client key passphrase
+	caFile := flag.String("caFile", "", "Path to CA certificate file")
+	certKeyFile := flag.String("certKeyFile", "", "Path to client certificate and key file")
+	clientPassword := flag.String("clientPassword", "", "Client certificate password")
 
-	// Loads CA certificate file
-	caCert, err := os.ReadFile(caFile)
-	if err != nil {
-		panic(err)
-	}
-	caCertPool := x509.NewCertPool()
-	if ok := caCertPool.AppendCertsFromPEM(caCert); !ok {
-		panic("Error: CA file must be in PEM format")
-	}
-	// Loads client certificate files
-	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+	username := flag.String("username", "", "MongoDB username")
+	password := flag.String("password", "", "MongoDB password")
 
-	if err != nil {
-		panic(err)
+	flag.Parse()
+
+	uri := "mongodb://localhost:27017/"
+	opts := options.Client().ApplyURI(uri).SetTimeout(time.Duration(5) * time.Second)
+
+	tlsOpts := map[string]any{}
+
+	if *caFile != "" {
+		tlsOpts["tlsCAFile"] = *caFile
 	}
-	// Instantiates a Config instance
-	tlsConfig := &tls.Config{
-		RootCAs:      caCertPool,
-		Certificates: []tls.Certificate{cert},
+
+	if *certKeyFile != "" {
+		tlsOpts["tlsCertificateKeyFile"] = *certKeyFile
 	}
-	uri := "mongodb://localhost:27017/?tls=true&tlsAllowInvalidCertificates=true&sslClientCertificateKeyPassword=" + passPhrase
-	// Sets TLS options in options instance
-	opts := options.Client().ApplyURI(uri).SetTLSConfig(tlsConfig)
+
+	if *clientPassword != "" {
+		tlsOpts["tlsCertificateKeyFilePassword"] = *clientPassword
+	}
+
+	if len(tlsOpts) > 0 {
+		tlsConfig, err := options.BuildTLSConfig(tlsOpts)
+		if err != nil {
+			panic(err)
+		}
+		opts = opts.SetTLSConfig(tlsConfig)
+	}
+
+	if *username != "" && *password != "" {
+		opts = opts.SetAuth(options.Credential{
+			Username: *username,
+			Password: *password,
+		})
+	}
 
 	ctx := context.TODO()
 	client, err := mongo.Connect(ctx, opts)
@@ -50,10 +65,10 @@ func main() {
 	}
 	defer client.Disconnect(ctx)
 
-	err = client.Ping(ctx, nil)
+	res, err := client.ListDatabases(ctx, bson.D{})
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println("Connected to MongoDB!")
+	fmt.Printf("Connected to MongoDB! %d databases found.\n", len(res.Databases))
 }

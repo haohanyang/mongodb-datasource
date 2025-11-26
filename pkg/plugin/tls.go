@@ -51,7 +51,7 @@ func SetupTls(config *models.PluginSettings, opts *options.ClientOptions) (*opti
 	tlsOpts := map[string]any{}
 
 	if config.CaCertPath != "" {
-		tlsOpts["tlsCaFile"] = config.CaCertPath
+		tlsOpts["tlsCAFile"] = config.CaCertPath
 	}
 
 	if config.ClientCertAndKeyPath != "" {

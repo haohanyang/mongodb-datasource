@@ -1,25 +1,59 @@
-#/bin/bash
-# Generate keys and certs to test local MongoDB TLS connection
+#!/bin/bash
 
-set -e
+# Create directory for certificates
+rm -rf certs
+mkdir certs
+cd certs
 
-# Read server address from command line args
-SERVER_ADDR=${1:-localhost}
+# Generate CA (Certificate Authority)
+echo "Generating CA certificate..."
+openssl genrsa -out ca-key.pem 4096
 
-mkdir -p certs
+openssl req -new -x509 -days 365 -key ca-key.pem -out ca-cert.pem \
+  -subj "/C=US/ST=State/L=City/O=Organization/OU=CA/CN=MongoDB-CA"
 
-# Generate a Certificate Authority (CA)
-openssl genrsa -out certs/ca.key 4096
-openssl req -x509 -new -nodes -key certs/ca.key -sha256 -days 365 -out certs/ca.pem -subj "/CN=${SERVER_ADDR}"
+# Generate MongoDB Server Certificate
+echo "Generating MongoDB server certificate..."
+openssl genrsa -out mongodb-server-key.pem 4096
 
+openssl req -new -key mongodb-server-key.pem -out mongodb-server.csr \
+  -subj "/C=US/ST=State/L=City/O=Organization/OU=Server/CN=localhost"
 
-# Generate a Server Key and Certificate Signing Request (CSR)
-# Passphrase is set to 123
-openssl genrsa -out certs/mongodb.key -passout pass:123 4096
-openssl req -new -key certs/mongodb.key -out certs/mongodb.csr -subj "/CN=${SERVER_ADDR}"
+# Create OpenSSL config for server cert with SAN
+cat > server-ext.cnf <<EOF
+subjectAltName = @alt_names
+[alt_names]
+DNS.1 = localhost
+DNS.2 = mongodb
+IP.1 = 127.0.0.1
+EOF
 
-# Sign the Server Certificate with the CA
-openssl x509 -req -extfile <(printf "subjectAltName=DNS:${SERVER_ADDR}") -in certs/mongodb.csr -CA certs/ca.pem -CAkey certs/ca.key -CAcreateserial -out certs/mongodb.crt -days 365 -sha256
+openssl x509 -req -in mongodb-server.csr -CA ca-cert.pem -CAkey ca-key.pem \
+  -CAcreateserial -out mongodb-server-cert.pem -days 365 -extfile server-ext.cnf
 
-# Combine Server Key and Certificate
-cat certs/mongodb.key certs/mongodb.crt > certs/mongodb.pem
+# Combine server cert and key into single PEM file
+cat mongodb-server-cert.pem mongodb-server-key.pem > mongodb-server.pem
+
+# 3. Generate Client Certificate
+echo "Generating client certificate..."
+openssl genrsa -out client-key.pem 4096
+
+openssl req -new -key client-key.pem -out client.csr \
+  -subj "/C=US/ST=State/L=City/O=Organization/OU=Client/CN=client"
+
+openssl x509 -req -in client.csr -CA ca-cert.pem -CAkey ca-key.pem \
+  -CAcreateserial -out client-cert.pem -days 365
+
+# Combine client cert and key into single PEM file
+cat client-cert.pem client-key.pem > client.pem
+
+echo "Certificates generated successfully!"
+echo ""
+echo "Files created:"
+echo "  ca-cert.pem           - CA certificate (share this with clients)"
+echo "  mongodb-server.pem    - MongoDB server certificate + key"
+echo "  client.pem            - Client certificate + key"
+echo ""
+
+# Clean up temporary files
+rm -f *.csr *.srl server-ext.cnf
