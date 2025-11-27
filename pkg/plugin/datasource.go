@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -44,10 +43,13 @@ func NewDatasource(ctx context.Context, source backend.DataSourceInstanceSetting
 		return nil, err
 	}
 
-	opts, err := SetupTls(options.Client().ApplyURI(uri.String()))
-	if err != nil {
-		backend.Logger.Error("Failed to setup TLS", "error", err)
-		return nil, err
+	opts := options.Client().ApplyURI(uri.String())
+
+	if config.TlsOption != tlsDisabled {
+		if err := SetupTls(config, opts); err != nil {
+			backend.Logger.Error("Failed to setup TLS", "error", err)
+			return nil, err
+		}
 	}
 
 	client, err := mongo.Connect(ctx, opts)
@@ -243,14 +245,13 @@ func (d *Datasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRe
 		res.Message = err.Error()
 	}
 
-	opts, err := SetupTls(config, options.Client().ApplyURI(uri.String()).SetTimeout(5*time.Second))
+	opts := options.Client().ApplyURI(uri.String()).SetTimeout(5 * time.Second)
 
-	if err != nil {
-		backend.Logger.Error("Failed to setup TLS", "error", err)
-
-		res.Status = backend.HealthStatusError
-		res.Message = err.Error()
-		return res, nil
+	if config.TlsOption != tlsDisabled {
+		if err := SetupTls(config, opts); err != nil {
+			backend.Logger.Error("Failed to setup TLS", "error", err)
+			return nil, err
+		}
 	}
 
 	client, err := mongo.Connect(ctx, opts)
@@ -273,11 +274,12 @@ func (d *Datasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRe
 		backend.Logger.Error(fmt.Sprintf("Failed to get database status: %s", err.Error()))
 		res.Status = backend.HealthStatusError
 
-		if strings.Contains(strings.ToLower(err.Error()), "authenticationfailed") || strings.Contains(strings.ToLower(err.Error()), "unauthorized") {
-			res.Message = "Authentication failed"
-		} else {
-			res.Message = err.Error()
-		}
+		res.Message = err.Error()
+		// if strings.Contains(strings.ToLower(err.Error()), "authenticationfailed") || strings.Contains(strings.ToLower(err.Error()), "unauthorized") {
+		// 	res.Message = "Authentication failed"
+		// } else {
+		// 	res.Message = err.Error()
+		// }
 
 		return res, nil
 	}
