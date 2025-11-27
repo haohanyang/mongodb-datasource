@@ -43,9 +43,9 @@ func SetupTls_(config *models.PluginSettings, opts *options.ClientOptions) (*opt
 }
 
 // SetupTls configures TLS settings for the MongoDB client options based on the plugin settings.
-func SetupTls(config *models.PluginSettings, opts *options.ClientOptions) (*options.ClientOptions, error) {
-	if config.TlsOption == tlsDisabled || (config.CaCertPath == "" && config.ClientCertAndKeyPath == "") {
-		return opts, nil
+func SetupTls(config *models.PluginSettings, opts *options.ClientOptions) error {
+	if config.CaCertPath == "" && config.ClientCertAndKeyPath == "" {
+		return nil
 	}
 
 	tlsOpts := map[string]any{}
@@ -64,8 +64,9 @@ func SetupTls(config *models.PluginSettings, opts *options.ClientOptions) (*opti
 
 	tlsConfig, err := options.BuildTLSConfig(tlsOpts)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return opts.SetTLSConfig(tlsConfig), nil
+	opts.SetTLSConfig(tlsConfig)
+	return nil
 }
