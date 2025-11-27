@@ -13,7 +13,7 @@ echo "Generating CA certificate..."
 openssl genrsa -out ca-key.pem 4096
 
 openssl req -new -x509 -days 365 -key ca-key.pem -out ca-cert.pem \
-  -subj "/C=US/ST=State/L=City/O=Organization/OU=CA/CN=MongoDB-CA"
+  -subj "/C=US/ST=State/L=City/O=Organization/OU=CA/CN=mongo"
 
 # Generate MongoDB Server Certificate
 echo "Generating MongoDB server certificate..."
@@ -27,7 +27,7 @@ cat > server-ext.cnf <<EOF
 subjectAltName = @alt_names
 [alt_names]
 DNS.1 = localhost
-DNS.2 = mongodb
+DNS.2 = mongo
 IP.1 = 127.0.0.1
 EOF
 
