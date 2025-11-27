@@ -79,12 +79,13 @@ func BuildMongoConnectionString(config *models.PluginSettings) (*url.URL, error)
 		query.Del("ssl")
 	}
 
-	if config.AuthMethod == MongoAuthX509 {
-		query.Add("authMechanism", "MONGODB-X509")
-	}
-
 	if config.AuthDatabase != "" {
 		query.Add("authSource", config.AuthDatabase)
+	}
+
+	if config.AuthMethod == MongoAuthX509 {
+		query.Add("authMechanism", "MONGODB-X509")
+		query.Add("authSource", "$external")
 	}
 
 	if config.TlsOption != tlsDisabled && config.TlsInsecure {
