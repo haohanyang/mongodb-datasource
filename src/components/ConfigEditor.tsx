@@ -124,7 +124,7 @@ export function ConfigEditor(props: Props) {
                 value={secureJsonData?.password}
                 width={40}
                 onReset={() => updateDatasourcePluginResetOption(props, 'password')}
-                onBlur={onUpdateDatasourceSecureJsonDataOption(props, 'password')}
+                onChange={onUpdateDatasourceSecureJsonDataOption(props, 'password')}
               />
             </Field>
             <Field label="Authentication Database">
@@ -185,7 +185,7 @@ export function ConfigEditor(props: Props) {
             value={secureJsonData?.clientKeyPassword}
             width={40}
             onReset={() => updateDatasourcePluginResetOption(props, 'clientKeyPassword')}
-            onBlur={onUpdateDatasourceSecureJsonDataOption(props, 'clientKeyPassword')}
+            onChange={onUpdateDatasourceSecureJsonDataOption(props, 'clientKeyPassword')}
             disabled={jsonData.tlsOption === TlsOption.DISABLED}
           />
         </Field>
