@@ -12,13 +12,13 @@ import (
 )
 
 // Username/Password with TLS (CA cert + Client cert)
-// go run pkg/tlsconn/main.go -caFile=certs/ca-cert.pem -certKeyFile=certs/client.pem -username=user -password=pass -clientKeyPassword=myclientpass
+// go run pkg/tlsconn/main.go -caFile=certs/ca-ec.pem -certKeyFile=certs/client-ec.pem -username=user -password=pass
 
 // Create x.509 User
-// go run pkg/tlsconn/main.go -caFile=certs/ca-cert.pem -certKeyFile=certs/client.pem -username=user -password=pass -clientKeyPassword=myclientpass -createX509User
+// go run pkg/tlsconn/main.go -caFile=certs/ca-ec.pem -certKeyFile=certs/client-ec.pem -username=user -password=pass -createX509User
 
 // x.509 Authentication with TLS (CA cert + Client cert)
-// go run pkg/tlsconn/main.go -caFile=certs/ca-cert.pem -certKeyFile=certs/client.pem -clientKeyPassword=myclientpass -x509Auth
+// go run pkg/tlsconn/main.go -caFile=certs/ca-ec.pem -certKeyFile=certs/client-ec.pem -x509Auth
 
 func main() {
 
@@ -88,7 +88,7 @@ func main() {
 	fmt.Printf("Connected to MongoDB! %d databases found.\n", len(res.Databases))
 
 	if *createX509User {
-		userName := "CN=client,OU=Client,O=Organization,L=City,ST=State,C=US" // "C=US,ST=State,L=City,O=Organization,OU=Client,CN=client"
+		userName := "CN=client,OU=DBX,O=MongoDB,L=New York City,ST=New York,C=US"
 		externalDb := client.Database("$external")
 
 		// Delete all existing x.509 users

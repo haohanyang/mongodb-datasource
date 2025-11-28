@@ -1,62 +1,49 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# Modified from https://github.com/mongodb/mongo-go-driver/blob/4c1a39701aaf9d938942041c98c423ed0e161704/etc/gen-ec-certs/gen-ec-certs.sh#L39
+# This script is used to generate Elliptic Curve (EC) certificates.
+# The EC certificates are used for testing
+# See: GODRIVER-2239.
+set -euo pipefail
+CA_SERIAL=$RANDOM
+SERVER_SERIAL=$RANDOM
+CLIENT_SERIAL=$RANDOM
+DAYS=14600
 
-# Client key password
-PASSWORD=myclientpass
-
-# Create directory for certificates
-rm -rf certs
-mkdir certs
+rm -rf certs && mkdir certs
 cd certs
 
-# Generate CA (Certificate Authority)
-echo "Generating CA certificate..."
-openssl genrsa -out ca-key.pem 4096
+# Generate CA certificate ... begin
+# Generate an EC private key.
+openssl ecparam -name prime256v1 -genkey -out ca-ec.key -noout
+# Generate a certificate signing request.
+openssl req -new -key ca-ec.key -out ca-ec.csr -subj "/C=US/ST=New York/L=New York City/O=MongoDB/OU=DBX/CN=ca/" -config ../scripts/empty.cnf -sha256
+# Self-sign the request.
+openssl x509 -in ca-ec.csr -out ca-ec.pem -req -signkey ca-ec.key -days $DAYS -sha256 -set_serial $CA_SERIAL -extfile ../scripts/ca.ext
+# Generate CA certificate ... end
 
-openssl req -new -x509 -days 365 -key ca-key.pem -out ca-cert.pem \
-  -subj "/C=US/ST=State/L=City/O=Organization/OU=CA/CN=mongo"
+# Generate Server certificate ... begin
+# Generate an EC private key.
+openssl ecparam -name prime256v1 -genkey -out server-ec.key -noout
+# Generate a certificate signing request.
+openssl req -new -key server-ec.key -out server-ec.csr -subj "/C=US/ST=New York/L=New York City/O=MongoDB/OU=DBX/CN=server/" -config ../scripts/empty.cnf -sha256
+# Sign the request with the CA. Add server extensions.
+openssl x509 -in server-ec.csr -out server-ec.pem -req -CA ca-ec.pem -CAkey ca-ec.key -days $DAYS -sha256 -set_serial $SERVER_SERIAL -extfile ../scripts/server.ext
+# Append private key to .pem file.
+cat server-ec.key >> server-ec.pem
+# Generate Server certificate ... end
 
-# Generate MongoDB Server Certificate
-echo "Generating MongoDB server certificate..."
-openssl genrsa -out mongodb-server-key.pem 4096
+# Generate Client certificate ... begin
+# Generate an EC private key.
+openssl ecparam -name prime256v1 -genkey -out client-ec.key -noout
+# Generate a certificate signing request.
+# Use the Common Name (CN) of "client". PyKMIP identifies the client by the CN. The test server expects the identity of "client".
+openssl req -new -key client-ec.key -out client-ec.csr -subj "/C=US/ST=New York/L=New York City/O=MongoDB/OU=DBX/CN=client/" -config ../scripts/empty.cnf -sha256
+# Sign the request with the CA. Add client extensions.
+openssl x509 -in client-ec.csr -out client-ec.pem -req -CA ca-ec.pem -CAkey ca-ec.key -days $DAYS -sha256 -set_serial $CLIENT_SERIAL -extfile ../scripts/client.ext
+# Append private key to .pem file.
+cat client-ec.key >> client-ec.pem
+# Generate Client certificate ... end
 
-openssl req -new -key mongodb-server-key.pem -out mongodb-server.csr \
-  -subj "/C=US/ST=State/L=City/O=Organization/OU=Server/CN=localhost"
-
-# Create OpenSSL config for server cert with SAN
-cat > server-ext.cnf <<EOF
-subjectAltName = @alt_names
-[alt_names]
-DNS.1 = localhost
-DNS.2 = mongo
-IP.1 = 127.0.0.1
-EOF
-
-openssl x509 -req -in mongodb-server.csr -CA ca-cert.pem -CAkey ca-key.pem \
-  -CAcreateserial -out mongodb-server-cert.pem -days 365 -extfile server-ext.cnf
-
-# Combine server cert and key into single PEM file
-cat mongodb-server-cert.pem mongodb-server-key.pem > mongodb-server.pem
-
-# Generate encrypted client certificate
-echo "Generating client certificate..."
-openssl genrsa -aes256 -out client-key.pem -passout pass:$PASSWORD 4096
-
-openssl req -new -key client-key.pem -passin pass:$PASSWORD -out client.csr \
-  -subj "/C=US/ST=State/L=City/O=Organization/OU=Client/CN=client"
-
-openssl x509 -req -in client.csr -CA ca-cert.pem -CAkey ca-key.pem \
-  -CAcreateserial -out client-cert.pem -days 365
-
-# Combine client cert and key into single PEM file
-cat client-cert.pem client-key.pem > client.pem
-
-echo "Certificates generated successfully!"
-echo "Client key password: $PASSWORD"
-echo "Files created:"
-echo "  ca-cert.pem           - CA certificate (share this with clients)"
-echo "  mongodb-server.pem    - MongoDB server certificate + key"
-echo "  client.pem            - Client certificate + key"
-echo ""
-
-# Clean up temporary files
-rm -f *.csr *.srl server-ext.cnf
+# Clean-up.
+rm *.csr
+rm *.key
