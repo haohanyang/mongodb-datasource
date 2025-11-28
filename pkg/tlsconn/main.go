@@ -14,6 +14,9 @@ import (
 // Username/Password with TLS (CA cert + Client cert)
 // go run pkg/tlsconn/main.go -caFile=certs/ca-ec.pem -certKeyFile=certs/client-ec.pem -username=user -password=pass
 
+// Username/Password with TLS (CA cert + Client cert + client key password)
+// go run pkg/tlsconn/main.go -caFile=certs/ca-ec.pem -certKeyFile=certs/client-ec-encrypted.pem -username=user -password=pass --clientKeyPassword=clientkeypass
+
 // x.509 Authentication with TLS (CA cert + Client cert)
 // go run pkg/tlsconn/main.go -caFile=certs/ca-ec.pem -certKeyFile=certs/client-x509.pem -x509Auth
 

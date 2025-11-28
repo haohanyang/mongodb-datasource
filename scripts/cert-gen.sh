@@ -7,6 +7,7 @@ set -euo pipefail
 CA_SERIAL=$RANDOM
 SERVER_SERIAL=$RANDOM
 CLIENT_SERIAL=$RANDOM
+CLIENT_KEY_PASSWORD=clientkeypass
 DAYS=14600
 
 rm -rf certs && mkdir certs
@@ -44,7 +45,22 @@ openssl x509 -in client-ec.csr -out client-ec.pem -req -CA ca-ec.pem -CAkey ca-e
 cat client-ec.key >> client-ec.pem
 # Generate Client certificate ... end
 
-# Generate X508 Auth certificate ... begin
+# Generate Encrypted Client certificate ... begin
+# Generate an EC private key, encrypted with a password.
+openssl ecparam -name prime256v1 -genkey | \
+  openssl ec -aes256 -out client-ec-encrypted.key -passout pass:$CLIENT_KEY_PASSWORD
+# Generate a certificate signing request.
+openssl req -new -key client-ec-encrypted.key -out client-ec-encrypted.csr \
+  -subj "/C=US/ST=New York/L=New York City/O=MongoDB/OU=DBX/CN=enc-client/" \
+  -config ../scripts/empty.cnf -sha256 -passin pass:$CLIENT_KEY_PASSWORD
+# Sign the request with the CA. Add client extensions.
+openssl x509 -in client-ec-encrypted.csr -out client-ec-encrypted.pem -req -CA ca-ec.pem -CAkey ca-ec.key -days $DAYS -sha256 -set_serial $CLIENT_SERIAL -extfile ../scripts/client.ext
+# Append encrypted private key to .pem file.
+cat client-ec-encrypted.key >> client-ec-encrypted.pem
+# Generate Client certificate ... end
+# ...existing code...
+
+# Generate X509 Auth certificate ... begin
 # Generate an EC private key.
 openssl ecparam -name prime256v1 -genkey -out client-x509.key -noout
 # Generate a certificate signing request.
@@ -57,10 +73,12 @@ cat client-x509.key >> client-x509.pem
 
 
 echo "Certificates generated successfully!"
+echo "Client key password: ${CLIENT_KEY_PASSWORD}"
 echo "Files created:"
 echo "  ca-ec.pem"
 echo "  server-ec.pem"
 echo "  client-ec.pem"
+echo "  client-ec-encrypted.pem"
 echo "  client-x509.pem"
 echo ""
 
