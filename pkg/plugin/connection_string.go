@@ -81,6 +81,8 @@ func BuildMongoConnectionString(config *models.PluginSettings) (*url.URL, error)
 
 	if config.AuthDatabase != "" {
 		query.Add("authSource", config.AuthDatabase)
+	} else {
+		query.Add("authSource", "admin")
 	}
 
 	if config.AuthMethod == MongoAuthX509 {
