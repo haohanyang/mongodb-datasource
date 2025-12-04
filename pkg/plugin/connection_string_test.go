@@ -22,7 +22,7 @@ func TestBuildMongoConnectionString(t *testing.T) {
 			t.Fatalf("expected no error, got %v", err)
 		}
 
-		expected := "mongodb://localhost:27017"
+		expected := "mongodb://localhost:27017/"
 		if connString != expected {
 			t.Errorf("expected connection string %s, got %s", expected, connString)
 		}
