@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/haohanyang/mongodb-datasource/pkg/models"
+	"go.mongodb.org/mongo-driver/x/mongo/driver/connstring"
 )
 
 func TestBuildMongoConnectionString(t *testing.T) {
@@ -12,8 +13,8 @@ func TestBuildMongoConnectionString(t *testing.T) {
 	t.Run("should build valid connection string with no auth", func(t *testing.T) {
 		config := &models.PluginSettings{
 			Host:                   "localhost:27017",
-			AuthMethod:             "auth-none",
-			ConnectionStringScheme: "standard",
+			AuthMethod:             MongoAuthNone,
+			ConnectionStringScheme: connstring.SchemeMongoDB,
 		}
 
 		uri, err := BuildMongoConnectionString(config)
@@ -32,8 +33,8 @@ func TestBuildMongoConnectionString(t *testing.T) {
 		config := &models.PluginSettings{
 			Host:                   "mycluster.mongodb.net",
 			Username:               "username",
-			AuthMethod:             "auth-username-password",
-			ConnectionStringScheme: "dns_seed_list",
+			AuthMethod:             MongoAuthUsernamePassword,
+			ConnectionStringScheme: connstring.SchemeMongoDBSRV,
 			Database:               "mydb",
 			ConnectionOptions:      "retryWrites=true&w=majority&replicaSet=Cluster0",
 			Secrets: &models.SecretPluginSettings{
@@ -42,10 +43,11 @@ func TestBuildMongoConnectionString(t *testing.T) {
 		}
 
 		uri, err := BuildMongoConnectionString(config)
-		connString := uri.String()
 		if err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
+
+		connString := uri.String()
 		if !strings.HasPrefix(connString, "mongodb+srv://username:password@mycluster.mongodb.net/mydb") {
 			t.Errorf("connection string %s does not start with expected substring", connString)
 		}
@@ -72,8 +74,8 @@ func TestBuildMongoConnectionString(t *testing.T) {
 	t.Run("should support multiple hosts in standard connection string", func(t *testing.T) {
 		config := &models.PluginSettings{
 			Host:                   "host1:27017,host2:27017,host3:27017",
-			AuthMethod:             "auth-none",
-			ConnectionStringScheme: "standard",
+			AuthMethod:             MongoAuthNone,
+			ConnectionStringScheme: connstring.SchemeMongoDB,
 		}
 
 		uri, err := BuildMongoConnectionString(config)
@@ -82,7 +84,7 @@ func TestBuildMongoConnectionString(t *testing.T) {
 			t.Fatalf("expected no error, got %v", err)
 		}
 
-		expected := "mongodb://host1:27017,host2:27017,host3:27017"
+		expected := "mongodb://host1:27017,host2:27017,host3:27017/"
 		if connString != expected {
 			t.Errorf("expected connection string %s, got %s", expected, connString)
 		}
@@ -91,9 +93,9 @@ func TestBuildMongoConnectionString(t *testing.T) {
 	t.Run("should build valid connection string without database name", func(t *testing.T) {
 		config := &models.PluginSettings{
 			Host:                   "mongodb:27017",
-			AuthMethod:             "auth-none",
-			ConnectionStringScheme: "standard",
-			ConnectionOptions:      "replicaSet=myRepl&ssl=true",
+			AuthMethod:             MongoAuthNone,
+			ConnectionStringScheme: connstring.SchemeMongoDB,
+			ConnectionOptions:      "replicaSet=myRepl&name=myclient",
 		}
 
 		uri, err := BuildMongoConnectionString(config)
@@ -102,7 +104,7 @@ func TestBuildMongoConnectionString(t *testing.T) {
 			t.Fatalf("expected no error, got %v", err)
 		}
 
-		expected := "mongodb://mongodb:27017/?replicaSet=myRepl&ssl=true"
+		expected := "mongodb://mongodb:27017/?name=myclient&replicaSet=myRepl"
 		if connString != expected {
 			t.Errorf("expected connection string %s, got %s", expected, connString)
 		}
