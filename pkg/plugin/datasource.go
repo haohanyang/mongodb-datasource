@@ -38,18 +38,10 @@ func NewDatasource(ctx context.Context, source backend.DataSourceInstanceSetting
 		return nil, err
 	}
 
-	uri, err := BuildMongoConnectionString(config)
+	opts, err := BuildMongoOpts(config)
 	if err != nil {
+		backend.Logger.Debug("Failed to configure MongoDB", "error", err)
 		return nil, err
-	}
-
-	opts := options.Client().ApplyURI(uri.String())
-
-	if config.TlsOption != tlsDisabled {
-		if err := SetupTls(config, opts); err != nil {
-			backend.Logger.Error("Failed to setup TLS", "error", err)
-			return nil, err
-		}
 	}
 
 	client, err := mongo.Connect(ctx, opts)
@@ -239,20 +231,15 @@ func (d *Datasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRe
 		return res, nil
 	}
 
-	uri, err := BuildMongoConnectionString(config)
+	opts, err := BuildMongoOpts(config)
 	if err != nil {
+		backend.Logger.Error("Failed to configure mongodb", "error", err)
 		res.Status = backend.HealthStatusError
 		res.Message = err.Error()
+		return res, nil
 	}
 
-	opts := options.Client().ApplyURI(uri.String()).SetTimeout(5 * time.Second)
-
-	if config.TlsOption != tlsDisabled {
-		if err := SetupTls(config, opts); err != nil {
-			backend.Logger.Error("Failed to setup TLS", "error", err)
-			return nil, err
-		}
-	}
+	opts.SetTimeout(5 * time.Second)
 
 	client, err := mongo.Connect(ctx, opts)
 	if err != nil {
