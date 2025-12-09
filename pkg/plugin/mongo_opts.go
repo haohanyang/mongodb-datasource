@@ -66,8 +66,9 @@ func setUri(config *models.PluginSettings, opts *options.ClientOptions) error {
 	}
 
 	u := &url.URL{
-		Host: config.Host,
-		Path: config.Database,
+		Host:   config.Host,
+		Path:   config.Database,
+		Scheme: connstring.SchemeMongoDB,
 	}
 
 	if config.Database == "" {
@@ -76,8 +77,6 @@ func setUri(config *models.PluginSettings, opts *options.ClientOptions) error {
 
 	if config.ConnectionStringScheme == connstring.SchemeMongoDBSRV {
 		u.Scheme = connstring.SchemeMongoDBSRV
-	} else {
-		u.Scheme = connstring.SchemeMongoDB
 	}
 
 	// Remove starting ? in connection options
@@ -114,7 +113,9 @@ func setUri(config *models.PluginSettings, opts *options.ClientOptions) error {
 	u.RawQuery = query.Encode()
 
 	opts.ApplyURI(u.String())
-	return nil
+
+	err = opts.Validate()
+	return err
 }
 
 func setupTls(config *models.PluginSettings, opts *options.ClientOptions) error {

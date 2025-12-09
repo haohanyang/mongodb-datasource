@@ -2,18 +2,18 @@ import { SelectableValue } from '@grafana/data';
 import descriptions from './config-descriptions.json';
 
 export const MongoDBAuthMethod = {
-  NONE: 'none',
+  NONE: '',
   USERNAME_PASSWORD: 'username-password',
   X509: 'x509',
 };
 
 export const ConnectionStringScheme = {
-  MONGODB: 'mongodb',
+  MONGODB: '',
   MONGODBSRV: 'mongodb+srv',
 };
 
 export const TlsOption = {
-  DEFAULT: 'default',
+  DEFAULT: '',
   ENABLED: 'enabled',
   DISABLED: 'disabled',
 };
