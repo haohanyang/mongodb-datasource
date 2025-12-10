@@ -90,6 +90,79 @@ func TestSetUri(t *testing.T) {
 			t.Errorf("expected connection string %s, got %s", expected, opts.GetURI())
 		}
 	})
+
+	t.Run("should build connection string with options", func(t *testing.T) {
+		opts := options.Client()
+		config := &models.PluginSettings{
+			Host:              "localhost:27017",
+			ConnectionOptions: "replicaSet=rs0&name=test",
+		}
+
+		err := setUri(config, opts)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		expected1 := "mongodb://localhost:27017/?replicaSet=rs0&name=test"
+		expected2 := "mongodb://localhost:27017/?name=test&replicaSet=rs0"
+		if opts.GetURI() != expected1 && opts.GetURI() != expected2 {
+			t.Errorf("expected connection string %s, got %s", expected1, opts.GetURI())
+		}
+	})
+
+	t.Run("should remove tls options from connection string", func(t *testing.T) {
+		opts := options.Client()
+		config := &models.PluginSettings{
+			Host:              "localhost:27017",
+			ConnectionOptions: "tls=true&name=test",
+		}
+
+		err := setUri(config, opts)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		expected := "mongodb://localhost:27017/?name=test"
+		if opts.GetURI() != expected {
+			t.Errorf("expected connection string %s, got %s", expected, opts.GetURI())
+		}
+	})
+
+	t.Run("should add tls=true options from connection string", func(t *testing.T) {
+		opts := options.Client()
+		config := &models.PluginSettings{
+			Host:      "localhost:27017",
+			TlsOption: tlsEnabled,
+		}
+
+		err := setUri(config, opts)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		expected := "mongodb://localhost:27017/?tls=true"
+		if opts.GetURI() != expected {
+			t.Errorf("expected connection string %s, got %s", expected, opts.GetURI())
+		}
+	})
+
+	t.Run("should add ssl=false options from connection string", func(t *testing.T) {
+		opts := options.Client()
+		config := &models.PluginSettings{
+			Host:      "localhost:27017",
+			TlsOption: tlsDisabled,
+		}
+
+		err := setUri(config, opts)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		expected := "mongodb://localhost:27017/?ssl=false"
+		if opts.GetURI() != expected {
+			t.Errorf("expected connection string %s, got %s", expected, opts.GetURI())
+		}
+	})
 }
 
 func TestSetAuth(t *testing.T) {
