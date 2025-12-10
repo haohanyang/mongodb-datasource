@@ -1,12 +1,28 @@
 package plugin
 
 import (
+	"context"
+	"fmt"
+	"net/url"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/haohanyang/mongodb-datasource/pkg/models"
+	"github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go/modules/mongodb"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/x/mongo/driver/connstring"
 )
+
+var sourceRoot = os.Getenv("SOURCE_ROOT")
+var certPath = filepath.Join(sourceRoot, "certs")
 
 func TestSetUri(t *testing.T) {
 
@@ -239,4 +255,309 @@ func TestSetAuth(t *testing.T) {
 			t.Errorf("expected auth source %s, got %s", "$external", auth.AuthSource)
 		}
 	})
+}
+
+func conn(ctx context.Context, config *models.PluginSettings) (*mongo.Client, error) {
+	opts := options.Client()
+	err := setUri(config, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	err = setAuth(config, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	opts.SetTimeout(5 * time.Second)
+
+	client, err := mongo.Connect(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	return client, nil
+}
+
+func getHost(ctx context.Context, container *mongodb.MongoDBContainer) (string, error) {
+	endpoint, err := container.ConnectionString(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	mongoUri, err := url.Parse(endpoint)
+	if err != nil {
+		return "", err
+	}
+
+	return mongoUri.Host, nil
+}
+
+func TestConn(t *testing.T) {
+	t.Run("should connect to mongodb with no auth", func(t *testing.T) {
+		ctx := context.Background()
+
+		mongodbContainer, err := mongodb.Run(ctx, "mongo")
+		testcontainers.CleanupContainer(t, mongodbContainer)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		host, err := getHost(ctx, mongodbContainer)
+		if err != nil {
+			t.Fatal("Failed to get host:", err)
+		}
+
+		config := &models.PluginSettings{
+			Host: host,
+		}
+
+		client, err := conn(ctx, config)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		defer func() {
+			client.Disconnect(ctx)
+		}()
+
+		err = client.Ping(ctx, nil)
+		if err != nil {
+			t.Fatalf("expected no error on ping, got %v", err)
+		}
+
+	})
+
+	t.Run("should connect to mongodb with username and password", func(t *testing.T) {
+		ctx := context.Background()
+
+		mongodbContainer, err := mongodb.Run(ctx, "mongo", testcontainers.WithEnv(map[string]string{
+			"MONGO_INITDB_ROOT_USERNAME": "user",
+			"MONGO_INITDB_ROOT_PASSWORD": "pass",
+		}))
+		testcontainers.CleanupContainer(t, mongodbContainer)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		host, err := getHost(ctx, mongodbContainer)
+		if err != nil {
+			t.Fatal("Failed to get host:", err)
+		}
+
+		config := &models.PluginSettings{
+			Host:       host,
+			AuthMethod: MongoAuthUsernamePassword,
+			Username:   "user",
+			Secrets: &models.SecretPluginSettings{
+				Password: "pass",
+			},
+		}
+
+		client, err := conn(ctx, config)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		defer func() {
+			client.Disconnect(ctx)
+		}()
+
+		err = client.Ping(ctx, nil)
+		if err != nil {
+			t.Fatalf("expected no error on ping, got %v", err)
+		}
+
+	})
+
+	t.Run("should connect to mongodb with tls", func(t *testing.T) {
+		ctx := context.Background()
+
+		mongodbContainer, err := mongodb.Run(ctx, "mongo", testcontainers.WithEnv(map[string]string{
+			"MONGO_INITDB_ROOT_USERNAME": "user",
+			"MONGO_INITDB_ROOT_PASSWORD": "pass",
+		}), testcontainers.WithFiles(testcontainers.ContainerFile{
+			HostFilePath:      certPath,
+			ContainerFilePath: "/",
+			FileMode:          0o777,
+		}), testcontainers.WithCmd("mongod", "--tlsMode", "preferTLS", "--tlsCAFile", "/certs/ca-ec.pem", "--tlsCertificateKeyFile", "/certs/server-ec.pem"))
+		testcontainers.CleanupContainer(t, mongodbContainer)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		host, err := getHost(ctx, mongodbContainer)
+		if err != nil {
+			t.Fatal("Failed to get host:", err)
+		}
+
+		config := &models.PluginSettings{
+			Host:                 host,
+			AuthMethod:           MongoAuthUsernamePassword,
+			CaCertPath:           filepath.Join("certPath", "ca-ec.pem"),
+			ClientCertAndKeyPath: filepath.Join("certPath", "client-ec.pem"),
+			TlsOption:            tlsEnabled,
+			Username:             "user",
+			Secrets: &models.SecretPluginSettings{
+				Password: "pass",
+			},
+		}
+
+		client, err := conn(ctx, config)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		defer func() {
+			client.Disconnect(ctx)
+		}()
+
+		err = client.Ping(ctx, nil)
+		if err != nil {
+			t.Fatalf("expected no error on ping, got %v", err)
+		}
+	})
+
+	t.Run("should connect to mongodb with tls and client passkey", func(t *testing.T) {
+		ctx := context.Background()
+
+		mongodbContainer, err := mongodb.Run(ctx, "mongo", testcontainers.WithEnv(map[string]string{
+			"MONGO_INITDB_ROOT_USERNAME": "user",
+			"MONGO_INITDB_ROOT_PASSWORD": "pass",
+		}), testcontainers.WithFiles(testcontainers.ContainerFile{
+			HostFilePath:      certPath,
+			ContainerFilePath: "/",
+			FileMode:          0o777,
+		}), testcontainers.WithCmd("mongod", "--tlsMode", "preferTLS", "--tlsCAFile", "/certs/ca-ec.pem", "--tlsCertificateKeyFile", "/certs/server-ec.pem"))
+		testcontainers.CleanupContainer(t, mongodbContainer)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		host, err := getHost(ctx, mongodbContainer)
+		if err != nil {
+			t.Fatal("Failed to get host:", err)
+		}
+
+		config := &models.PluginSettings{
+			Host:                 host,
+			AuthMethod:           MongoAuthUsernamePassword,
+			CaCertPath:           filepath.Join("certPath", "ca-ec.pem"),
+			ClientCertAndKeyPath: filepath.Join("certPath", "client-ec-encrypted.pem"),
+			TlsOption:            tlsEnabled,
+			Username:             "user",
+			Secrets: &models.SecretPluginSettings{
+				Password:          "pass",
+				ClientKeyPassword: "clientkeypass",
+			},
+		}
+
+		client, err := conn(ctx, config)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		defer func() {
+			client.Disconnect(ctx)
+		}()
+
+		err = client.Ping(ctx, nil)
+		if err != nil {
+			t.Fatalf("expected no error on ping, got %v", err)
+		}
+	})
+
+	t.Run("should connect to mongodb with x509 auth", func(t *testing.T) {
+		ctx := context.Background()
+
+		mongodbContainer, err := mongodb.Run(ctx, "mongo", testcontainers.WithEnv(map[string]string{
+			"MONGO_INITDB_ROOT_USERNAME": "user",
+			"MONGO_INITDB_ROOT_PASSWORD": "pass",
+		}), testcontainers.WithFiles(testcontainers.ContainerFile{
+			HostFilePath:      certPath,
+			ContainerFilePath: "/",
+			FileMode:          0o777,
+		}), testcontainers.WithCmd("mongod", "--tlsMode", "preferTLS", "--tlsCAFile", "/certs/ca-ec.pem", "--tlsCertificateKeyFile", "/certs/server-ec.pem"))
+		testcontainers.CleanupContainer(t, mongodbContainer)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		host, err := getHost(ctx, mongodbContainer)
+		if err != nil {
+			t.Fatal("Failed to get host:", err)
+		}
+
+		// Create x509 user
+		{
+			// Get username
+			output, err := exec.Command("openssl", "x509", "-in", filepath.Join(certPath, "client-x509.pem"), "-inform", "PEM", "-subject", "-nameopt", "RFC2253").Output()
+			if err != nil {
+				t.Fatal(err)
+			}
+			lines := strings.Split(string(output), "\n")
+			subject := strings.Replace(lines[0], "subject=", "", 1)
+
+			config := &models.PluginSettings{
+				Host:                 host,
+				AuthMethod:           MongoAuthUsernamePassword,
+				CaCertPath:           filepath.Join("certPath", "ca-ec.pem"),
+				ClientCertAndKeyPath: filepath.Join("certPath", "client-ec.pem"),
+				Username:             "user",
+				Secrets: &models.SecretPluginSettings{
+					Password: "pass",
+				},
+			}
+
+			client, err := conn(ctx, config)
+			if err != nil {
+				t.Fatalf("expected no error, got %v", err)
+			}
+
+			defer client.Disconnect(ctx)
+
+			res := client.Database("$external").RunCommand(ctx, bson.D{
+				{Key: "createUser", Value: subject},
+				{Key: "roles", Value: bson.A{
+					bson.D{{Key: "role", Value: "readWrite"}, {Key: "db", Value: "test"}},
+					bson.D{{Key: "role", Value: "userAdminAnyDatabase"}, {Key: "db", Value: "admin"}},
+				}},
+			})
+
+			if res.Err() != nil {
+				t.Fatalf("failed to create x509 user: %v", res.Err())
+			}
+
+			fmt.Printf("X509 user %s created\n", subject)
+		}
+
+		config := &models.PluginSettings{
+			Host:                 host,
+			AuthMethod:           MongoAuthX509,
+			CaCertPath:           filepath.Join("certPath", "ca-ec.pem"),
+			ClientCertAndKeyPath: filepath.Join("certPath", "client-x509.pem"),
+			TlsOption:            tlsEnabled,
+			Database:             "test",
+		}
+
+		client, err := conn(ctx, config)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		defer func() {
+			client.Disconnect(ctx)
+		}()
+
+		err = client.Ping(ctx, nil)
+		if err != nil {
+			t.Fatalf("expected no error on ping, got %v", err)
+		}
+	})
+
 }
