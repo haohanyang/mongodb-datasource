@@ -48,7 +48,7 @@ func TestSetUri(t *testing.T) {
 	t.Run("should build connection string with srv scheme", func(t *testing.T) {
 		opts := options.Client()
 		config := &models.PluginSettings{
-			Host:                   "example.com",
+			Host:                   "test1.test.build.10gen.cc",
 			ConnectionStringScheme: connstring.SchemeMongoDBSRV,
 		}
 
@@ -57,7 +57,7 @@ func TestSetUri(t *testing.T) {
 			t.Fatalf("expected no error, got %v", err)
 		}
 
-		expected := "mongodb+srv://localhost:27017/"
+		expected := "mongodb+srv://test1.test.build.10gen.cc/"
 		if opts.GetURI() != expected {
 			t.Errorf("expected connection string %s, got %s", expected, opts.GetURI())
 		}
