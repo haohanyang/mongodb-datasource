@@ -32,7 +32,7 @@ func BuildMongoOpts(config *models.PluginSettings) (*options.ClientOptions, erro
 
 func setAuth(config *models.PluginSettings, opts *options.ClientOptions) error {
 	if config.AuthMethod == MongoAuthUsernamePassword {
-		if config.Username == "" || config.Secrets.Password == "" {
+		if config.Username == "" || config.Secrets == nil || config.Secrets.Password == "" {
 			return errors.New("missing MongoDB username or password")
 		}
 
@@ -133,7 +133,7 @@ func setupTls(config *models.PluginSettings, opts *options.ClientOptions) error 
 		tlsOpts["tlsCertificateKeyFile"] = config.ClientCertAndKeyPath
 	}
 
-	if config.Secrets.ClientKeyPassword != "" {
+	if config.Secrets != nil && config.Secrets.ClientKeyPassword != "" {
 		tlsOpts["tlsCertificateKeyFilePassword"] = config.Secrets.ClientKeyPassword
 	}
 
