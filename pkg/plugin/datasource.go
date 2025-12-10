@@ -3,6 +3,7 @@ package plugin
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -48,6 +49,12 @@ func NewDatasource(ctx context.Context, source backend.DataSourceInstanceSetting
 	if err != nil {
 		backend.Logger.Error(fmt.Sprintf("Failed to connect to db: %s", err.Error()))
 		return nil, err
+	}
+
+	err = client.Ping(ctx, nil)
+	if err != nil {
+		backend.Logger.Error("Failed to connect to db", "error", "can't ping the server")
+		return nil, errors.New("can't ping the MongoDB server")
 	}
 
 	datasource := &Datasource{
@@ -249,11 +256,21 @@ func (d *Datasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRe
 		backend.Logger.Error("Failed to connect to db", "error", err)
 		return res, nil
 	}
+
 	defer func() {
 		if err = client.Disconnect(ctx); err != nil {
 			backend.Logger.Error("Failed to disconnect to db", "error", err)
 		}
 	}()
+
+	err = client.Ping(ctx, nil)
+	if err != nil {
+		res.Status = backend.HealthStatusError
+		res.Message = "Failed to ping the MongoDB server"
+
+		backend.Logger.Error("Failed to connect to db", "error", "can't ping the server")
+		return res, nil
+	}
 
 	var result bson.M
 	command := bson.D{{Key: "dbStats", Value: 1}}
