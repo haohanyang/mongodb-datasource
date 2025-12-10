@@ -1,4 +1,4 @@
-import React, { ChangeEvent } from 'react';
+import React, { ChangeEvent, useEffect, useState, useCallback } from 'react';
 import {
   Divider,
   Field,
@@ -16,6 +16,7 @@ import {
   MongoDBAuthMethod,
   ConnectionStringScheme,
 } from '../types';
+import { getBackendSrv } from '@grafana/runtime';
 
 interface Props extends DataSourcePluginOptionsEditorProps<MongoDataSourceOptions, MongoDataSourceSecureJsonData> {}
 
@@ -33,6 +34,9 @@ const mongoConnectionStringSchemes: SelectableValue[] = [
 export function ConfigEditor(props: Props) {
   const { onOptionsChange, options } = props;
   const { jsonData, secureJsonFields, secureJsonData } = options;
+  
+  const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
+  const [testMessage, setTestMessage] = useState<string>('');
 
   // Setup default values
   if (!jsonData.authType) {
@@ -46,6 +50,57 @@ export function ConfigEditor(props: Props) {
   if (!jsonData.connectionStringScheme) {
     jsonData.connectionStringScheme = ConnectionStringScheme.STANDARD;
   }
+
+  // Check if all required fields are filled
+  const isConfigurationComplete = useCallback(() => {
+    if (!jsonData.host || !jsonData.database) {
+      return false;
+    }
+
+    if (jsonData.authType === MongoDBAuthMethod.USERNAME_PASSWORD) {
+      return !!(jsonData.username && (secureJsonFields?.password || secureJsonData?.password));
+    }
+
+    if (jsonData.authType === MongoDBAuthMethod.TLS) {
+      return !!(jsonData.caCertPath && jsonData.clientCertPath && jsonData.clientKeyPath);
+    }
+
+    return true;
+  }, [jsonData, secureJsonFields, secureJsonData]);
+
+  // Automatic connection test when configuration is complete
+  useEffect(() => {
+    const testConnection = async () => {
+      if (!isConfigurationComplete()) {
+        setTestStatus('idle');
+        setTestMessage('');
+        return;
+      }
+
+      setTestStatus('testing');
+      setTestMessage('Testing connection...');
+
+      try {
+        const response = await getBackendSrv().post(`/api/datasources/${options.id}/health`, {});
+        
+        if (response.status === 'OK') {
+          setTestStatus('success');
+          setTestMessage(response.message || 'Connection successful!');
+        } else {
+          setTestStatus('error');
+          setTestMessage(response.message || 'Connection failed');
+        }
+      } catch (error: any) {
+        setTestStatus('error');
+        setTestMessage(error?.data?.message || error?.message || 'Failed to test connection');
+      }
+    };
+
+    // Debounce the test to avoid too many requests
+    const timeoutId = setTimeout(testConnection, 1000);
+    
+    return () => clearTimeout(timeoutId);
+  }, [jsonData, secureJsonFields, secureJsonData, options.id, isConfigurationComplete]);
 
   return (
     <>
