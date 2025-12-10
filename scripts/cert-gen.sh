@@ -10,6 +10,11 @@ CLIENT_SERIAL=$RANDOM
 CLIENT_KEY_PASSWORD=clientkeypass
 DAYS=14600
 
+if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" || "$OSTYPE" == "cygwin" ]]; then
+  # Prevent path conversion on Windows
+  export MSYS_NO_PATHCONV=1
+fi
+
 rm -rf certs && mkdir certs
 cd certs
 

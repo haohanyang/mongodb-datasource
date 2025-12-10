@@ -1,7 +1,6 @@
 const os = require('os');
 const path = require('path');
 const { test, expect } = require('@grafana/plugin-e2e');
-const { ConnectionStringScheme } = require('../src/constants');
 const { execSync } = require('child_process');
 const { MongoClient } = require('mongodb');
 const { MongoMemoryServer } = require('mongodb-memory-server');
@@ -18,6 +17,8 @@ const dbHost = os.platform() === 'linux' ? 'localhost:27017' : 'host.docker.inte
 let server;
 
 function getX509Subject() {
+  // On powershell
+  // Set-Alias openssl "C:\Program Files\Git\usr\bin\openssl.exe"
   const command = `openssl x509 -in ${x509ClientCertKeyPath} -inform PEM -subject -nameopt RFC2253`;
   const output = execSync(command).toString().trim().split('\n')[0];
   const subject = output.replace('subject=', '').trim();
