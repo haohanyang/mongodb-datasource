@@ -91,3 +91,79 @@ func TestSetUri(t *testing.T) {
 		}
 	})
 }
+
+func TestSetAuth(t *testing.T) {
+	t.Run("should handle no auth", func(t *testing.T) {
+		opts := options.Client()
+		config := &models.PluginSettings{
+			Host: "localhost:27017",
+		}
+		err := setAuth(config, opts)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+		auth := opts.Auth
+		if auth != nil {
+			t.Errorf("expected no auth to be set, got %v", auth)
+		}
+	})
+
+	t.Run("should set username and password", func(t *testing.T) {
+		opts := options.Client()
+		config := &models.PluginSettings{
+			Host:       "localhost:27017",
+			AuthMethod: MongoAuthUsernamePassword,
+			Username:   "testuser",
+			Secrets: &models.SecretPluginSettings{
+				Password: "testpass",
+			},
+			AuthDatabase: "admin",
+		}
+
+		err := setAuth(config, opts)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		auth := opts.Auth
+
+		if auth == nil {
+			t.Fatalf("expected auth to be set, got nil")
+		}
+		if auth.Username != "testuser" {
+			t.Errorf("expected username %s, got %s", "testuser", auth.Username)
+		}
+		if auth.Password != "testpass" {
+			t.Errorf("expected password %s, got %s", "testpass", auth.Password)
+		}
+		if auth.AuthSource != "admin" {
+			t.Errorf("expected auth source %s, got %s", "admin", auth.AuthSource)
+		}
+	})
+
+	t.Run("should set x509 auth", func(t *testing.T) {
+		opts := options.Client()
+		config := &models.PluginSettings{
+			Host:       "localhost:27017",
+			AuthMethod: MongoAuthX509,
+		}
+
+		err := setAuth(config, opts)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		auth := opts.Auth
+
+		if auth == nil {
+			t.Fatalf("expected auth to be set, got nil")
+		}
+		if auth.AuthMechanism != "MONGODB-X509" {
+			t.Errorf("expected auth mechanism %s, got %s", "MONGODB-X509", auth.AuthMechanism)
+		}
+
+		if auth.AuthSource != "$external" {
+			t.Errorf("expected auth source %s, got %s", "$external", auth.AuthSource)
+		}
+	})
+}
