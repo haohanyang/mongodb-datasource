@@ -8,7 +8,7 @@ export const MongoDBAuthMethod = {
 };
 
 export const ConnectionStringScheme = {
-  MONGODB: '',
+  MONGODB: 'mongodb',
   MONGODBSRV: 'mongodb+srv',
 };
 

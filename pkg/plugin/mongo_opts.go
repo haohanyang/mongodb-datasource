@@ -9,7 +9,8 @@ import (
 	"go.mongodb.org/mongo-driver/x/mongo/driver/connstring"
 )
 
-func BuildMongoOpts(config *models.PluginSettings) (*options.ClientOptions, error) {
+func buildMongoOpts(config *models.PluginSettings) (*options.ClientOptions, error) {
+
 	opts := options.Client()
 
 	err := setUri(config, opts)

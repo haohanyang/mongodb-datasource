@@ -39,7 +39,7 @@ func NewDatasource(ctx context.Context, source backend.DataSourceInstanceSetting
 		return nil, err
 	}
 
-	opts, err := BuildMongoOpts(config)
+	opts, err := buildMongoOpts(config)
 	if err != nil {
 		backend.Logger.Debug("Failed to configure MongoDB", "error", err)
 		return nil, err
@@ -238,7 +238,7 @@ func (d *Datasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRe
 		return res, nil
 	}
 
-	opts, err := BuildMongoOpts(config)
+	opts, err := buildMongoOpts(config)
 	if err != nil {
 		backend.Logger.Error("Failed to configure mongodb", "error", err)
 		res.Status = backend.HealthStatusError
