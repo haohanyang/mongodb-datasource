@@ -11,10 +11,7 @@ const serverCertKeyPath = path.resolve(__dirname, '..', 'certs', 'server-ec.pem'
 const x509ClientCertKeyPath = path.resolve(__dirname, '..', 'certs', 'client-x509.pem');
 const screenshotsDir = path.resolve(__dirname, '..', 'test-screenshots');
 
-const dbHost = os.platform() === 'linux' ? 'localhost:27017' : 'host.docker.internal:27017';
-
-/** @type {MongoMemoryServer?} */
-let server;
+const dbHost = os.platform() === 'linux' ? 'localhost' : 'host.docker.internal';
 
 function getX509Subject() {
   // On powershell
@@ -26,6 +23,9 @@ function getX509Subject() {
 }
 
 test.describe('config editor', () => {
+  /** @type {MongoMemoryServer?} */
+  let server;
+
   test.afterEach(async ({ page }) => {
     console.log('Stopping MongoDB Memory Server...');
     if (server) {
@@ -42,15 +42,14 @@ test.describe('config editor', () => {
 
   test('Should connect to when mongo without auth', async ({ createDataSourceConfigPage, page }) => {
     server = await MongoMemoryServer.create({
-      instance: { port: 27017 },
       binary: {
         version: '8.0.0',
       },
     });
-
+    const port = new URL(server.getUri()).port;
     const configPage = await createDataSourceConfigPage({ type: 'haohanyang-mongodb-datasource' });
 
-    await page.getByLabel('Host').fill(dbHost);
+    await page.getByLabel('Host').fill(dbHost + ':' + port);
     await page.getByLabel('Database').fill('test');
     await page.getByRole('radio', { name: 'None' }).check();
     await expect(configPage.saveAndTest()).toBeOK();
@@ -58,7 +57,6 @@ test.describe('config editor', () => {
 
   test('Should connect to mongo with username/password auth', async ({ createDataSourceConfigPage, page }) => {
     server = await MongoMemoryServer.create({
-      instance: { port: 27017 },
       binary: {
         version: '8.0.0',
       },
@@ -68,9 +66,10 @@ test.describe('config editor', () => {
         customRootPwd: 'pass',
       },
     });
+    const port = new URL(server.getUri()).port;
 
     const configPage = await createDataSourceConfigPage({ type: 'haohanyang-mongodb-datasource' });
-    await page.getByLabel('Host').fill(dbHost);
+    await page.getByLabel('Host').fill(dbHost + ':' + port);
     await page.getByLabel('Database').fill('test');
     await page.getByRole('radio', { name: 'Username/Password', exact: true }).check();
     await page.getByLabel('Username', { exact: true }).fill('user');
@@ -87,7 +86,6 @@ test.describe('config editor', () => {
   }) => {
     server = await MongoMemoryServer.create({
       instance: {
-        port: 27017,
         args: ['--tlsMode', 'preferTLS', '--tlsCAFile', caCertPath, '--tlsCertificateKeyFile', serverCertKeyPath],
       },
       binary: {
@@ -99,10 +97,11 @@ test.describe('config editor', () => {
         customRootPwd: 'pass',
       },
     });
+    const port = new URL(server.getUri()).port;
 
     const configPage = await createDataSourceConfigPage({ type: 'haohanyang-mongodb-datasource' });
 
-    await page.getByLabel('Host').fill(dbHost);
+    await page.getByLabel('Host').fill(dbHost + ':' + port);
     await page.getByLabel('Database').fill('test');
     await page.getByRole('radio', { name: 'Username/Password', exact: true }).check();
     await page.getByLabel('Username', { exact: true }).fill('user');
@@ -125,7 +124,6 @@ test.describe('config editor', () => {
   }) => {
     server = await MongoMemoryServer.create({
       instance: {
-        port: 27017,
         args: ['--tlsMode', 'preferTLS', '--tlsCAFile', caCertPath, '--tlsCertificateKeyFile', serverCertKeyPath],
       },
       binary: {
@@ -137,10 +135,10 @@ test.describe('config editor', () => {
         customRootPwd: 'pass',
       },
     });
-
+    const port = new URL(server.getUri()).port;
     const configPage = await createDataSourceConfigPage({ type: 'haohanyang-mongodb-datasource' });
 
-    await page.getByLabel('Host').fill(dbHost);
+    await page.getByLabel('Host').fill(dbHost + ':' + port);
     await page.getByLabel('Database').fill('test');
     await page.getByRole('radio', { name: 'Username/Password', exact: true }).check();
     await page.getByLabel('Username', { exact: true }).fill('user');
@@ -160,7 +158,6 @@ test.describe('config editor', () => {
   test('Should connect to mongo with x509 auth and tls certificates', async ({ createDataSourceConfigPage, page }) => {
     server = await MongoMemoryServer.create({
       instance: {
-        port: 27017,
         args: ['--tlsMode', 'preferTLS', '--tlsCAFile', caCertPath, '--tlsCertificateKeyFile', serverCertKeyPath],
       },
       binary: {
@@ -172,6 +169,7 @@ test.describe('config editor', () => {
         customRootPwd: 'pass',
       },
     });
+    const port = new URL(server.getUri()).port;
 
     const client = new MongoClient(server.getUri(), {
       tls: true,
@@ -200,7 +198,7 @@ test.describe('config editor', () => {
 
     const configPage = await createDataSourceConfigPage({ type: 'haohanyang-mongodb-datasource' });
 
-    await page.getByLabel('Host').fill(dbHost);
+    await page.getByLabel('Host').fill(dbHost + ':' + port);
     await page.getByLabel('Database').fill('test');
     await page.getByRole('radio', { name: 'X.509', exact: true }).check();
 
