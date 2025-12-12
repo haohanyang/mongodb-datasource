@@ -15,6 +15,13 @@ if [[ "$1" == "build" ]]; then
   elif [[ "$1" == "start" ]]; then
     echo "Starting development container..."
 
+    # If on linux, run with --network="host" for easier access to local databases
+    if [[ "$(uname -s)" == "Linux" ]]; then
+      NETWORK_OPTION="--network=host"
+    else
+      NETWORK_OPTION=""
+    fi
+
     docker run -d \
       --name mongodb-datasource-grafana \
       --user root \
@@ -29,6 +36,7 @@ if [[ "$1" == "build" ]]; then
       -e GF_LOG_LEVEL=debug \
       -e GF_DATAPROXY_LOGGING=1 \
       -e GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=haohanyang-mongodb-datasource \
+      $NETWORK_OPTION \
       mongodb-datasource-grafana-dev
 
 
