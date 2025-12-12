@@ -156,25 +156,17 @@ jobs:
       - name: Install dev dependencies
         run: npm ci
 
-      - name: Start Grafana
-        run: |
-          bash scripts/cert-gen.sh
-          docker compose -f docker-compose.test.yaml pull
-          DEVELOPMENT=false GRAFANA_VERSION=11.6.8 GRAFANA_IMAGE=grafana docker compose -f docker-compose.test.yaml up -d
-
-      - name: Wait for Grafana to start
-        uses: nev7n/wait_for_response@v1
-        with:
-          url: 'http://localhost:3000/'
-          responseCode: 200
-          timeout: 60000
-          interval: 500
-
       - name: Install Playwright Browsers
         run: npm exec playwright install chromium --with-deps
 
       - name: Generate certificates for tests
         run: bash scripts/cert-gen.sh
+
+      - name: Build Grafana docker image
+        run: bash scripts/dev-container.sh build
+
+      - name: Run Grafana docker container
+        run: bash scripts/dev-container.sh start
 
       - name: Run Playwright tests
         id: run-tests
@@ -186,7 +178,7 @@ jobs:
           docker logs mongodb-datasource-grafana >& grafana-server.log
 
       - name: Stop grafana docker
-        run: docker compose -f docker-compose.test.yaml down
+        run: docker stop mongodb-datasource-grafana
 
       - name: Upload server log
         uses: actions/upload-artifact@v4
@@ -196,12 +188,10 @@ jobs:
           path: grafana-server.log
           retention-days: 5
 
-      # Uncomment this step to upload the Playwright report to Github artifacts.
-      # If your repository is public, the report will be public on the Internet so beware not to expose sensitive information.
-      # - name: Upload artifacts
-      #   uses: actions/upload-artifact@v4
-      #   if: ${{ always() && steps.run-tests.outcome == 'failure' }}
-      #   with:
-      #     name: playwright-report-${{ matrix.GRAFANA_IMAGE.NAME }}-v${{ matrix.GRAFANA_IMAGE.VERSION }}-${{github.run_id}}
-      #     path: playwright-report/
-      #     retention-days: 5
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        if: ${{ always() && steps.run-tests.outcome == 'failure' }}
+        with:
+          name: playwright-report-${{github.run_id}}
+          path: playwright-report/
+          retention-days: 3
