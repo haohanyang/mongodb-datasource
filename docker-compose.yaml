@@ -22,6 +22,7 @@ services:
       - ./dist:/var/lib/grafana/plugins/haohanyang-mongodb-datasource
       - ./provisioning:/etc/grafana/provisioning
       - .:/root/haohanyang-mongodb-datasource
+      - ./certs:/certs:ro
 
     environment:
       NODE_ENV: development
@@ -29,33 +30,3 @@ services:
       GF_LOG_LEVEL: debug
       GF_DATAPROXY_LOGGING: 1
       GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: haohanyang-mongodb-datasource
-    networks:
-      - mongodb-datasource
-
-  mongo:
-    image: mongo
-    container_name: mongodb-datasource-mongo
-    command: [--replSet, rs0]
-    ports:
-      - 27017:27017
-    healthcheck:
-      test: echo "try { rs.status() } catch (err) { rs.initiate({_id:'rs0',members:[{_id:0, host:'mongo:27017'}]}) }" | mongosh --port 27017 --quiet
-      interval: 10s
-      timeout: 20s
-      start_period: 0s
-      start_interval: 1s
-      retries: 10
-    networks:
-      - mongodb-datasource
-
-  compass:
-    image: haohanyang/compass-web
-    container_name: mongodb-datasource-compass
-    ports:
-      - 8080:8080
-    networks:
-      - mongodb-datasource
-
-networks:
-  mongodb-datasource:
-    driver: bridge

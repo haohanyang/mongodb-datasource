@@ -73,20 +73,20 @@ jobs:
           fi
 
       - name: Setup Go environment
-        if: steps.check-for-backend.outputs.has-backend == 'true'
         uses: actions/setup-go@v5
         with:
-          go-version: '1.21'
+          go-version: '1.24.0'
+
+      - name: Generate certificates for tests
+        run: bash scripts/cert-gen.sh
 
       - name: Test backend
-        if: steps.check-for-backend.outputs.has-backend == 'true'
-        uses: magefile/mage-action@v3
-        with:
-          version: latest
-          args: coverage
+        working-directory: ./pkg/plugin
+        run: go test -v -timeout 180s
+        env:
+          SOURCE_ROOT: ${{ github.workspace }}
 
       - name: Build backend
-        if: steps.check-for-backend.outputs.has-backend == 'true'
         uses: magefile/mage-action@v3
         with:
           version: latest
@@ -131,49 +131,17 @@ jobs:
           path: ${{ steps.metadata.outputs.plugin-id }}
           retention-days: 5
 
-  resolve-versions:
-    name: Resolve e2e images
-    runs-on: ubuntu-latest
-    timeout-minutes: 3
-    needs: build
-    if: ${{ needs.build.outputs.has-e2e == 'true' }}
-    outputs:
-      matrix: ${{ steps.resolve-versions.outputs.matrix }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Create fake plugin metadata
-        id: create-fake-metadata
-        run: |
-          tmpfile=$(mktemp -d)
-          sed 's/>=10.4.0/\^11.x/g' src/plugin.json > $tmpfile/plugin.json
-          echo "fake_plugin_dir=$tmpfile" >> $GITHUB_OUTPUT
-      - name: Resolve Grafana E2E versions
-        id: resolve-versions
-        uses: grafana/plugin-actions/e2e-version@main
-        with:
-          skip-grafana-dev-image: true
-          limit: 1
-          plugin-directory: ${{ steps.create-fake-metadata.outputs.fake_plugin_dir }}
-
   playwright-tests:
-    needs: [resolve-versions, build]
+    needs: [build]
     timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        GRAFANA_IMAGE: ${{fromJson(needs.resolve-versions.outputs.matrix)}}
-    name: e2e test ${{ matrix.GRAFANA_IMAGE.name }}@${{ matrix.GRAFANA_IMAGE.VERSION }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Download plugin
         uses: actions/download-artifact@v4
         with:
           path: dist
           name: ${{ needs.build.outputs.plugin-id }}-${{ needs.build.outputs.plugin-version }}
-
       - name: Execute permissions on binary
         if: needs.build.outputs.has-backend == 'true'
         run: |
@@ -188,22 +156,17 @@ jobs:
       - name: Install dev dependencies
         run: npm ci
 
-      - name: Start Grafana
-        run: |
-          bash scripts/cert-gen.sh mongo-tls-auth
-          docker compose -f docker-compose.test.yaml pull
-          DEVELOPMENT=false GRAFANA_VERSION=${{ matrix.GRAFANA_IMAGE.VERSION }} GRAFANA_IMAGE=${{ matrix.GRAFANA_IMAGE.NAME }} docker compose -f docker-compose.test.yaml up -d
-
-      - name: Wait for Grafana to start
-        uses: nev7n/wait_for_response@v1
-        with:
-          url: 'http://localhost:3000/'
-          responseCode: 200
-          timeout: 60000
-          interval: 500
-
       - name: Install Playwright Browsers
         run: npm exec playwright install chromium --with-deps
+
+      - name: Generate certificates for tests
+        run: bash scripts/cert-gen.sh
+
+      - name: Build Grafana docker image
+        run: bash scripts/dev-container.sh build
+
+      - name: Run Grafana docker container
+        run: bash scripts/dev-container.sh start
 
       - name: Run Playwright tests
         id: run-tests
@@ -215,22 +178,20 @@ jobs:
           docker logs mongodb-datasource-grafana >& grafana-server.log
 
       - name: Stop grafana docker
-        run: docker compose -f docker-compose.test.yaml down
+        run: docker stop mongodb-datasource-grafana
 
       - name: Upload server log
         uses: actions/upload-artifact@v4
         if: ${{ always() && steps.run-tests.outcome == 'failure' }}
         with:
-          name: ${{ matrix.GRAFANA_IMAGE.NAME }}-v${{ matrix.GRAFANA_IMAGE.VERSION }}-${{github.run_id}}-server-log
+          name: grafana-${{github.run_id}}-server-log
           path: grafana-server.log
           retention-days: 5
 
-      # Uncomment this step to upload the Playwright report to Github artifacts.
-      # If your repository is public, the report will be public on the Internet so beware not to expose sensitive information.
-      # - name: Upload artifacts
-      #   uses: actions/upload-artifact@v4
-      #   if: ${{ always() && steps.run-tests.outcome == 'failure' }}
-      #   with:
-      #     name: playwright-report-${{ matrix.GRAFANA_IMAGE.NAME }}-v${{ matrix.GRAFANA_IMAGE.VERSION }}-${{github.run_id}}
-      #     path: playwright-report/
-      #     retention-days: 5
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        if: ${{ always() && steps.run-tests.outcome == 'failure' }}
+        with:
+          name: playwright-report-${{github.run_id}}
+          path: playwright-report/
+          retention-days: 3
