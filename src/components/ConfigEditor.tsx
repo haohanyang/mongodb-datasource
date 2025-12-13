@@ -74,7 +74,7 @@ export function ConfigEditor(props: Props) {
           ></Input>
         </Field>
 
-        <Field label="Database" description="The default database">
+        <Field label="Database" required>
           <Input
             id="config-editor-database"
             value={jsonData.database}

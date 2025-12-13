@@ -2,7 +2,6 @@ package plugin
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 	"os"
 	"os/exec"
@@ -47,7 +46,8 @@ func TestSetUri(t *testing.T) {
 	t.Run("should build connection string without db", func(t *testing.T) {
 		opts := options.Client()
 		config := &models.PluginSettings{
-			Host: "localhost:27017",
+			Host:     "localhost:27017",
+			Database: "test",
 		}
 
 		err := setUri(config, opts)
@@ -55,7 +55,7 @@ func TestSetUri(t *testing.T) {
 			t.Fatalf("expected no error, got %v", err)
 		}
 
-		expected := "mongodb://localhost:27017/"
+		expected := "mongodb://localhost:27017/test"
 		if opts.GetURI() != expected {
 			t.Errorf("expected connection string %s, got %s", expected, opts.GetURI())
 		}
@@ -65,6 +65,7 @@ func TestSetUri(t *testing.T) {
 		opts := options.Client()
 		config := &models.PluginSettings{
 			Host:                   "test1.test.build.10gen.cc",
+			Database:               "test",
 			ConnectionStringScheme: connstring.SchemeMongoDBSRV,
 		}
 
@@ -73,7 +74,7 @@ func TestSetUri(t *testing.T) {
 			t.Fatalf("expected no error, got %v", err)
 		}
 
-		expected := "mongodb+srv://test1.test.build.10gen.cc/"
+		expected := "mongodb+srv://test1.test.build.10gen.cc/test"
 		if opts.GetURI() != expected {
 			t.Errorf("expected connection string %s, got %s", expected, opts.GetURI())
 		}
@@ -89,10 +90,23 @@ func TestSetUri(t *testing.T) {
 		}
 	})
 
+	t.Run("should return error for missing database", func(t *testing.T) {
+		opts := options.Client()
+		config := &models.PluginSettings{
+			Host: "localhost:27017",
+		}
+
+		err := setUri(config, opts)
+		if err == nil {
+			t.Fatalf("expected error for missing database, got nil")
+		}
+	})
+
 	t.Run("should build connection string with multiple hosts", func(t *testing.T) {
 		opts := options.Client()
 		config := &models.PluginSettings{
-			Host: "localhost1:27017,localhost2:27017,localhost3:27017",
+			Host:     "localhost1:27017,localhost2:27017,localhost3:27017",
+			Database: "test",
 		}
 
 		err := setUri(config, opts)
@@ -100,7 +114,7 @@ func TestSetUri(t *testing.T) {
 			t.Fatalf("expected no error, got %v", err)
 		}
 
-		expected := "mongodb://localhost1:27017,localhost2:27017,localhost3:27017/"
+		expected := "mongodb://localhost1:27017,localhost2:27017,localhost3:27017/test"
 
 		if opts.GetURI() != expected {
 			t.Errorf("expected connection string %s, got %s", expected, opts.GetURI())
@@ -112,6 +126,7 @@ func TestSetUri(t *testing.T) {
 		config := &models.PluginSettings{
 			Host:              "localhost:27017",
 			ConnectionOptions: "replicaSet=rs0&name=test",
+			Database:          "test",
 		}
 
 		err := setUri(config, opts)
@@ -119,8 +134,8 @@ func TestSetUri(t *testing.T) {
 			t.Fatalf("expected no error, got %v", err)
 		}
 
-		expected1 := "mongodb://localhost:27017/?replicaSet=rs0&name=test"
-		expected2 := "mongodb://localhost:27017/?name=test&replicaSet=rs0"
+		expected1 := "mongodb://localhost:27017/test?replicaSet=rs0&name=test"
+		expected2 := "mongodb://localhost:27017/test?name=test&replicaSet=rs0"
 		if opts.GetURI() != expected1 && opts.GetURI() != expected2 {
 			t.Errorf("expected connection string %s, got %s", expected1, opts.GetURI())
 		}
@@ -131,6 +146,7 @@ func TestSetUri(t *testing.T) {
 		config := &models.PluginSettings{
 			Host:              "localhost:27017",
 			ConnectionOptions: "tls=true&name=test",
+			Database:          "test",
 		}
 
 		err := setUri(config, opts)
@@ -138,7 +154,7 @@ func TestSetUri(t *testing.T) {
 			t.Fatalf("expected no error, got %v", err)
 		}
 
-		expected := "mongodb://localhost:27017/?name=test"
+		expected := "mongodb://localhost:27017/test?name=test"
 		if opts.GetURI() != expected {
 			t.Errorf("expected connection string %s, got %s", expected, opts.GetURI())
 		}
@@ -148,6 +164,7 @@ func TestSetUri(t *testing.T) {
 		opts := options.Client()
 		config := &models.PluginSettings{
 			Host:      "localhost:27017",
+			Database:  "test",
 			TlsOption: tlsEnabled,
 		}
 
@@ -156,7 +173,7 @@ func TestSetUri(t *testing.T) {
 			t.Fatalf("expected no error, got %v", err)
 		}
 
-		expected := "mongodb://localhost:27017/?tls=true"
+		expected := "mongodb://localhost:27017/test?tls=true"
 		if opts.GetURI() != expected {
 			t.Errorf("expected connection string %s, got %s", expected, opts.GetURI())
 		}
@@ -167,6 +184,7 @@ func TestSetUri(t *testing.T) {
 		config := &models.PluginSettings{
 			Host:      "localhost:27017",
 			TlsOption: tlsDisabled,
+			Database:  "test",
 		}
 
 		err := setUri(config, opts)
@@ -174,7 +192,7 @@ func TestSetUri(t *testing.T) {
 			t.Fatalf("expected no error, got %v", err)
 		}
 
-		expected := "mongodb://localhost:27017/?ssl=false"
+		expected := "mongodb://localhost:27017/test?ssl=false"
 		if opts.GetURI() != expected {
 			t.Errorf("expected connection string %s, got %s", expected, opts.GetURI())
 		}
@@ -185,11 +203,12 @@ func TestSetAuth(t *testing.T) {
 	t.Run("should handle no auth", func(t *testing.T) {
 		opts := options.Client()
 		config := &models.PluginSettings{
-			Host: "localhost:27017",
+			Host:     "localhost:27017",
+			Database: "test",
 		}
 		err := setAuth(config, opts)
 		if err != nil {
-			t.Fatalf("expected no error, got %v", err)
+			t.Fatal(err)
 		}
 		auth := opts.Auth
 		if auth != nil {
@@ -202,6 +221,7 @@ func TestSetAuth(t *testing.T) {
 		config := &models.PluginSettings{
 			Host:       "localhost:27017",
 			AuthMethod: MongoAuthUsernamePassword,
+			Database:   "test",
 			Username:   "testuser",
 			Secrets: &models.SecretPluginSettings{
 				Password: "testpass",
@@ -211,7 +231,7 @@ func TestSetAuth(t *testing.T) {
 
 		err := setAuth(config, opts)
 		if err != nil {
-			t.Fatalf("expected no error, got %v", err)
+			t.Fatal(err)
 		}
 
 		auth := opts.Auth
@@ -234,12 +254,13 @@ func TestSetAuth(t *testing.T) {
 		opts := options.Client()
 		config := &models.PluginSettings{
 			Host:       "localhost:27017",
+			Database:   "test",
 			AuthMethod: MongoAuthX509,
 		}
 
 		err := setAuth(config, opts)
 		if err != nil {
-			t.Fatalf("expected no error, got %v", err)
+			t.Fatal(err)
 		}
 
 		auth := opts.Auth
@@ -311,25 +332,24 @@ func TestConn(t *testing.T) {
 
 		host, err := getHost(ctx, mongodbContainer)
 		if err != nil {
-			t.Fatal("Failed to get host:", err)
+			t.Fatal(err)
 		}
 
 		config := &models.PluginSettings{
-			Host: host,
+			Host:     host,
+			Database: "test",
 		}
 
 		client, err := conn(ctx, config)
 		if err != nil {
-			t.Fatalf("expected no error, got %v", err)
+			t.Fatal(err)
 		}
 
-		defer func() {
-			client.Disconnect(ctx)
-		}()
+		defer client.Disconnect(ctx)
 
 		err = client.Ping(ctx, nil)
 		if err != nil {
-			t.Fatalf("expected no error on ping, got %v", err)
+			t.Fatal(err)
 		}
 
 	})
@@ -349,7 +369,7 @@ func TestConn(t *testing.T) {
 
 		host, err := getHost(ctx, mongodbContainer)
 		if err != nil {
-			t.Fatal("Failed to get host:", err)
+			t.Fatal(err)
 		}
 
 		config := &models.PluginSettings{
@@ -359,20 +379,19 @@ func TestConn(t *testing.T) {
 			Secrets: &models.SecretPluginSettings{
 				Password: "pass",
 			},
+			Database: "test",
 		}
 
 		client, err := conn(ctx, config)
 		if err != nil {
-			t.Fatalf("expected no error, got %v", err)
+			t.Fatal(err)
 		}
 
-		defer func() {
-			client.Disconnect(ctx)
-		}()
+		defer client.Disconnect(ctx)
 
 		err = client.Ping(ctx, nil)
 		if err != nil {
-			t.Fatalf("expected no error on ping, got %v", err)
+			t.Fatal(err)
 		}
 
 	})
@@ -396,7 +415,7 @@ func TestConn(t *testing.T) {
 
 		host, err := getHost(ctx, mongodbContainer)
 		if err != nil {
-			t.Fatal("Failed to get host:", err)
+			t.Fatal(err)
 		}
 
 		config := &models.PluginSettings{
@@ -409,20 +428,19 @@ func TestConn(t *testing.T) {
 			Secrets: &models.SecretPluginSettings{
 				Password: "pass",
 			},
+			Database: "test",
 		}
 
 		client, err := conn(ctx, config)
 		if err != nil {
-			t.Fatalf("expected no error, got %v", err)
+			t.Fatal(err)
 		}
 
-		defer func() {
-			client.Disconnect(ctx)
-		}()
+		defer client.Disconnect(ctx)
 
 		err = client.Ping(ctx, nil)
 		if err != nil {
-			t.Fatalf("expected no error on ping, got %v", err)
+			t.Fatal(err)
 		}
 	})
 
@@ -445,7 +463,7 @@ func TestConn(t *testing.T) {
 
 		host, err := getHost(ctx, mongodbContainer)
 		if err != nil {
-			t.Fatal("Failed to get host:", err)
+			t.Fatal(err)
 		}
 
 		config := &models.PluginSettings{
@@ -459,20 +477,19 @@ func TestConn(t *testing.T) {
 				Password:          "pass",
 				ClientKeyPassword: "clientkeypass",
 			},
+			Database: "test",
 		}
 
 		client, err := conn(ctx, config)
 		if err != nil {
-			t.Fatalf("expected no error, got %v", err)
+			t.Fatal(err)
 		}
 
-		defer func() {
-			client.Disconnect(ctx)
-		}()
+		defer client.Disconnect(ctx)
 
 		err = client.Ping(ctx, nil)
 		if err != nil {
-			t.Fatalf("expected no error on ping, got %v", err)
+			t.Fatal(err)
 		}
 	})
 
@@ -495,7 +512,7 @@ func TestConn(t *testing.T) {
 
 		host, err := getHost(ctx, mongodbContainer)
 		if err != nil {
-			t.Fatal("Failed to get host:", err)
+			t.Fatal(err)
 		}
 
 		// Create x509 user
@@ -506,7 +523,7 @@ func TestConn(t *testing.T) {
 				t.Fatal(err)
 			}
 			lines := strings.Split(string(output), "\n")
-			subject := strings.Replace(lines[0], "subject=", "", 1)
+			subject := strings.TrimSpace(strings.Replace(lines[0], "subject=", "", 1))
 
 			config := &models.PluginSettings{
 				Host:                 host,
@@ -518,11 +535,12 @@ func TestConn(t *testing.T) {
 				Secrets: &models.SecretPluginSettings{
 					Password: "pass",
 				},
+				Database: "test",
 			}
 
 			client, err := conn(ctx, config)
 			if err != nil {
-				t.Fatalf("expected no error, got %v", err)
+				t.Fatal(err)
 			}
 
 			defer client.Disconnect(ctx)
@@ -536,10 +554,10 @@ func TestConn(t *testing.T) {
 			})
 
 			if res.Err() != nil {
-				t.Fatalf("failed to create x509 user: %v", res.Err())
+				t.Fatal(res.Err())
 			}
 
-			fmt.Printf("X509 user %s created\n", subject)
+			t.Logf("X509 user %s created\n", subject)
 		}
 
 		config := &models.PluginSettings{
@@ -553,16 +571,14 @@ func TestConn(t *testing.T) {
 
 		client, err := conn(ctx, config)
 		if err != nil {
-			t.Fatalf("expected no error, got %v", err)
+			t.Fatal(err)
 		}
 
-		defer func() {
-			client.Disconnect(ctx)
-		}()
+		defer client.Disconnect(ctx)
 
 		err = client.Ping(ctx, nil)
 		if err != nil {
-			t.Fatalf("expected no error on ping, got %v", err)
+			t.Fatal(err)
 		}
 	})
 

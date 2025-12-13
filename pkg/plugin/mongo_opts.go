@@ -73,7 +73,8 @@ func setUri(config *models.PluginSettings, opts *options.ClientOptions) error {
 	}
 
 	if config.Database == "" {
-		u.Path = "/"
+		// u.Path = "/"
+		return errors.New("missing database")
 	}
 
 	if config.ConnectionStringScheme == connstring.SchemeMongoDBSRV {
