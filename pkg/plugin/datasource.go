@@ -2,14 +2,10 @@ package plugin
 
 import (
 	"context"
-	"crypto/tls"
-	"crypto/x509"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
-	"strings"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -43,27 +39,22 @@ func NewDatasource(ctx context.Context, source backend.DataSourceInstanceSetting
 		return nil, err
 	}
 
-	uri, err := MongoUri(config)
+	opts, err := buildMongoOpts(config)
 	if err != nil {
+		backend.Logger.Debug("Failed to configure MongoDB", "error", err)
 		return nil, err
-	}
-
-	opts := options.Client().ApplyURI(uri)
-
-	if config.AuthMethod == "auth-tls" {
-		// TLS setup
-		tlsConfig, err := tlsSetup(config)
-		if err != nil {
-			backend.Logger.Error("Failed to setup TLS", "error", err)
-			return nil, err
-		}
-		opts.SetTLSConfig(tlsConfig)
 	}
 
 	client, err := mongo.Connect(ctx, opts)
 	if err != nil {
 		backend.Logger.Error(fmt.Sprintf("Failed to connect to db: %s", err.Error()))
 		return nil, err
+	}
+
+	err = client.Ping(ctx, nil)
+	if err != nil {
+		backend.Logger.Error("Failed to connect to db", "error", "can't ping the server")
+		return nil, errors.New("can't ping the MongoDB server")
 	}
 
 	datasource := &Datasource{
@@ -85,39 +76,6 @@ func NewDatasource(ctx context.Context, source backend.DataSourceInstanceSetting
 // be disposed and a new one will be created using NewSampleDatasource factory function.
 func (d *Datasource) Dispose() {
 	d.client.Disconnect(context.TODO())
-}
-
-func tlsSetup(config *models.PluginSettings) (*tls.Config, error) {
-	caFile := config.CaCertPath
-	certFile := config.ClientCertPath
-	keyFile := config.ClientKeyPath
-
-	if caFile == "" || certFile == "" || keyFile == "" {
-		return nil, errors.New("CA certificate, client certificate or client key file path is missing")
-	}
-
-	// Loads CA certificate file
-	caCert, err := os.ReadFile(caFile)
-	if err != nil {
-		return nil, err
-	}
-	caCertPool := x509.NewCertPool()
-	if ok := caCertPool.AppendCertsFromPEM(caCert); !ok {
-		return nil, errors.New("CA file must be in PEM format")
-	}
-	// Loads client certificate files
-	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
-
-	if err != nil {
-		return nil, err
-	}
-
-	tlsConfig := &tls.Config{
-		RootCAs:      caCertPool,
-		Certificates: []tls.Certificate{cert},
-	}
-
-	return tlsConfig, nil
 }
 
 // QueryData handles multiple queries and returns multiple responses.
@@ -280,26 +238,15 @@ func (d *Datasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRe
 		return res, nil
 	}
 
-	uri, err := MongoUri(config)
+	opts, err := buildMongoOpts(config)
 	if err != nil {
+		backend.Logger.Error("Failed to configure mongodb", "error", err)
 		res.Status = backend.HealthStatusError
 		res.Message = err.Error()
+		return res, nil
 	}
 
-	opts := options.Client().ApplyURI(uri).SetTimeout(5 * time.Second)
-
-	if config.AuthMethod == "auth-tls" {
-		// TLS setup
-		tlsConfig, err := tlsSetup(config)
-		if err != nil {
-			backend.Logger.Error("Failed to setup TLS", "error", err)
-
-			res.Status = backend.HealthStatusError
-			res.Message = err.Error()
-			return res, nil
-		}
-		opts.SetTLSConfig(tlsConfig)
-	}
+	opts.SetTimeout(5 * time.Second)
 
 	client, err := mongo.Connect(ctx, opts)
 	if err != nil {
@@ -309,11 +256,21 @@ func (d *Datasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRe
 		backend.Logger.Error("Failed to connect to db", "error", err)
 		return res, nil
 	}
+
 	defer func() {
 		if err = client.Disconnect(ctx); err != nil {
 			backend.Logger.Error("Failed to disconnect to db", "error", err)
 		}
 	}()
+
+	err = client.Ping(ctx, nil)
+	if err != nil {
+		res.Status = backend.HealthStatusError
+		res.Message = "Failed to ping the MongoDB server"
+
+		backend.Logger.Error("Failed to connect to db", "error", "can't ping the server")
+		return res, nil
+	}
 
 	var result bson.M
 	command := bson.D{{Key: "dbStats", Value: 1}}
@@ -321,11 +278,12 @@ func (d *Datasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRe
 		backend.Logger.Error(fmt.Sprintf("Failed to get database status: %s", err.Error()))
 		res.Status = backend.HealthStatusError
 
-		if strings.Contains(strings.ToLower(err.Error()), "authenticationfailed") || strings.Contains(strings.ToLower(err.Error()), "unauthorized") {
-			res.Message = "Authentication failed"
-		} else {
-			res.Message = err.Error()
-		}
+		res.Message = err.Error()
+		// if strings.Contains(strings.ToLower(err.Error()), "authenticationfailed") || strings.Contains(strings.ToLower(err.Error()), "unauthorized") {
+		// 	res.Message = "Authentication failed"
+		// } else {
+		// 	res.Message = err.Error()
+		// }
 
 		return res, nil
 	}

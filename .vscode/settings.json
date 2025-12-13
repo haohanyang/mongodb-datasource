@@ -1,7 +1,11 @@
 {
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.formatOnSave": true,
-  "go.testFlags": ["-v"],
+  "go.testFlags": ["-v", "-timeout", "180s"],
+  "go.toolsEnvVars": {
+    "GOTOOLCHAIN": "auto",
+    "SOURCE_ROOT": "${workspaceFolder}"
+  },
   "[go]": {
     "editor.defaultFormatter": "golang.go"
   }
