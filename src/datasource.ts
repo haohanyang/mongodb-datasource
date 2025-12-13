@@ -38,13 +38,13 @@ export class MongoDBDataSource extends DataSourceWithBackend<MongoDBQuery, Mongo
       from = query.localFrom.toDate().getTime();
 
       variables['__local_from'] = { value: from.toString() };
-      variables['__from_oid'] = { value: unixTsToMongoID(from, '0') };
+      variables['__from_oid'] = { value: `"${unixTsToMongoID(from, '0')}"` };
     }
 
     if (query.localTo) {
       to = query.localTo.toDate().getTime();
       variables['__local_to'] = { value: to.toString() };
-      variables['__to_oid'] = { value: unixTsToMongoID(to, '0') };
+      variables['__to_oid'] = { value: `"${unixTsToMongoID(to, '0')}"` };
     }
 
     let queryText = query.queryText!;

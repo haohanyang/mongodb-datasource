@@ -36,7 +36,7 @@ const tokenPatternJS = new RegExp(`(${opsJS.join('|')}):`, 'g');
 const tokenPatternJSON = new RegExp(`(${opsJSON.join('|')}):`, 'g');
 
 export class SemanticTokensProvider implements monacoTypes.languages.DocumentSemanticTokensProvider {
-  constructor(private readonly editor: MonacoEditor) { }
+  constructor(private readonly editor: MonacoEditor) {}
 
   getLegend(): monacoTypes.languages.SemanticTokensLegend {
     return legend;
@@ -65,7 +65,7 @@ export class SemanticTokensProvider implements monacoTypes.languages.DocumentSem
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
 
-      for (let match = null; (match = tokenPattern.exec(line));) {
+      for (let match = null; (match = tokenPattern.exec(line)); ) {
         const type = language === 'javascript' ? getType('identifier') : getType('string');
         const modifier = getModifier('op');
 
@@ -85,7 +85,7 @@ export class SemanticTokensProvider implements monacoTypes.languages.DocumentSem
       data: new Uint32Array(data),
     };
   }
-  releaseDocumentSemanticTokens(resultId?: string): void { }
+  releaseDocumentSemanticTokens(resultId?: string): void {}
 }
 
 export function useSemanticTokens() {
