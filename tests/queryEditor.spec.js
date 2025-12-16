@@ -1,4 +1,5 @@
 const path = require('path');
+const os = require('os');
 const https = require('https');
 const { createInterface } = require('readline');
 const { EJSON } = require('bson');
@@ -73,6 +74,8 @@ test.describe('query editor', () => {
 
     const port = new URL(mongoServer.getUri()).port;
 
+    const dbHost = os.platform() === 'linux' ? 'localhost' : 'host.docker.internal';
+
     ds = await createDataSource({
       name: 'MongoDB Test Datasource',
       type: 'haohanyang-mongodb-datasource',
@@ -82,7 +85,7 @@ test.describe('query editor', () => {
       version: 1,
       editable: true,
       jsonData: {
-        host: `host.docker.internal:${port}`,
+        host: `${dbHost}:${port}`,
         database: 'test',
       },
     });
