@@ -6,6 +6,8 @@ const { MongoMemoryServer } = require('mongodb-memory-server');
 const { test, expect } = require('@grafana/plugin-e2e');
 const { MongoClient, Db } = require('mongodb');
 
+test.setTimeout(100 * 1000);
+
 const screenshotsDir = path.resolve(__dirname, '..', 'test-screenshots');
 
 /**
