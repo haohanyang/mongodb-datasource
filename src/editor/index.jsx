@@ -80,7 +80,7 @@ function App() {
           Parse filter
         </button>
       </div>
-      {language == 'javascript' && <code>{parseResult}</code>}
+      {language === 'javascript' && <code>{parseResult}</code>}
     </main>
   );
 }
