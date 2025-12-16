@@ -1,0 +1,69 @@
+// Built-in variables
+// Reference: https://docs.aws.amazon.com/grafana/latest/userguide/variables-types.html
+/**
+ * Beginning of time range in Unix millisecond epoch, e.g., 1594671549254
+ */
+declare const $__from: number;
+
+/**
+ * End of time range in Unix millisecond epoch, e.g., 1594671549254
+ */
+declare const $__to: number;
+
+/**
+ * Beginning of time range in Unix millisecond epoch that respects local dashboard overrides, e.g., 1594671549254
+ */
+declare const $__local_from: number;
+
+/**
+ * End of time range in Unix millisecond epoch that respects local dashboard overrides, e.g., 1594671549254
+ */
+declare const $__local_to: number;
+
+/**
+ * Mongo ObjectId that corresponds to the start of time range
+ */
+declare const $__from_oid: string;
+
+/**
+ * Mongo ObjectId that corresponds to the end of time range
+ */
+declare const $__to_oid: string;
+
+// MongoDB constructors
+// Reference: https://www.mongodb.com/docs/manual/reference/method/js-constructor/
+
+declare class ObjectId {
+    /**
+     * Returns a new ObjectId.
+     * @param value Optional. A 24 character hexadecimal string value for the new ObjectId, or an integer value, in seconds, is added to the Unix epoch to create the new timestamp.
+     */
+    constructor(value?: string | number)
+};
+
+/**
+ * Returns a new ObjectId.
+ * @param value Optional. A 24 character hexadecimal string value for the new ObjectId, or an integer value, in seconds, is added to the Unix epoch to create the new timestamp.
+ */
+declare function ObjectId(value?: string | number): ObjectId;
+
+/**
+ * Returns a date either as a string or as a Date object. The date can contain a date and a time, known as a datetime.
+ * @param value Optional. An ISO-8601 date string with a year within the inclusive range 0 through 9999. If not provided, it returns the current date.
+ */
+declare function ISODate(value?: string): Date;
+
+
+declare class UUID {
+    /**
+     * Generates a BSON UUID object.
+     * @param hex Optional. Specify a 36 character string to convert to a UUID BSON object. If not provided, MongoDB generates a random UUID in RFC 4122 v4 format. 
+     */
+    constructor(hex?: string)
+};
+
+/**
+ * Generates a BSON UUID object.
+ * @param hex Optional. Specify a 36 character string to convert to a UUID BSON object. If not provided, MongoDB generates a random UUID in RFC 4122 v4 format. 
+ */
+declare function UUID(hex?: string): UUID;

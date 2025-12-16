@@ -9,9 +9,10 @@ import {
   QUERY_OPERATORS,
 } from '@mongodb-js/mongodb-constants';
 
-// Supports JSON only right now
-class CompletionProvider implements monacoTypes.languages.CompletionItemProvider {
+export class CompletionProvider implements monacoTypes.languages.CompletionItemProvider {
   constructor(private readonly editor: MonacoEditor) {}
+
+  triggerCharacters = ['$'];
 
   provideCompletionItems(
     model: monacoTypes.editor.ITextModel,
@@ -21,23 +22,29 @@ class CompletionProvider implements monacoTypes.languages.CompletionItemProvider
       return { suggestions: [] };
     }
 
-    const textUntilPosition = model.getValueInRange({
-      startLineNumber: 1,
-      startColumn: 1,
-      endLineNumber: position.lineNumber,
-      endColumn: position.column,
-    });
-
     // Check if the current position is inside a bracket
-    const match = textUntilPosition.match(/\s*\{\s*("[^"]*"\s*:\s*"[^"]*"\s*,\s*)*([^"]*)?$/);
-    if (!match) {
-      return { suggestions: [] };
+    const allText = model.getValue();
+    const currentOffset = model.getOffsetAt({ lineNumber: position.lineNumber, column: position.column }) - 1;
+
+    for (let i = currentOffset - 1; i >= 0; i--) {
+      if (allText[i].trim()) {
+        if (allText[i] !== '{') {
+          return { suggestions: [] };
+        }
+        break;
+      }
+    }
+
+    for (let i = currentOffset + 1; i < allText.length; i++) {
+      if (allText[i].trim()) {
+        if (allText[i] !== '}') {
+          return { suggestions: [] };
+        }
+        break;
+      }
     }
 
     const word = model.getWordUntilPosition(position);
-    if (!word) {
-      return { suggestions: [] };
-    }
 
     const range = {
       startLineNumber: position.lineNumber,
@@ -46,36 +53,39 @@ class CompletionProvider implements monacoTypes.languages.CompletionItemProvider
       endColumn: word.endColumn,
     };
 
-    const stageSuggestions: languages.CompletionItem[] = STAGE_OPERATORS.map((stage) => {
-      // Add double quotation marks
-      const snippet = stage.snippet.replace(/(\s*)([_a-zA-Z]+)\s*: /g, '$1"$2": ');
-      return {
-        label: `"${stage.name}"`,
-        kind: languages.CompletionItemKind.Function,
-        insertText: `"\\${stage.name}": ${snippet}`,
-        range: range,
-        detail: stage.meta,
-        documentation: stage.description,
-        insertTextRules: languages.CompletionItemInsertTextRule.InsertAsSnippet,
-      };
-    });
-
-    const expressionSuggestions: languages.CompletionItem[] = [
+    const language = model.getLanguageId();
+    const suggestions = [
+      ...STAGE_OPERATORS,
       ...EXPRESSION_OPERATORS,
       ...ACCUMULATORS,
       ...CONVERSION_OPERATORS,
       ...QUERY_OPERATORS,
-    ].map((expression) => ({
-      label: `"${expression.name}"`,
-      kind: languages.CompletionItemKind.Function,
-      insertText: `"\\${expression.name}": \${1:expression}`,
-      range: range,
-      detail: expression.meta,
-      insertTextRules: languages.CompletionItemInsertTextRule.InsertAsSnippet,
-    }));
+    ].map((op) => {
+      if (op.meta === 'stage') {
+        const snippet = op.snippet.replace(/(\s*)([_a-zA-Z]+)\s*: /g, '$1"$2": ');
+        return {
+          label: language === 'json' ? `"${op.name}"` : op.name,
+          kind: languages.CompletionItemKind.Function,
+          insertText: language === 'json' ? `"\\${op.name}": ${snippet}` : `\\${op.name}: ${op.snippet}`,
+          range: range,
+          detail: op.meta,
+          documentation: op.description,
+          insertTextRules: languages.CompletionItemInsertTextRule.InsertAsSnippet,
+        };
+      } else {
+        return {
+          label: language === 'json' ? `"${op.name}"` : op.name,
+          kind: languages.CompletionItemKind.Function,
+          insertText: language === 'json' ? `"\\${op.name}": \${1:expression}` : `\\${op.name}: \${1:expression}`,
+          range: range,
+          detail: op.meta,
+          insertTextRules: languages.CompletionItemInsertTextRule.InsertAsSnippet,
+        };
+      }
+    });
 
     return {
-      suggestions: [...stageSuggestions, ...expressionSuggestions],
+      suggestions,
     };
   }
 }
@@ -90,7 +100,8 @@ export function useAutocomplete() {
 
   return (editor: MonacoEditor, monaco: Monaco) => {
     const provider = new CompletionProvider(editor);
-    const { dispose } = monaco.languages.registerCompletionItemProvider('json', provider);
+    const { dispose } = monaco.languages.registerCompletionItemProvider(['json', 'javascript'], provider);
+
     autocompleteDisposeFun.current = dispose;
   };
 }

@@ -9,8 +9,6 @@ datasources:
     version: 1
     editable: true
     jsonData:
-      host: localhost
-      port: 27017
+      host: localhost:27017
       database: test
-      authType: auth-none
     secureJsonData:

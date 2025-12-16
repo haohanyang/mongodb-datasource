@@ -45,4 +45,8 @@ grafana-storage/
 
 mongo-docs/
 certs/
+
+dist-editor/
 test-screenshots/
+
+.bra.toml

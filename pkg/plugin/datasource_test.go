@@ -23,7 +23,6 @@ import (
 var datasetLinks = []string{
 	"https://github.com/ozlerhakan/mongodb-json-files/raw/refs/heads/master/datasets/students.json",
 	"https://github.com/ozlerhakan/mongodb-json-files/raw/refs/heads/master/datasets/covers.json",
-	"https://github.com/neelabalan/mongodb-sample-dataset/raw/refs/heads/main/sample_airbnb/listingsAndReviews.json",
 	"https://github.com/neelabalan/mongodb-sample-dataset/raw/refs/heads/main/sample_analytics/accounts.json",
 	"https://github.com/neelabalan/mongodb-sample-dataset/raw/refs/heads/main/sample_analytics/customers.json",
 	"https://github.com/neelabalan/mongodb-sample-dataset/raw/refs/heads/main/sample_analytics/transactions.json",
