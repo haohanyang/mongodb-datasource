@@ -48,3 +48,5 @@ certs/
 
 dist-editor/
 test-screenshots/
+
+.bra.toml

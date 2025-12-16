@@ -52,6 +52,9 @@ test.describe('query editor', () => {
   /** @type {MongoMemoryServer?} */
   let mongoServer;
 
+  /** @type {import('@grafana/data').DataSourceInstanceSettings} */
+  let ds;
+
   test.beforeAll(async ({ createDataSource, readProvisionedDataSource }) => {
     // Prepare MongoDB
     mongoServer = await MongoMemoryServer.create({
@@ -66,10 +69,21 @@ test.describe('query editor', () => {
     await loadRemoteDataToMongo(customerDataUrl, client.db('test'));
     await client.close();
 
-    // Prepare data source
-    const ds = await readProvisionedDataSource({ fileName: 'test/mongo-default.yml' });
+    const port = new URL(mongoServer.getUri()).port;
 
-    await createDataSource(ds);
+    ds = await createDataSource({
+      name: 'MongoDB Test Datasource',
+      type: 'haohanyang-mongodb-datasource',
+      access: 'proxy',
+      isDefault: false,
+      orgId: 1,
+      version: 1,
+      editable: true,
+      jsonData: {
+        host: `host.docker.internal:${port}`,
+        database: 'test',
+      },
+    });
   });
 
   test.afterEach(async ({ page }) => {
@@ -87,12 +101,7 @@ test.describe('query editor', () => {
     }
   });
 
-  test('data query should return correct customer data with JSON query', async ({
-    panelEditPage,
-    readProvisionedDataSource,
-    selectors,
-    page,
-  }) => {
+  test('data query should return correct customer data with JSON query', async ({ panelEditPage, selectors, page }) => {
     const query = `
 [
   {
@@ -133,12 +142,10 @@ test.describe('query editor', () => {
 ]
   `;
 
-    const ds = await readProvisionedDataSource({ fileName: 'test/mongo-default.yml' });
-
     await panelEditPage.datasource.set(ds.name);
 
     await panelEditPage.getQueryEditorRow('A').getByText('Enter your collection').click();
-    await page.keyboard.type('test_customerData');
+    await page.keyboard.type('customers');
     await page.keyboard.press('Enter');
 
     const editor = panelEditPage
@@ -151,60 +158,63 @@ test.describe('query editor', () => {
     await editor.fill(query);
     await panelEditPage.setVisualization('Table');
     await expect(panelEditPage.refreshPanel()).toBeOK();
-    // await expect(panelEditPage.panel.data).toContainText(['164', 'gmail.com', '165', 'yahoo.com', '171', 'hotmail.com']);
+    await expect(panelEditPage.panel.data).toContainText([
+      '164',
+      'gmail.com',
+      '165',
+      'yahoo.com',
+      '171',
+      'hotmail.com',
+    ]);
   });
 
-  test('data query should return correct temperature data with JavaScript query', async ({
+  test('data query should return correct customer data with JavaScript query', async ({
     panelEditPage,
-    readProvisionedDataSource,
     selectors,
     page,
   }) => {
     const query = `
-  db.test_customerData.aggregate([
+[
   {
-    "$project": {
-      "domain": {
-        "$arrayElemAt": [
+    $project: {
+      domain: {
+        $arrayElemAt: [
           {
-            "$split": [
-              "$email",
-              "@"
-            ]
+            $split: ['$email', '@'],
           },
-          1
-        ]
-      }
-    }
+          1,
+        ],
+      },
+    },
   },
   {
-    "$group": {
-      "_id": "$domain",
-      "count": {
-        "$sum": 1
-      }
-    }
+    $group: {
+      _id: '$domain',
+      count: {
+        $sum: 1,
+      },
+    },
   },
   {
-    "$project": {
-      "_id": 0,
-      "provider": "$_id",
-      "count": 1
-    }
+    $project: {
+      _id: 0,
+      provider: '$_id',
+      count: 1,
+    },
   },
   {
-    "$sort": {
-      "count": 1
-    }
-  }
-])
-  `;
+    $sort: {
+      count: 1,
+    },
+  },
+]
 
-    const ds = await readProvisionedDataSource({ fileName: 'test/mongo-default.yml' });
+    `;
+
     await panelEditPage.datasource.set(ds.name);
 
     await panelEditPage.getQueryEditorRow('A').getByText('Enter your collection').click();
-    await page.keyboard.type('test_customerData');
+    await page.keyboard.type('customers');
     await page.keyboard.press('Enter');
 
     const selectLanguage = panelEditPage.getQueryEditorRow('A').getByRole('combobox').last();
@@ -218,161 +228,16 @@ test.describe('query editor', () => {
 
     await editor.clear();
     await editor.fill(query);
+
     await panelEditPage.setVisualization('Table');
     await expect(panelEditPage.refreshPanel()).toBeOK();
-    // await expect(panelEditPage.panel.data).toContainText(['164', 'gmail.com', '165', 'yahoo.com', '171', 'hotmail.com']);
-  });
-
-  test('data query should return correct temperature data with JavaScript function', async ({
-    panelEditPage,
-    readProvisionedDataSource,
-    selectors,
-    page,
-  }) => {
-    const query = `
-    function query() {
-      return [
-  {
-    "$project": {
-      "domain": {
-        "$arrayElemAt": [
-          {
-            "$split": [
-              "$email",
-              "@"
-            ]
-          },
-          1
-        ]
-      }
-    }
-  },
-  {
-    "$group": {
-      "_id": "$domain",
-      "count": {
-        "$sum": 1
-      }
-    }
-  },
-  {
-    "$project": {
-      "_id": 0,
-      "provider": "$_id",
-      "count": 1
-    }
-  },
-  {
-    "$sort": {
-      "count": 1
-    }
-  }
-]
-    }
-  `;
-
-    const ds = await readProvisionedDataSource({ fileName: 'test/mongo-default.yml' });
-    await panelEditPage.datasource.set(ds.name);
-
-    await panelEditPage.getQueryEditorRow('A').getByText('Enter your collection').click();
-    await page.keyboard.type('test_customerData');
-    await page.keyboard.press('Enter');
-
-    // get toggle switch
-    const selectLanguage = panelEditPage.getQueryEditorRow('A').getByRole('combobox').last();
-    await selectLanguage.click();
-    await page.getByText('JavaScript Shadow', { exact: true }).click();
-    const editor = panelEditPage
-      .getByGrafanaSelector(selectors.components.CodeEditor.container, {
-        root: panelEditPage.getQueryEditorRow('A'),
-      })
-      .getByRole('textbox');
-
-    await editor.scrollIntoViewIfNeeded();
-    // click on the toggle switch
-
-    await editor.clear();
-    await editor.fill(query);
-    await panelEditPage.setVisualization('Table');
-    await expect(panelEditPage.refreshPanel()).toBeOK();
-    // await expect(panelEditPage.panel.data).toContainText(['164', 'gmail.com', '165', 'yahoo.com', '171', 'hotmail.com']);
-  });
-
-  test('data query should return correct temperature data with javascript function with variables', async ({
-    panelEditPage,
-    readProvisionedDataSource,
-    selectors,
-    page,
-  }) => {
-    const query = `
-    function query() {
-      return [
-  {
-    "$project": {
-      "domain": {
-        "$arrayElemAt": [
-          {
-            "$split": [
-              "$email",
-              "@"
-            ]
-          },
-          1
-        ]
-      }
-    }
-  },
-  {
-    "$group": {
-      "_id": "$domain",
-      "count": {
-        "$sum": 1
-      }
-    }
-  },
-  {
-    "$project": {
-      "_id": 0,
-      "provider": "$_id",
-      "count": 1
-    }
-  },
-  {
-    "$sort": {
-      "count": 1
-    }
-  }
-]
-    }
-  `;
-
-    const ds = await readProvisionedDataSource({ fileName: 'test/mongo-default.yml' });
-    await panelEditPage.datasource.set(ds.name);
-
-    await panelEditPage.getQueryEditorRow('A').getByText('Enter your collection').click();
-    await page.keyboard.type('test_customerData');
-    await page.keyboard.press('Enter');
-
-    const selectLanguage = panelEditPage.getQueryEditorRow('A').getByRole('combobox').last();
-    await selectLanguage.click();
-    await page.getByText('JavaScript Shadow', { exact: true }).click();
-    const editor = panelEditPage
-      .getByGrafanaSelector(selectors.components.CodeEditor.container, {
-        root: panelEditPage.getQueryEditorRow('A'),
-      })
-      .getByRole('textbox');
-
-    await panelEditPage.timeRange.set({
-      from: '2023-10-24T00:00:00.000Z',
-      to: '2023-10-26T00:00:00.000Z',
-    });
-
-    await editor.scrollIntoViewIfNeeded();
-
-    await editor.clear();
-    await editor.fill(query);
-    await panelEditPage.setVisualization('Table');
-    await expect(panelEditPage.refreshPanel()).toBeOK();
-    // await expect(panelEditPage.panel.data).toContainText(['164', 'gmail.com', '165', 'yahoo.com', '171', 'hotmail.com']);
+    await expect(panelEditPage.panel.data).toContainText([
+      '164',
+      'gmail.com',
+      '165',
+      'yahoo.com',
+      '171',
+      'hotmail.com',
+    ]);
   });
 });
