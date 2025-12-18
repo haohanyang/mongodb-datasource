@@ -195,27 +195,13 @@ func (d *Datasource) query(ctx context.Context, _ backend.PluginContext, query b
 
 	defer cursor.Close(ctx)
 
-	if qm.QueryType == "table" {
-		frame, err := CreateTableFramesFromQuery(ctx, query.RefID, cursor)
-		if err != nil {
-			backend.Logger.Error("Failed to create data frame from query", "error", err)
-			return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Failed to query: %v", err.Error()))
-		}
-
-		response.Frames = append(response.Frames, frame)
-
-	} else {
-		frames, err := CreateTimeSeriesFramesFromQuery(ctx, cursor)
-		if err != nil {
-			backend.Logger.Error("Failed to create time series frames from query", "error", err)
-
-			return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Failed to query: %v", err.Error()))
-		}
-
-		for _, frame := range frames {
-			response.Frames = append(response.Frames, frame)
-		}
+	frame, err := CreateTableFramesFromQuery(ctx, query.RefID, cursor)
+	if err != nil {
+		backend.Logger.Error("Failed to create data frame from query", "error", err)
+		return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Failed to query: %v", err.Error()))
 	}
+
+	response.Frames = append(response.Frames, frame)
 
 	return response
 }
@@ -344,14 +330,7 @@ func watchChangeStream(ctx context.Context, qm *queryModel, stream *mongo.Change
 	defer stream.Close(ctx)
 
 	for stream.Next(ctx) {
-		var err error
-		var frame *data.Frame
-
-		if qm.QueryType == "table" {
-			frame, err = CreateTableFramesFromStream(ctx, "stream", stream)
-		} else {
-			frame, err = CreateTableFramesFromStream(ctx, "stream", stream)
-		}
+		frame, err := CreateTableFramesFromStream(ctx, "stream", stream)
 
 		if err != nil {
 			backend.Logger.Error("Failed to create data frame from stream", "error", err)

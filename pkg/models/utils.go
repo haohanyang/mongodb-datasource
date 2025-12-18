@@ -7,6 +7,10 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
+func pointer[K any](val K) *K {
+	return &val
+}
+
 func rawArrayToJson(value bson.RawValue) (string, error) {
 	var bsonDoc bson.M
 	err := bson.UnmarshalExtJSON([]byte(fmt.Sprintf(`{"data":%s}`, value.String())), true, &bsonDoc)

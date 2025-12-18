@@ -128,7 +128,6 @@ func TestQueryTableData(t *testing.T) {
 			qm := queryModel{
 				QueryText:     "[]",
 				Collection:    coll,
-				QueryType:     "table",
 				QueryLanguage: "json",
 			}
 
