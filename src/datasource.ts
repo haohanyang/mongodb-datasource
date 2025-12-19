@@ -1,17 +1,9 @@
-import {
-  DataSourceInstanceSettings,
-  CoreApp,
-  ScopedVars,
-  DataQueryRequest,
-  LiveChannelScope,
-  DataQueryResponse,
-  LoadingState,
-} from '@grafana/data';
-import { DataSourceWithBackend, getGrafanaLiveSrv, getTemplateSrv, TemplateSrv } from '@grafana/runtime';
+import { DataSourceInstanceSettings, CoreApp, ScopedVars, DataQueryRequest, DataQueryResponse } from '@grafana/data';
+import { DataSourceWithBackend, getTemplateSrv, TemplateSrv } from '@grafana/runtime';
 import { EJSON } from 'bson';
 import { parseFilter } from 'mongodb-query-parser';
-import { merge, Observable, of } from 'rxjs';
-import { base64UrlEncode, unixTsToMongoID } from './utils';
+import { Observable } from 'rxjs';
+import { unixTsToMongoID } from './utils';
 import { MongoDBQuery, MongoDataSourceOptions, DEFAULT_QUERY, QueryLanguage } from './types';
 import { MongoDBVariableSupport } from './variables';
 

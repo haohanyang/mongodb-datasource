@@ -99,7 +99,8 @@ export function QueryEditor(props: Props) {
         <QueryEditorRaw
           query={query.queryText ?? ''}
           language={query.queryLanguage === QueryLanguage.JAVASCRIPT ? QueryLanguage.JAVASCRIPT : QueryLanguage.JSON}
-          onBlur={(queryText: string) => {
+          onBlur={(queryText_: string) => {
+            let queryText = queryText_.trim();
             props.onChange({ ...query, queryText });
             if (query.queryLanguage === QueryLanguage.JSON) {
               if (!validator.isJSON(queryText)) {
@@ -109,6 +110,9 @@ export function QueryEditor(props: Props) {
               }
             } else {
               try {
+                // Remove trailing semicolons
+                queryText = queryText.replace(/;+$/, '');
+
                 const parsed = EJSON.stringify(parseFilter(queryText));
                 setParsedQuery(parsed);
                 setQueryTextError(undefined);
