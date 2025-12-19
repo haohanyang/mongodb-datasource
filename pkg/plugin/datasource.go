@@ -11,7 +11,6 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/resource/httpadapter"
-	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/haohanyang/mongodb-datasource/pkg/models"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -195,7 +194,7 @@ func (d *Datasource) query(ctx context.Context, _ backend.PluginContext, query b
 
 	defer cursor.Close(ctx)
 
-	frame, err := CreateTableFramesFromQuery(ctx, query.RefID, cursor)
+	frame, err := createTableFramesFromQuery(ctx, query.RefID, cursor)
 	if err != nil {
 		backend.Logger.Error("Failed to create data frame from query", "error", err)
 		return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Failed to query: %v", err.Error()))
@@ -278,68 +277,4 @@ func (d *Datasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRe
 		Status:  backend.HealthStatusOk,
 		Message: "Successfully connects to MongoDB",
 	}, nil
-}
-
-func (d *Datasource) SubscribeStream(ctx context.Context, req *backend.SubscribeStreamRequest) (*backend.SubscribeStreamResponse, error) {
-	backend.Logger.Info("User subscribed to channel", "path", req.Path)
-
-	return &backend.SubscribeStreamResponse{
-		Status: backend.SubscribeStreamStatusOK,
-	}, nil
-}
-
-func (d *Datasource) PublishStream(ctx context.Context, req *backend.PublishStreamRequest) (*backend.PublishStreamResponse, error) {
-	backend.Logger.Info("User published to channel", "path", req.Path)
-
-	return &backend.PublishStreamResponse{
-		Status: backend.PublishStreamStatusPermissionDenied,
-	}, nil
-}
-
-func (d *Datasource) RunStream(ctx context.Context, req *backend.RunStreamRequest, sender *backend.StreamSender) error {
-	backend.Logger.Info("User was running the stream on channel", "path", req.Path)
-
-	qm := queryModel{}
-	json.Unmarshal(req.Data, &qm)
-
-	var pipeline []bson.D
-
-	err := bson.UnmarshalExtJSON([]byte(qm.QueryText), false, &pipeline)
-	if err != nil {
-		backend.Logger.Error("Failed to unmarshal JsonExt", "error", err)
-		return err
-	}
-
-	mongoStream, err := d.client.Database(d.database).Watch(ctx, pipeline)
-	if err != nil {
-		backend.Logger.Error("Failed to listen to Mongo change streams", "error", err)
-		return err
-	}
-
-	go watchChangeStream(ctx, &qm, mongoStream, sender)
-
-	for {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		}
-	}
-}
-
-func watchChangeStream(ctx context.Context, qm *queryModel, stream *mongo.ChangeStream, sender *backend.StreamSender) {
-	defer stream.Close(ctx)
-
-	for stream.Next(ctx) {
-		frame, err := CreateTableFramesFromStream(ctx, "stream", stream)
-
-		if err != nil {
-			backend.Logger.Error("Failed to create data frame from stream", "error", err)
-		} else {
-			err = sender.SendFrame(frame, data.IncludeAll)
-			if err != nil {
-				backend.Logger.Error("Failed to send frame", "error", err)
-			}
-		}
-
-	}
 }

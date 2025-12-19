@@ -79,57 +79,12 @@ export class MongoDBDataSource extends DataSourceWithBackend<MongoDBQuery, Mongo
   }
 
   query(request: DataQueryRequest<MongoDBQuery>): Observable<DataQueryResponse> {
-    if (request.liveStreaming) {
-      const observables = request.targets.map((query) => {
-        return getGrafanaLiveSrv().getDataStream({
-          addr: {
-            scope: LiveChannelScope.DataSource,
-            namespace: this.uid,
-            path: `mongodb-datasource/${query.refId}`,
-            data: {
-              ...query,
-            },
-          },
-        });
-      });
-
-      return merge(...observables);
-    }
-
-    const streamQueries = request.targets.filter((query) => query.isStreaming);
-
-    if (streamQueries.length === 0) {
-      return super.query({
-        ...request,
-        targets: request.targets.map((query) => {
-          return { ...query, localFrom: request.range.from, localTo: request.range.to };
-        }),
-      });
-    } else if (streamQueries.length === request.targets.length) {
-      const observables = request.targets.map((query) => {
-        return getGrafanaLiveSrv().getDataStream({
-          addr: {
-            scope: LiveChannelScope.DataSource,
-            namespace: this.uid,
-            path: `mongodb-datasource/${base64UrlEncode(query.collection)}-${base64UrlEncode(query.queryText)}`,
-            data: {
-              ...query,
-            },
-          },
-        });
-      });
-
-      return merge(...observables);
-    } else {
-      // Mix of streaming requests and normal requests is not supported
-      return of({
-        data: [],
-        error: {
-          message: 'Mix of streaming requests and normal requests is not supported',
-        },
-        state: LoadingState.Error,
-      });
-    }
+    return super.query({
+      ...request,
+      targets: request.targets.map((query) => {
+        return { ...query, localFrom: request.range.from, localTo: request.range.to };
+      }),
+    });
   }
 
   getCollectionNames(): Promise<string[]> {

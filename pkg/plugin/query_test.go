@@ -41,7 +41,7 @@ func TestCreateTableFramesFromQuery(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		frame, err := CreateTableFramesFromQuery(ctx, "test", cursor)
+		frame, err := createTableFramesFromQuery(ctx, "test", cursor)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -77,7 +77,7 @@ func TestCreateTableFramesFromQuery(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		frame, err := CreateTableFramesFromQuery(ctx, "test", cursor)
+		frame, err := createTableFramesFromQuery(ctx, "test", cursor)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -112,7 +112,7 @@ func TestCreateTableFramesFromQuery(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		frame, err := CreateTableFramesFromQuery(ctx, "test", cursor)
+		frame, err := createTableFramesFromQuery(ctx, "test", cursor)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -147,7 +147,7 @@ func TestCreateTableFramesFromQuery(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		frame, err := CreateTableFramesFromQuery(ctx, "test", cursor)
+		frame, err := createTableFramesFromQuery(ctx, "test", cursor)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -190,7 +190,7 @@ func TestCreateTableFramesFromQuery(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		frame, err := CreateTableFramesFromQuery(ctx, "test", cursor)
+		frame, err := createTableFramesFromQuery(ctx, "test", cursor)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -234,7 +234,7 @@ func TestCreateTableFramesFromQuery(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		_, err = CreateTableFramesFromQuery(ctx, "test", cursor)
+		_, err = createTableFramesFromQuery(ctx, "test", cursor)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -262,7 +262,7 @@ func TestCreateTableFramesFromQuery(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		frames, err := CreateTableFramesFromQuery(ctx, "test", cursor)
+		frames, err := createTableFramesFromQuery(ctx, "test", cursor)
 		if err != nil {
 			t.Fatal(err)
 		}

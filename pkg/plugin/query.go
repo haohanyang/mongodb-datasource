@@ -9,7 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func CreateTableFramesFromQuery(ctx context.Context, tableName string, cursor *mongo.Cursor) (*data.Frame, error) {
+func createTableFramesFromQuery(ctx context.Context, tableName string, cursor *mongo.Cursor) (*data.Frame, error) {
 
 	columns := make(map[string]*models.Column)
 	rowIndex := 0
@@ -65,32 +65,6 @@ func CreateTableFramesFromQuery(ctx context.Context, tableName string, cursor *m
 			c.Rectify()
 			frame.Fields = append(frame.Fields, c.Field)
 		}
-	}
-
-	return frame, nil
-}
-
-func CreateTableFramesFromStream(ctx context.Context, tableName string, stream *mongo.ChangeStream) (*data.Frame, error) {
-
-	frame := data.NewFrame(tableName)
-
-	elements, err := stream.Current.Elements()
-	if err != nil {
-		return nil, err
-	}
-
-	for _, element := range elements {
-		if element.Value().Type == bson.TypeNull {
-			continue
-		}
-		nc, err := models.NewColumn(0, element)
-		if err != nil {
-			return nil, err
-		}
-
-		nc.Rectify()
-		frame.Fields = append(frame.Fields, nc.Field)
-
 	}
 
 	return frame, nil

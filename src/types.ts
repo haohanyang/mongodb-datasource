@@ -5,7 +5,6 @@ export interface MongoDBQuery extends DataQuery {
   queryText?: string;
   collection?: string;
   queryLanguage?: string;
-  isStreaming?: boolean;
   // Aggregate options
   aggregateMaxTimeMS?: number;
   aggregateComment?: string;
