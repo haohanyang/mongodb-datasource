@@ -8,6 +8,9 @@ on:
 permissions:
   contents: write
 
+env:
+  SOURCE_ROOT: ${{ github.workspace }}
+
 jobs:
   release:
     permissions:
