@@ -13,13 +13,10 @@ jobs:
     permissions:
       contents: write
     runs-on: ubuntu-latest
-    services:
-      mongo:
-        image: mongo
-        ports:
-          - 27018:27017
     steps:
       - uses: actions/checkout@v4
+      - name: Generate certificates for tests
+        run: bash scripts/cert-gen.sh
       - uses: ./.github/actions/build-plugin
         with:
           go-version: '1.24.0'
