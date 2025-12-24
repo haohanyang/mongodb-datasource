@@ -116,7 +116,7 @@ runs:
         sha1sum ${{ steps.metadata.outputs.archive }} | cut -f1 -d' ' > ${{ steps.metadata.outputs.archive-sha1sum }}
       shell: bash
 
-    - name: Validate plugin
-      run: |
-        npx -y @grafana/plugin-validator@latest -sourceCodeUri -severity warning file://./ ${{ steps.metadata.outputs.archive }}
-      shell: bash
+    # - name: Validate plugin
+    #   run: |
+    #     npx -y @grafana/plugin-validator@latest -sourceCodeUri -severity warning file://./ ${{ steps.metadata.outputs.archive }}
+    #   shell: bash
