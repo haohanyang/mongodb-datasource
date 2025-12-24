@@ -1,0 +1,122 @@
+# From https://github.com/grafana/plugin-actions/blob/d381e10ef234721a03e28af8017e290dc225e945/package-plugin/action.yml
+name: 'Grafana Package Plugin'
+description: 'Packages a Grafana plugin'
+
+outputs:
+  archive:
+    description: 'The path to the plugin archive (zip).'
+    value: ${{ steps.metadata.outputs.archive }}
+  archive-sha1sum:
+    description: 'The path to the plugin archive sha1sum.'
+    value: ${{ steps.metadata.outputs.archive-sha1sum }}
+  plugin-id:
+    description: 'The ID of the plugin.'
+    value: ${{ steps.metadata.outputs.plugin-id }}
+  plugin-version:
+    description: 'The plugin version.'
+    value: ${{ steps.metadata.outputs.plugin-version }}
+
+inputs:
+  policy_token:
+    description: 'Grafana access policy token. https://grafana.com/developers/plugin-tools/publish-a-plugin/sign-a-plugin#generate-an-access-policy-token'
+    required: false
+    default: ''
+  go-version:
+    description: 'Version of go'
+    required: false
+    default: '1.21'
+  node-version:
+    description: 'Version of node'
+    required: false
+    default: '20'
+
+runs:
+  using: 'composite'
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '${{ inputs.node-version }}'
+
+    - name: Setup Go environment
+      uses: actions/setup-go@v5
+      with:
+        go-version: '${{ inputs.go-version }}'
+
+    - name: Install dependencies
+      run: ${{ github.action_path }}/pm.sh install
+      shell: bash
+
+    - name: Build and test frontend
+      run: ${{ github.action_path }}/pm.sh build
+      shell: bash
+
+    - name: Check for backend
+      id: check-for-backend
+      run: |
+        if [ -f "Magefile.go" ]
+        then
+          echo "has-backend=true" >> $GITHUB_OUTPUT
+        fi
+      shell: bash
+
+    - name: Test backend
+      if: steps.check-for-backend.outputs.has-backend == 'true'
+      uses: magefile/mage-action@v3
+      with:
+        version: latest
+        args: coverage
+
+    - name: Build backend
+      if: steps.check-for-backend.outputs.has-backend == 'true'
+      uses: magefile/mage-action@v3
+      with:
+        version: latest
+        args: buildAll
+
+    - name: Warn missing Grafana access policy token
+      run: |
+        echo Please generate a Grafana access policy token: https://grafana.com/developers/plugin-tools/publish-a-plugin/sign-a-plugin#generate-an-access-policy-token
+        echo Once done please follow the instructions found here: https://github.com/${{github.repository}}/blob/main/README.md#using-github-actions-release-workflow
+      if: ${{ inputs.policy_token == '' }}
+      shell: bash
+
+    - name: Sign plugin
+      run: ${{ github.action_path }}/pm.sh sign
+      shell: bash
+      env:
+        GRAFANA_ACCESS_POLICY_TOKEN: ${{ inputs.policy_token }}
+        GRAFANA_API_KEY: ${{ inputs.grafana_token }}
+      if: ${{ inputs.policy_token != '' }}
+
+    - name: Get plugin metadata
+      id: metadata
+      run: |
+        sudo apt-get install jq
+
+        export GRAFANA_PLUGIN_ID=$(cat dist/plugin.json | jq -r .id)
+        export GRAFANA_PLUGIN_VERSION=$(cat dist/plugin.json | jq -r .info.version)
+        export GRAFANA_PLUGIN_TYPE=$(cat dist/plugin.json | jq -r .type)
+        export GRAFANA_PLUGIN_ARTIFACT=${GRAFANA_PLUGIN_ID}-${GRAFANA_PLUGIN_VERSION}.zip
+        export GRAFANA_PLUGIN_ARTIFACT_SHA1SUM=${GRAFANA_PLUGIN_ARTIFACT}.sha1
+
+        echo "plugin-id=${GRAFANA_PLUGIN_ID}" >> $GITHUB_OUTPUT
+        echo "plugin-version=${GRAFANA_PLUGIN_VERSION}" >> $GITHUB_OUTPUT
+        echo "plugin-type=${GRAFANA_PLUGIN_TYPE}" >> $GITHUB_OUTPUT
+        echo "archive=${GRAFANA_PLUGIN_ARTIFACT}" >> $GITHUB_OUTPUT
+        echo "archive-sha1sum=${GRAFANA_PLUGIN_ARTIFACT_SHA1SUM}" >> $GITHUB_OUTPUT
+
+        echo "github-tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
+      shell: bash
+
+    - name: Package plugin
+      id: package-plugin
+      run: |
+        mv dist ${{ steps.metadata.outputs.plugin-id }}
+        zip ${{ steps.metadata.outputs.archive }} ${{ steps.metadata.outputs.plugin-id }} -r
+        sha1sum ${{ steps.metadata.outputs.archive }} | cut -f1 -d' ' > ${{ steps.metadata.outputs.archive-sha1sum }}
+      shell: bash
+
+    - name: Validate plugin
+      run: |
+        npx -y @grafana/plugin-validator@latest -sourceCodeUri -severity warning file://./ ${{ steps.metadata.outputs.archive }}
+      shell: bash
