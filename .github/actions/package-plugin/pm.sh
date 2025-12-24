@@ -1,5 +1,6 @@
-# Copied from https://github.com/grafana/plugin-actions/blob/d381e10ef234721a03e28af8017e290dc225e945/package-plugin/pm.sh
 #!/bin/bash
+# Copied from https://github.com/grafana/plugin-actions/blob/d381e10ef234721a03e28af8017e290dc225e945/package-plugin/pm.sh
+
 
 # Check if command argument is provided
 if [ "$1" = "" ]; then

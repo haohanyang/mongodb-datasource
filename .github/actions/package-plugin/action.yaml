@@ -43,12 +43,10 @@ runs:
         go-version: '${{ inputs.go-version }}'
 
     - name: Install dependencies
-      run: node ${{ github.action_path }}/pm.sh install
-      shell: bash
+      run: bash ${{ github.action_path }}/pm.sh install
 
     - name: Build and test frontend
-      run: node ${{ github.action_path }}/pm.sh build
-      shell: bash
+      run: bash ${{ github.action_path }}/pm.sh build
 
     - name: Check for backend
       id: check-for-backend
@@ -81,8 +79,7 @@ runs:
       shell: bash
 
     - name: Sign plugin
-      run: node ${{ github.action_path }}/pm.sh sign
-      shell: bash
+      run: bash ${{ github.action_path }}/pm.sh sign
       env:
         GRAFANA_ACCESS_POLICY_TOKEN: ${{ inputs.policy_token }}
         GRAFANA_API_KEY: ${{ inputs.grafana_token }}
