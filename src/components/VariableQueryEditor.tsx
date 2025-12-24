@@ -1,11 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { InlineField, Input, Alert, Button, InlineFieldRow } from '@grafana/ui';
 import { QueryEditorProps } from '@grafana/data';
-import { MongoDataSourceOptions, MongoDBQuery, MongoDBVariableQuery, QueryType } from '../types';
+import { MongoDataSourceOptions, MongoDBQuery, MongoDBVariableQuery } from '../types';
 import { QueryEditorRaw } from './QueryEditorRaw';
 import { MongoDBDataSource } from 'datasource';
-
-const refId = 'MongoDBVariableQueryEditor-VariableQuery';
 
 export type VariableQueryEditorProps = QueryEditorProps<
   MongoDBDataSource,
@@ -14,15 +12,7 @@ export type VariableQueryEditorProps = QueryEditorProps<
   MongoDBVariableQuery
 >;
 
-export const VariableQueryEditor = ({ onChange, query }: VariableQueryEditorProps) => {
-  const [collection, setCollection] = useState('');
-  const [queryText, setQueryText] = useState('');
-
-  useEffect(() => {
-    setCollection(query.collection ?? '');
-    setQueryText(query.queryText ?? '');
-  }, [query]);
-
+export const VariableQueryEditor = ({ onChange, query, onRunQuery }: VariableQueryEditorProps) => {
   return (
     <div>
       <InlineFieldRow style={{ justifyContent: 'space-between' }}>
@@ -30,31 +20,22 @@ export const VariableQueryEditor = ({ onChange, query }: VariableQueryEditorProp
           label="Collection"
           tooltip="Name of MongoDB collection to query"
           error="Collection is required"
-          invalid={!collection}
+          invalid={!query.collection}
         >
           <Input
             name="collection"
-            onChange={(evt) => {
-              setCollection(evt.currentTarget.value);
-            }}
-            value={collection}
+            onChange={(evt) => onChange({ ...query, collection: evt.currentTarget.value })}
+            value={query.collection}
           ></Input>
         </InlineField>
-        <Button
-          icon="play"
-          variant="primary"
-          size="sm"
-          onClick={() =>
-            onChange({ queryText: queryText, queryType: QueryType.TABLE, refId: refId, collection: collection })
-          }
-        >
+        <Button icon="play" variant="primary" size="sm" onClick={onRunQuery}>
           Save and Query
         </Button>
       </InlineFieldRow>
       <QueryEditorRaw
-        query={queryText}
+        query={query.queryText ?? ''}
         language="json"
-        onBlur={(queryText) => setQueryText(queryText)}
+        onBlur={(queryText) => onChange({ ...query, queryText })}
         height={300}
         fontSize={14}
       />

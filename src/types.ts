@@ -4,11 +4,7 @@ import { DataQuery } from '@grafana/schema';
 export interface MongoDBQuery extends DataQuery {
   queryText?: string;
   collection?: string;
-  queryType?: string;
   queryLanguage?: string;
-
-  isStreaming?: boolean;
-
   // Aggregate options
   aggregateMaxTimeMS?: number;
   aggregateComment?: string;
@@ -26,21 +22,14 @@ export interface MongoDBVariableQuery extends DataQuery {
   collection?: string;
 }
 
-export const QueryType = {
-  TIMESERIES: 'timeseries',
-  TABLE: 'table',
-};
-
 export const QueryLanguage = {
   JSON: 'json',
   JAVASCRIPT: 'javascript',
 };
 
 export const DEFAULT_QUERY: Partial<MongoDBQuery> = {
-  queryText: '',
-  queryType: QueryType.TABLE,
+  queryText: JSON.stringify([], null, 2),
   queryLanguage: QueryLanguage.JSON,
-  isStreaming: false,
 };
 
 export interface JsQueryResult {

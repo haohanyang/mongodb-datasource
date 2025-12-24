@@ -1,4 +1,4 @@
-import React, { ChangeEvent, useEffect, useState } from 'react';
+import React, { ChangeEvent, useState } from 'react';
 import {
   Button,
   InlineField,
@@ -9,123 +9,100 @@ import {
   Modal,
   useTheme2,
   SegmentAsync,
+  ComboboxOption,
 } from '@grafana/ui';
 import { EditorHeader, InlineSelect, FlexItem } from '@grafana/plugin-ui';
-import { CoreApp, QueryEditorProps, SelectableValue, LoadingState } from '@grafana/data';
+import { QueryEditorProps, LoadingState } from '@grafana/data';
 import { EJSON } from 'bson';
 import { parseFilter } from 'mongodb-query-parser';
 import { MongoDBDataSource } from '../datasource';
-import { MongoDataSourceOptions, MongoDBQuery, QueryLanguage, QueryType, DEFAULT_QUERY } from '../types';
+import { MongoDataSourceOptions, MongoDBQuery, QueryLanguage } from '../types';
 import { QueryEditorRaw } from './QueryEditorRaw';
 import { QueryToolbox } from './QueryToolbox';
 import validator from 'validator';
 
 type Props = QueryEditorProps<MongoDBDataSource, MongoDBQuery, MongoDataSourceOptions>;
 
-const queryTypes: Array<SelectableValue<string>> = [
-  {
-    label: 'Time series',
-    value: QueryType.TIMESERIES,
-    icon: 'chart-line',
-  },
-  {
-    label: 'Table',
-    value: QueryType.TABLE,
-    icon: 'table',
-  },
-];
-
-const languageOptions: Array<SelectableValue<string>> = [
+const languageOptions: Array<ComboboxOption<string>> = [
   { label: 'JSON', value: QueryLanguage.JSON },
   { label: 'JavaScript', value: QueryLanguage.JAVASCRIPT },
 ];
 
 export function QueryEditor(props: Props) {
-  const { query, app, data, onRunQuery } = props;
+  const { query, data, onRunQuery } = props;
 
   const theme = useTheme2();
 
-  const [collection, setCollection] = useState<string>('');
-  const [queryText, setQueryText] = useState<string>('');
-  const [queryType, setQueryType] = useState<string>(QueryType.TABLE);
-  const [queryLanguage, setQueryLanguage] = useState<string>(DEFAULT_QUERY.queryLanguage!);
-  const [isStreaming, setIsStreaming] = useState<boolean>(false);
   const [queryTextError, setQueryTextError] = useState<string | undefined>(undefined);
   const [parsedQuery, setParsedQuery] = useState<string>('');
   const [isAggregateOptionExpanded, setIsAggregateOptionExpanded] = useState(false);
   const [isEditorExpanded, setIsEditorExpanded] = useState(false);
-
-  useEffect(() => {
-    if (query.collection) {
-      setCollection(query.collection);
-    }
-  }, [query.collection]);
-
-  useEffect(() => {
-    if (query.queryText) {
-      setQueryText(query.queryText);
-    }
-  }, [query.queryText]);
-
-  useEffect(() => {
-    if (query.queryType) {
-      setQueryType(query.queryType);
-    }
-  }, [query.queryType]);
-
-  useEffect(() => {
-    if (query.queryLanguage) {
-      setQueryLanguage(query.queryLanguage);
-    }
-  }, [query.queryLanguage]);
-
-  useEffect(() => {
-    if (query.isStreaming !== undefined) {
-      setIsStreaming(query.isStreaming);
-    }
-  }, [query.isStreaming]);
 
   const renderCodeEditor = (showTools: boolean, width?: number, height?: number) => {
     return (
       <>
         {!isEditorExpanded && (
           <EditorHeader>
-            <InlineSelect
-              label="Format"
-              value={queryType}
-              placeholder="Select format"
-              menuShouldPortal
-              onChange={(val) => props.onChange({ ...query, queryType: val.value })}
-              options={queryTypes}
-            />
-            <InlineSelect
-              id="query-editor-query-language"
-              label="Language"
-              placeholder="Select query language"
-              options={languageOptions}
-              value={queryLanguage}
-              onChange={(val) => props.onChange({ ...query, queryLanguage: val.value })}
-            />
+            <InlineField
+              label="Collection"
+              error="Collection is required"
+              invalid={!query.collection}
+              tooltip="Name of MongoDB collection to query"
+              transparent
+            >
+              <SegmentAsync
+                id="query-editor-collection"
+                placeholder="Enter your collection"
+                allowEmptyValue={false}
+                loadOptions={() => {
+                  return props.datasource.getCollectionNames().then((names) =>
+                    names.map((name) => ({
+                      value: name,
+                      label: name,
+                    })),
+                  );
+                }}
+                value={{ value: query.collection, label: query.collection }}
+                onChange={(e) => {
+                  props.onChange({ ...query, collection: e.value });
+                }}
+                noOptionMessageHandler={(s) => {
+                  if (s.loading) {
+                    return 'Loading collections...';
+                  } else if (s.error) {
+                    return 'Failed to fetch collections';
+                  }
+                  return 'No collection found';
+                }}
+                allowCustomValue
+              />
+            </InlineField>
+            <InlineField label="Language" transparent>
+              <InlineSelect
+                options={languageOptions}
+                value={query.queryLanguage === QueryLanguage.JAVASCRIPT ? QueryLanguage.JAVASCRIPT : QueryLanguage.JSON}
+                onChange={(op) => props.onChange({ ...query, queryLanguage: op.value })}
+              />
+            </InlineField>
             <FlexItem grow={1} />
-            {!isStreaming && (
-              <Button
-                icon="play"
-                variant="primary"
-                size="sm"
-                onClick={() => onRunQuery()}
-                disabled={data?.state === LoadingState.Loading}
-              >
-                Run query
-              </Button>
-            )}
+            <Button
+              icon="play"
+              variant="primary"
+              size="sm"
+              onClick={onRunQuery}
+              disabled={data?.state === LoadingState.Loading}
+            >
+              Run query
+            </Button>
           </EditorHeader>
         )}
         <QueryEditorRaw
-          query={queryText}
-          language={queryLanguage === QueryLanguage.JAVASCRIPT ? 'javascript' : 'json'}
-          onBlur={(queryText: string) => {
+          query={query.queryText ?? ''}
+          language={query.queryLanguage === QueryLanguage.JAVASCRIPT ? QueryLanguage.JAVASCRIPT : QueryLanguage.JSON}
+          onBlur={(queryText_: string) => {
+            let queryText = queryText_.trim();
             props.onChange({ ...query, queryText });
-            if (queryLanguage === QueryLanguage.JSON) {
+            if (query.queryLanguage === QueryLanguage.JSON) {
               if (!validator.isJSON(queryText)) {
                 setQueryTextError('Query should be a valid JSON');
               } else {
@@ -133,6 +110,9 @@ export function QueryEditor(props: Props) {
               }
             } else {
               try {
+                // Remove trailing semicolons
+                queryText = queryText.replace(/;+$/, '');
+
                 const parsed = EJSON.stringify(parseFilter(queryText));
                 setParsedQuery(parsed);
                 setQueryTextError(undefined);
@@ -179,51 +159,6 @@ export function QueryEditor(props: Props) {
 
   return (
     <>
-      <InlineFieldRow>
-        <InlineField
-          label="Collection"
-          error="Collection is required"
-          invalid={!collection}
-          tooltip="Name of MongoDB collection to query"
-        >
-          <SegmentAsync
-            id="query-editor-collection"
-            placeholder="Enter your collection"
-            allowEmptyValue={false}
-            loadOptions={() => {
-              return props.datasource.getCollectionNames().then((names) => {
-                return names.map((name) => ({
-                  value: name,
-                  label: name,
-                }));
-              });
-            }}
-            value={{ value: collection, label: collection }}
-            onChange={(e) => {
-              props.onChange({ ...query, collection: e.value });
-            }}
-            noOptionMessageHandler={(s) => {
-              if (s.loading) {
-                return 'Loading collections...';
-              } else if (s.error) {
-                return 'Failed to fetch collections';
-              }
-              return 'No collection found';
-            }}
-            allowCustomValue
-            disabled={queryLanguage === QueryLanguage.JAVASCRIPT}
-          />
-        </InlineField>
-        {app !== CoreApp.Explore && (
-          <InlineField label="Streaming" tooltip="(Experimental) Watch MongoDB change streams">
-            <InlineSwitch
-              id="query-editor-collection-streaming"
-              value={isStreaming === true}
-              onChange={(evt) => props.onChange({ ...query, isStreaming: evt.currentTarget.checked })}
-            />
-          </InlineField>
-        )}
-      </InlineFieldRow>
       {isEditorExpanded ? renderPlaceholder() : renderCodeEditor(true, undefined, 300)}
 
       <ControlledCollapse
@@ -322,7 +257,7 @@ export function QueryEditor(props: Props) {
           </InlineField>
         </InlineFieldRow>
       </ControlledCollapse>
-      {process.env.NODE_ENV === 'development' && queryLanguage === QueryLanguage.JAVASCRIPT && (
+      {process.env.NODE_ENV === 'development' && query.queryLanguage === QueryLanguage.JAVASCRIPT && (
         <code>{parsedQuery}</code>
       )}
       {isEditorExpanded && (

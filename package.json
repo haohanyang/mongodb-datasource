@@ -1,6 +1,6 @@
 {
   "name": "mongodb-datasource",
-  "version": "0.4.1",
+  "version": "0.5.0-alpha.0",
   "scripts": {
     "build": "webpack -c ./webpack.config.ts --config-name plugin --env production",
     "build:dev": "webpack -c ./webpack.config.ts --config-name plugin --env development",
