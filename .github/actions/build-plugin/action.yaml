@@ -72,6 +72,7 @@ runs:
         draft: true
         generate_release_notes: true
         token: ${{ inputs.token }}
+        tag_name: 'v${{ steps.package-plugin.outputs.plugin-version }}'
         files: |
           ./${{ steps.package-plugin.outputs.archive }}
           ./${{ steps.package-plugin.outputs.archive-sha1sum }}
