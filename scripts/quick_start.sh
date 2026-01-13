@@ -34,6 +34,15 @@ if [ $? -eq 0 ]; then
     fi
 
     echo "Grafana is running on http://localhost:3000"
+    echo ""
+    echo "To sign the plugin, set environment variable GRAFANA_ACCESS_POLICY_TOKEN then run the following command:
+
+    export GRAFANA_ACCESS_POLICY_TOKEN=<your-token-here>
+
+    npx --yes @grafana/sign-plugin --distDir mongodb-datasource --rootUrls <grafana-root-urls>
+
+Then restart the Grafana server
+    "
 else
     echo "Download failed."
 fi
