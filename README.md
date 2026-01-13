@@ -50,6 +50,16 @@ python3 scripts/quick_start.py
 
 Visit Grafana on http://localhost:3000. Add a new MongoDB data source with host `mongo`, port `27017`, and enter the collection name. If you want to use [MongoDB Compass Web](https://github.com/haohanyang/compass-web) GUI to manage the database, uncomment `compass` service in [docker-compose.prod.yaml](/docker-compose.prod.yaml)
 
+#### Sign the plugin
+
+Check the official docs [Sign a private plugin](https://grafana.com/developers/plugin-tools/publish-a-plugin/sign-a-plugin#sign-a-private-plugin). You set the token `GRAFANA_ACCESS_POLICY_TOKEN` obtained from Grafana Cloud in the environment and run the following command to generate a `MANIFEST.txt` file in the plugin directory.
+
+```
+npx --yes @grafana/sign-plugin --distDir mongodb-datasource --rootUrls <grafana-server-root-urls>
+```
+
+You need to restart the Grafana server afterwards.
+
 ### Full steps
 
 1. **Download:** Obtain the latest plugin build from the [Release page](https://github.com/haohanyang/mongodb-datasource/releases) or [workflow artifacts](https://github.com/haohanyang/mongodb-datasource/actions?query=branch%3Amaster).
