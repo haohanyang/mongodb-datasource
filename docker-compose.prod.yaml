@@ -8,18 +8,3 @@ services:
       - ./mongodb-datasource:/var/lib/grafana/plugins/haohanyang-mongodb-datasource
     environment:
       GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: haohanyang-mongodb-datasource
-    links:
-      - mongo
-
-  mongo:
-    image: mongo
-    ports:
-      - 27017:27017
-
-  # Uncomment the following to run MongoDB Compass Web
-  # compass:
-  #   image: haohanyang/compass-web
-  #   ports:
-  #     - 8080:8080
-  #   links:
-  #     - mongo
