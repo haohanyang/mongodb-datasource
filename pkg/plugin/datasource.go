@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/yesoreyeram/grafana-plugins/lib/go/macros"
 	"net/http"
 	"time"
 
@@ -12,7 +13,6 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/resource/httpadapter"
 	"github.com/haohanyang/mongodb-datasource/pkg/models"
-
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -123,7 +123,7 @@ func (d *Datasource) listCollections(rw http.ResponseWriter, req *http.Request) 
 	rw.WriteHeader(http.StatusOK)
 }
 
-func (d *Datasource) query(ctx context.Context, _ backend.PluginContext, query backend.DataQuery) backend.DataResponse {
+func (d *Datasource) query(ctx context.Context, pCtx backend.PluginContext, query backend.DataQuery) backend.DataResponse {
 	backend.Logger.Debug("Executing query", "refId", query.RefID, "json", query.JSON)
 
 	var response backend.DataResponse
@@ -140,8 +140,16 @@ func (d *Datasource) query(ctx context.Context, _ backend.PluginContext, query b
 	}
 
 	var pipeline []bson.D
+	var args = macros.Args{
+		TimeRange: query.TimeRange,
+		User:      pCtx.User,
+	}
+	expandedQuery, err := macros.ApplyMacros(qm.QueryText, args)
+	if err != nil {
+		return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Failed to apply macros: %v", err.Error()))
+	}
 
-	err = bson.UnmarshalExtJSON([]byte(qm.QueryText), false, &pipeline)
+	err = bson.UnmarshalExtJSON([]byte(expandedQuery), false, &pipeline)
 	if err != nil {
 		return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Failed to unmarshal JsonExt: %v", err.Error()))
 	}
