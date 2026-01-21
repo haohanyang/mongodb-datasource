@@ -19,19 +19,29 @@ export class MongoDBVariableSupport extends CustomVariableSupport<MongoDBDataSou
           }
 
           const dataframe = response.data[0] as DataFrameSchema;
-          const field = dataframe.fields.find((f) => f.name === 'value');
+          const valueField = dataframe.fields.find((f) => f.name === 'value');
+          const textField = dataframe.fields.find((f) => f.name === 'text');
 
-          if (!field) {
+          if (!valueField) {
             throw new Error('Field "value" not found');
           }
 
-          if (field.type !== FieldType.string && field.type !== FieldType.number) {
-            throw new Error('Each element should be string or number');
+          if (valueField.type !== FieldType.string && valueField.type !== FieldType.number) {
+            throw new Error('Each element of "value" should be string or number');
+          }
+
+          if (textField && textField.type !== FieldType.string && textField.type !== FieldType.number) {
+            throw new Error('Each element of "text" should be string or number');
           }
 
           // @ts-ignore
-          const metricFindValues: MetricFindValue[] = field.values.map((value: string | number) => ({
-            text: value.toString(),
+          const valueFieldValues: Array<number | string> = valueField.values;
+          // @ts-ignore
+          const textFieldValues: Array<number | string> | undefined = textField?.values;
+
+          // @ts-ignore
+          const metricFindValues: MetricFindValue[] = valueFieldValues.map((value: string | number, idx: number) => ({
+            text: textFieldValues ? textFieldValues[idx].toString() : value.toString(),
             value: value,
             expandable: true,
           }));
