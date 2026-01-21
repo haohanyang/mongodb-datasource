@@ -42,13 +42,41 @@ This plugin enables you to query and visualize data from your MongoDB databases 
 
 ### Quick start
 
-Run the script [quick_start.py](scripts/quick_start.py) in the root directory to start MongoDB and Grafana containers with the plugin
+Run the script [quick_start.sh](scripts/quick_start.sh) or [quick_start.ps1](scripts/quick_start.ps1) from the repository root to start MongoDB and Grafana containers with the plugin
+
+- Linux/macOS
 
 ```
-python3 scripts/quick_start.py
+bash scripts/quick_start.sh
+```
+
+- Windows
+
+```
+.\scripts\quick_start.ps1
 ```
 
 Visit Grafana on http://localhost:3000. Add a new MongoDB data source with host `mongo`, port `27017`, and enter the collection name. If you want to use [MongoDB Compass Web](https://github.com/haohanyang/compass-web) GUI to manage the database, uncomment `compass` service in [docker-compose.prod.yaml](/docker-compose.prod.yaml)
+
+> [!NOTE]
+> Version 0.5.x is in pre-release. To run the latest pre-release version, add the flag `--pre-release` to the end.
+>
+> ```
+> # Linux/macOS
+> bash scripts/quick_start.sh --pre-release
+> # Windows
+> .\scripts\quick_start.ps1 --pre-release
+> ```
+
+#### Sign the plugin
+
+Check the official docs [Sign a private plugin](https://grafana.com/developers/plugin-tools/publish-a-plugin/sign-a-plugin#sign-a-private-plugin). You set the token `GRAFANA_ACCESS_POLICY_TOKEN` obtained from Grafana Cloud in the environment and run the following command to generate a `MANIFEST.txt` file in the plugin directory.
+
+```
+npx --yes @grafana/sign-plugin --distDir mongodb-datasource --rootUrls <grafana-server-root-urls>
+```
+
+You need to restart the Grafana server afterwards.
 
 ### Full steps
 
