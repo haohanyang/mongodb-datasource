@@ -65,7 +65,7 @@ export const VariableQueryEditor = ({ onChange, query, onRunQuery, datasource }:
         </p>
         <p>
           The optional
-          <code>text</code> field will be used as the name of <code>value</code> if <code>text</code> exists.
+          <code>text</code> field will be used as the display text of variables if exists.
         </p>
       </Alert>
     </div>
