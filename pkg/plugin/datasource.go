@@ -63,7 +63,8 @@ func NewDatasource(ctx context.Context, source backend.DataSourceInstanceSetting
 
 	// Setup resource handlers
 	mux := http.NewServeMux()
-	mux.HandleFunc("/collections", datasource.listCollections)
+	mux.HandleFunc("GET /collections", datasource.listCollections)
+	mux.HandleFunc("POST /variable-query", datasource.queryVariableHandler)
 
 	datasource.resourceHandler = httpadapter.New(mux)
 
@@ -88,7 +89,7 @@ func (d *Datasource) QueryData(ctx context.Context, req *backend.QueryDataReques
 
 	for _, q := range req.Queries {
 
-		res := d.query(ctx, req.PluginContext, q)
+		res := d.query(ctx, q)
 
 		// save the response in a hashmap
 		// based on with RefID as identifier
@@ -123,7 +124,46 @@ func (d *Datasource) listCollections(rw http.ResponseWriter, req *http.Request) 
 	rw.WriteHeader(http.StatusOK)
 }
 
-func (d *Datasource) query(ctx context.Context, _ backend.PluginContext, query backend.DataQuery) backend.DataResponse {
+// Query Variable support
+func (d *Datasource) queryVariableHandler(rw http.ResponseWriter, req *http.Request) {
+	var variableQuery variableQueryRequest
+
+	ctx := req.Context()
+
+	err := json.NewDecoder(req.Body).Decode(&variableQuery)
+	if err != nil {
+		http.Error(rw, "Invalid request format", http.StatusBadRequest)
+		return
+	}
+
+	var pipeline []bson.D
+
+	err = bson.UnmarshalExtJSON([]byte(variableQuery.Query), false, &pipeline)
+	if err != nil {
+		http.Error(rw, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	db := d.client.Database(d.database)
+	cursor, err := db.Collection(variableQuery.Collection).Aggregate(ctx, pipeline)
+
+	if err != nil {
+		http.Error(rw, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	result, err := queryVariable(ctx, cursor)
+	if err != nil {
+		http.Error(rw, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	rw.Header().Set("Content-Type", "application/json")
+	rw.WriteHeader(http.StatusOK)
+	json.NewEncoder(rw).Encode(result)
+}
+
+func (d *Datasource) query(ctx context.Context, query backend.DataQuery) backend.DataResponse {
 	backend.Logger.Debug("Executing query", "refId", query.RefID, "json", query.JSON)
 
 	var response backend.DataResponse

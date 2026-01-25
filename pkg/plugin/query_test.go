@@ -271,3 +271,138 @@ func TestCreateTableFramesFromQuery(t *testing.T) {
 	})
 
 }
+
+func TestQueryVariable(t *testing.T) {
+	t.Run("string values", func(t *testing.T) {
+		ctx := context.Background()
+		toInsert := []interface{}{
+			bson.M{
+				"value": "value1",
+				"text":  "text1",
+			},
+			bson.M{
+				"value": "value2",
+			},
+		}
+		cursor, err := mongo.NewCursorFromDocuments(toInsert, nil, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		results, err := queryVariable(ctx, cursor)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if results[0].Value != "value1" || results[0].Text != "text1" {
+			t.Error("unexpected first result")
+		}
+
+		if results[1].Value != "value2" || results[1].Text != "value2" {
+			t.Error("unexpected second result")
+		}
+	})
+
+	t.Run("int values", func(t *testing.T) {
+		ctx := context.Background()
+
+		toInsert := []interface{}{
+			bson.M{
+				"value": 1,
+				"text":  "one",
+			},
+			bson.M{
+				"value": 2,
+			},
+		}
+
+		cursor, err := mongo.NewCursorFromDocuments(toInsert, nil, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		results, err := queryVariable(ctx, cursor)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if results[0].Value != int32(1) || results[0].Text != "one" {
+			t.Error("unexpected first result")
+		}
+
+		if results[1].Value != int32(2) || results[1].Text != "2" {
+			t.Error("unexpected second result")
+		}
+	})
+
+	t.Run("float values", func(t *testing.T) {
+		ctx := context.Background()
+		toInsert := []interface{}{
+			bson.M{
+				"value": 1.1,
+				"text":  "one point one",
+			},
+			bson.M{
+				"value": 2.2,
+				"text":  "two point two",
+			},
+		}
+
+		cursor, err := mongo.NewCursorFromDocuments(toInsert, nil, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		results, err := queryVariable(ctx, cursor)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if results[0].Value != 1.1 || results[0].Text != "one point one" {
+			t.Error("unexpected first result")
+		}
+
+		if results[1].Value != 2.2 || results[1].Text != "two point two" {
+			t.Error("unexpected second result")
+		}
+
+	})
+
+	t.Run("mix value types", func(t *testing.T) {
+		ctx := context.Background()
+
+		toInsert := []interface{}{
+			bson.M{
+				"value": "value1",
+				"text":  "text1",
+			},
+			bson.M{
+				"value": 2,
+			},
+			bson.M{
+				"value": 3.3,
+				"text":  "three point three",
+			},
+		}
+		cursor, err := mongo.NewCursorFromDocuments(toInsert, nil, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		results, err := queryVariable(ctx, cursor)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if results[0].Value != "value1" || results[0].Text != "text1" {
+			t.Error("unexpected first result")
+		}
+		if results[1].Value != int32(2) || results[1].Text != "2" {
+			t.Error("unexpected second result", results[1].Value, results[1].Text)
+		}
+		if results[2].Value != 3.3 || results[2].Text != "three point three" {
+			t.Error("unexpected third result")
+		}
+	})
+
+}

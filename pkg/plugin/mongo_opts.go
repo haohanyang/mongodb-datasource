@@ -32,7 +32,7 @@ func buildMongoOpts(config *models.PluginSettings) (*options.ClientOptions, erro
 }
 
 func setAuth(config *models.PluginSettings, opts *options.ClientOptions) error {
-	if config.AuthMethod == MongoAuthUsernamePassword {
+	if config.AuthMethod == mongoAuthUsernamePassword {
 		if config.Username == "" || config.Secrets == nil || config.Secrets.Password == "" {
 			return errors.New("missing MongoDB username or password")
 		}
@@ -47,7 +47,7 @@ func setAuth(config *models.PluginSettings, opts *options.ClientOptions) error {
 		}
 
 		opts.SetAuth(cred)
-	} else if config.AuthMethod == MongoAuthX509 {
+	} else if config.AuthMethod == mongoAuthX509 {
 		cred := options.Credential{
 			AuthMechanism: "MONGODB-X509",
 			AuthSource:    "$external",

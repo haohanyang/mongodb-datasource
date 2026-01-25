@@ -1,10 +1,25 @@
-import { DataSourceInstanceSettings, CoreApp, ScopedVars, DataQueryRequest, DataQueryResponse } from '@grafana/data';
+import {
+  DataSourceInstanceSettings,
+  CoreApp,
+  ScopedVars,
+  DataQueryRequest,
+  DataQueryResponse,
+  LegacyMetricFindQueryOptions,
+  MetricFindValue,
+} from '@grafana/data';
 import { DataSourceWithBackend, getTemplateSrv, TemplateSrv } from '@grafana/runtime';
 import { EJSON } from 'bson';
 import { parseFilter } from 'mongodb-query-parser';
-import { Observable } from 'rxjs';
+import { type Observable } from 'rxjs';
 import { unixTsToMongoID } from './utils';
-import { MongoDBQuery, MongoDataSourceOptions, DEFAULT_QUERY, QueryLanguage } from './types';
+import {
+  MongoDBQuery,
+  MongoDataSourceOptions,
+  DEFAULT_QUERY,
+  QueryLanguage,
+  MongoDBVariableQuery,
+  MongoDBVariableResultEntry,
+} from './types';
 import { MongoDBVariableSupport } from './variables';
 
 export class MongoDBDataSource extends DataSourceWithBackend<MongoDBQuery, MongoDataSourceOptions> {
@@ -77,6 +92,14 @@ export class MongoDBDataSource extends DataSourceWithBackend<MongoDBQuery, Mongo
         return { ...query, localFrom: request.range.from, localTo: request.range.to };
       }),
     });
+  }
+
+  async metricFindQuery(
+    query: MongoDBVariableQuery,
+    options?: LegacyMetricFindQueryOptions,
+  ): Promise<MetricFindValue[]> {
+    const results = await this.postResource<MongoDBVariableResultEntry[]>('variable-query', query);
+    return results;
   }
 
   getCollectionNames(): Promise<string[]> {

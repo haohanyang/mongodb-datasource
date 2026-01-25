@@ -50,3 +50,6 @@ dist-editor/
 test-screenshots/
 
 .bra.toml
+
+provisioning/datasources/dev.yml
+provisioning/datasources/dev.yaml
