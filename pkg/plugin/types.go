@@ -26,3 +26,13 @@ type queryModel struct {
 	AggregateMaxAwaitTime             int    `json:"aggregateMaxAwaitTime"`
 	AggregateBypassDocumentValidation bool   `json:"aggregateBypassDocumentValidation"`
 }
+
+type variableQueryRequest struct {
+	Collection string `json:"collection"`
+	Query      string `json:"queryText"`
+}
+
+type variableQueryEntry struct {
+	Value any    `json:"value"`
+	Text  string `json:"text"`
+}

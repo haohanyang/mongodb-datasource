@@ -220,7 +220,7 @@ func TestSetAuth(t *testing.T) {
 		opts := options.Client()
 		config := &models.PluginSettings{
 			Host:       "localhost:27017",
-			AuthMethod: MongoAuthUsernamePassword,
+			AuthMethod: mongoAuthUsernamePassword,
 			Database:   "test",
 			Username:   "testuser",
 			Secrets: &models.SecretPluginSettings{
@@ -255,7 +255,7 @@ func TestSetAuth(t *testing.T) {
 		config := &models.PluginSettings{
 			Host:       "localhost:27017",
 			Database:   "test",
-			AuthMethod: MongoAuthX509,
+			AuthMethod: mongoAuthX509,
 		}
 
 		err := setAuth(config, opts)
@@ -374,7 +374,7 @@ func TestConn(t *testing.T) {
 
 		config := &models.PluginSettings{
 			Host:       host,
-			AuthMethod: MongoAuthUsernamePassword,
+			AuthMethod: mongoAuthUsernamePassword,
 			Username:   "user",
 			Secrets: &models.SecretPluginSettings{
 				Password: "pass",
@@ -420,7 +420,7 @@ func TestConn(t *testing.T) {
 
 		config := &models.PluginSettings{
 			Host:                 host,
-			AuthMethod:           MongoAuthUsernamePassword,
+			AuthMethod:           mongoAuthUsernamePassword,
 			CaCertPath:           filepath.Join(certPath, "ca-ec.pem"),
 			ClientCertAndKeyPath: filepath.Join(certPath, "client-ec.pem"),
 			TlsOption:            tlsEnabled,
@@ -468,7 +468,7 @@ func TestConn(t *testing.T) {
 
 		config := &models.PluginSettings{
 			Host:                 host,
-			AuthMethod:           MongoAuthUsernamePassword,
+			AuthMethod:           mongoAuthUsernamePassword,
 			CaCertPath:           filepath.Join(certPath, "ca-ec.pem"),
 			ClientCertAndKeyPath: filepath.Join(certPath, "client-ec-encrypted.pem"),
 			TlsOption:            tlsEnabled,
@@ -527,7 +527,7 @@ func TestConn(t *testing.T) {
 
 			config := &models.PluginSettings{
 				Host:                 host,
-				AuthMethod:           MongoAuthUsernamePassword,
+				AuthMethod:           mongoAuthUsernamePassword,
 				CaCertPath:           filepath.Join(certPath, "ca-ec.pem"),
 				ClientCertAndKeyPath: filepath.Join(certPath, "client-ec.pem"),
 				TlsOption:            tlsEnabled,
@@ -562,7 +562,7 @@ func TestConn(t *testing.T) {
 
 		config := &models.PluginSettings{
 			Host:                 host,
-			AuthMethod:           MongoAuthX509,
+			AuthMethod:           mongoAuthX509,
 			CaCertPath:           filepath.Join(certPath, "ca-ec.pem"),
 			ClientCertAndKeyPath: filepath.Join(certPath, "client-x509.pem"),
 			TlsOption:            tlsEnabled,

@@ -1,4 +1,4 @@
-import { DataSourceJsonData, DateTime } from '@grafana/data';
+import { DataSourceJsonData, DateTime, MetricFindValue } from '@grafana/data';
 import { DataQuery } from '@grafana/schema';
 
 export interface MongoDBQuery extends DataQuery {
@@ -21,6 +21,8 @@ export interface MongoDBVariableQuery extends DataQuery {
   queryText?: string;
   collection?: string;
 }
+
+export interface MongoDBVariableResultEntry extends MetricFindValue {}
 
 export const QueryLanguage = {
   JSON: 'json',
