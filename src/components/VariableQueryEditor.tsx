@@ -59,8 +59,14 @@ export const VariableQueryEditor = ({ onChange, query, onRunQuery, datasource }:
         fontSize={14}
       />
       <Alert title="Query info" severity="info" style={{ marginTop: 10 }}>
-        The query result is expected to contain <code>value</code> field which has elements of type <code>string</code>{' '}
-        or <code>number</code>
+        <p>
+          Write the query in JSON format. The query result is expected to contain <code>value</code> field which has
+          elements of type <code>string</code> or <code>number</code>.
+        </p>
+        <p>
+          The optional
+          <code>text</code> field will be used as the name of <code>value</code> if <code>text</code> exists.
+        </p>
       </Alert>
     </div>
   );
