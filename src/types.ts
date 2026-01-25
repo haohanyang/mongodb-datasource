@@ -18,7 +18,7 @@ export interface MongoDBQuery extends DataQuery {
 }
 
 export interface MongoDBVariableQuery extends DataQuery {
-  query?: string;
+  queryText?: string;
   collection?: string;
 }
 

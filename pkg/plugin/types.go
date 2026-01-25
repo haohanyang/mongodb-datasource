@@ -29,7 +29,7 @@ type queryModel struct {
 
 type variableQueryRequest struct {
 	Collection string `json:"collection"`
-	Query      string `json:"query"`
+	Query      string `json:"queryText"`
 }
 
 type variableQueryEntry struct {

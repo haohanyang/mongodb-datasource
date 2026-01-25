@@ -52,9 +52,9 @@ export const VariableQueryEditor = ({ onChange, query, onRunQuery, datasource }:
         </InlineField>
       </InlineFieldRow>
       <QueryEditorRaw
-        query={query.query ?? ''}
+        query={query.queryText ?? ''}
         language="json"
-        onBlur={(queryText) => onChange({ ...query, query: queryText })}
+        onBlur={(queryText) => onChange({ ...query, queryText: queryText })}
         height={300}
         fontSize={14}
       />

@@ -14,7 +14,7 @@ export class MongoDBVariableSupport extends CustomVariableSupport<MongoDBDataSou
     const [target] = request.targets;
     const result = this.datasource.metricFindQuery({
       refId: target.refId,
-      query: target.query,
+      queryText: target.queryText,
       collection: target.collection,
     });
     return from(result).pipe(map((data) => ({ data })));
