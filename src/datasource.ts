@@ -89,7 +89,9 @@ export class MongoDBDataSource extends DataSourceWithBackend<MongoDBQuery, Mongo
     return super.query({
       ...request,
       targets: request.targets.map((query) => {
-        return { ...query, localFrom: request.range.from, localTo: request.range.to };
+        const queryText = (query.queryText ?? '').trimEnd().replace(/;$/, '');
+
+        return { ...query, localFrom: request.range.from, localTo: request.range.to, queryText: queryText };
       }),
     });
   }
