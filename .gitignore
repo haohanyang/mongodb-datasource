@@ -53,3 +53,7 @@ test-screenshots/
 
 provisioning/datasources/dev.yml
 provisioning/datasources/dev.yaml
+
+.docusaurus/
+.cache-loader/
+build/

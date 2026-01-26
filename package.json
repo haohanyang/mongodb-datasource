@@ -14,7 +14,9 @@
     "server": "docker compose up --build",
     "sign": "npx --yes @grafana/sign-plugin@latest",
     "format": "prettier --write .",
-    "editor-dev": "webpack serve --config-name editor"
+    "editor-dev": "webpack serve --config-name editor",
+    "d": "docusaurus start",
+    "b": "docusaurus build"
   },
   "author": "Haohan Yang",
   "license": "Apache-2.0",
@@ -76,6 +78,8 @@
     "node": ">=20"
   },
   "dependencies": {
+    "@docusaurus/core": "3.9.2",
+    "@docusaurus/preset-classic": "3.9.2",
     "@emotion/css": "11.10.6",
     "@grafana/data": "^11.2.0",
     "@grafana/plugin-ui": "^0.10.5",
@@ -85,6 +89,7 @@
     "@mongodb-js/mongodb-constants": "^0.11.1",
     "jsonc-parser": "^3.3.1",
     "mongodb-query-parser": "^4.4.4",
+    "prism-react-renderer": "^2.3.0",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "tslib": "2.5.3",
