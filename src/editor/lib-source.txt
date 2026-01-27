@@ -1,5 +1,11 @@
-// Built-in variables
+// Global variables
 // Reference: https://docs.aws.amazon.com/grafana/latest/userguide/variables-types.html
+
+/**
+ * This variable is the name of the current dashboard.
+ */
+declare const $__dashboard: string;
+
 /**
  * Beginning of time range in Unix millisecond epoch, e.g., 1594671549254
  */
@@ -10,8 +16,35 @@ declare const $__from: number;
  */
 declare const $__to: number;
 
+
 /**
- * Beginning of time range in Unix millisecond epoch that respects local dashboard overrides, e.g., 1594671549254
+ * You can use the `$__interval` variable as a parameter to group by time (for InfluxDB, Myself, Postgres, MSSQL), Date histogram interval (for OpenSearch), or as a summarize function parameter (for Graphite).
+ * 
+ * The Grafana workspace automatically calculates an interval that can be used to group by time in queries. When there are more data points than can be shown on a graph, queries can be made more efficient by grouping by a larger interval. For example, it is more efficient to group by 1 day than by 10s when looking at 3 months of data. The graph will look the same, and the query will be faster. The `$__interval` is calculated by using the time range and the width of the graph (the number of pixels).
+ * 
+ * Approximate Calculation: `(from - to) / resolution`
+ */
+declare const $__interval: string;
+
+/**
+ * This variable is the `$__interval` variable in milliseconds, not a time interval formatted string. For example, if the `$__interval` is 20m then the `$__interval_ms` is `1200000`.
+ */
+declare const $__interval_ms: number;
+
+/**
+ * This variable is the ID of the current organization. The variable `${__org.name}` is the name of the current organization.
+ */
+declare const $__org: string
+
+/**
+ * The variable `${__user.id}` is the ID of the current user. The variable `${__user.login}` is the login handle of the current user. The variable `${__user.email}` is the email for the current user.
+ */
+declare const $__user: string
+
+// Plugin variables 
+
+/**
+ * Beginning of time range in Unix millisecond epoch that respects local dashboard overrides, e.g., 1594671549254.
  */
 declare const $__local_from: number;
 
