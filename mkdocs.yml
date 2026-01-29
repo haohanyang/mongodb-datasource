@@ -1,0 +1,17 @@
+site_name: MongoDB Data Source
+theme:
+  name: material
+  language: en
+  features:
+    - content.code.copy
+repo_url: https://github.com/haohanyang/mongodb-datasource
+site_author: Haohan Yang
+site_description: Documentation for MongoDB Data Source for Grafana
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
