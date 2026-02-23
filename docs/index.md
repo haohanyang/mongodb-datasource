@@ -1,4 +1,4 @@
-# Home
+# Introduction
 
 Integrate MongoDB and Grafana. This plugin enables you to query and visualize data from your MongoDB databases on Grafana. A free, open source, community-driven alternative to Grafana Lab's enterprise plugin and MongoDB Atlas Charts.
 

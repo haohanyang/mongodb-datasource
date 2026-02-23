@@ -15,3 +15,10 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.snippets
   - pymdownx.superfences
+  - admonition
+  - tables
+nav:
+  - Home: index.md
+  - 'Get Started': get-started.md
+  - Configuration: configs.md
+  - Query: query.md
