@@ -47,7 +47,7 @@ const editorConfig = (env: any): Configuration => {
     output: {
       globalObject: 'self',
       filename: '[name].bundle.js',
-      path: path.resolve(__dirname, 'dist-editor'),
+      path: path.join(__dirname, 'docs', 'javascripts'),
     },
     module: {
       rules: [

@@ -17,8 +17,13 @@ markdown_extensions:
   - pymdownx.superfences
   - admonition
   - tables
+  - pymdownx.tabbed:
+      alternate_style: true
 nav:
   - Home: index.md
   - 'Get Started': get-started.md
   - Configuration: configs.md
   - Query: query.md
+  - 'Code Editor': code-editor.md
+extra_javascript:
+  - javascripts/main.bundle.js

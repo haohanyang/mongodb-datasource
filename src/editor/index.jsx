@@ -27,7 +27,7 @@ function setMonacoEnv() {
   };
 }
 
-const initQuery = `
+const initJSQuery = `
 [
 	{
 		$match: {
@@ -37,9 +37,20 @@ const initQuery = `
 ]
 `;
 
-function App() {
-  const [query, setQuery] = useState(initQuery.trim());
-  const [language, setLanguage] = useState('javascript');
+const initJsonQuery = JSON.stringify(
+  [
+    {
+      $match: {
+        key: 'value',
+      },
+    },
+  ],
+  null,
+  2,
+);
+
+function App({ language }) {
+  const [query, setQuery] = useState(language === 'javascript' ? initJSQuery.trim() : initJsonQuery.trim());
   const [parseResult, setParseResult] = useState('');
 
   const parseFilterHandler = () => {
@@ -52,40 +63,41 @@ function App() {
   };
 
   return (
-    <main
-      style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: '100vh',
-        flexDirection: 'column',
-      }}
-    >
-      <QueryEditorRaw query={query} onBlur={setQuery} language={language} width={500} height={500} fontSize={14} />
-
-      <div style={{ marginTop: 10 }}>
-        <label htmlFor="language-select">Language:</label>
-        <select
-          id="language-select"
-          value={language}
-          onChange={(e) => {
-            setLanguage(e.target.value);
-            setParseResult('');
-          }}
-        >
-          <option value="json">JSON</option>
-          <option value="javascript">JavaScript</option>
-        </select>
-        <button onClick={parseFilterHandler} disabled={language !== 'javascript'} style={{ marginLeft: 10 }}>
-          Parse filter
-        </button>
-      </div>
-      {language === 'javascript' && <code>{parseResult}</code>}
-    </main>
+    <div id="editor-container">
+      <QueryEditorRaw query={query} onBlur={setQuery} language={language} height={500} fontSize={14} />
+      {language === 'javascript' && (
+        <div style={{ marginTop: 10 }}>
+          <button
+            className="md-button"
+            onClick={parseFilterHandler}
+            disabled={language !== 'javascript'}
+            style={{ marginLeft: 10 }}
+          >
+            Parse filter
+          </button>
+          {parseResult && (
+            <div>
+              <pre>
+                <code>{parseResult}</code>
+              </pre>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
 setMonacoEnv();
 
-const root = createRoot(document.getElementById('root'));
-root.render(<App />);
+const jsEditorElement = document.getElementById('editor-js');
+if (jsEditorElement) {
+  const root = createRoot(jsEditorElement);
+  root.render(<App language="javascript" />);
+}
+
+const jsonEditorElement = document.getElementById('editor-json');
+if (jsonEditorElement) {
+  const root = createRoot(jsonEditorElement);
+  root.render(<App language="json" />);
+}
