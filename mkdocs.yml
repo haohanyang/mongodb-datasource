@@ -25,5 +25,6 @@ nav:
   - Configuration: configs.md
   - Query: query.md
   - 'Code Editor': code-editor.md
+  - Query Variable: query-variable.md
 extra_javascript:
   - javascripts/main.bundle.js

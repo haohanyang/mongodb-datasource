@@ -158,7 +158,11 @@ Because the plugin returns a single data frame, you need to split it by category
 2. Add the **"Partition by values"** transformation.
 3. Set the field to **`name`**.
 
+![transform-partition](assets/transforms-partition.png)
+
 Each category will now appear as a separate series on your visualization.
+
+![airbnb-properties-ts](assets/airbnb-properties-ts.png)
 
 !!! info
 
