@@ -47,7 +47,7 @@ const editorConfig = (env: any): Configuration => {
     output: {
       globalObject: 'self',
       filename: '[name].bundle.js',
-      path: path.resolve(__dirname, 'dist-editor'),
+      path: path.join(__dirname, 'docs', 'javascripts'),
     },
     module: {
       rules: [
@@ -72,14 +72,6 @@ const editorConfig = (env: any): Configuration => {
           use: ['style-loader', 'css-loader'],
         },
       ],
-    },
-    devServer: {
-      static: {
-        directory: path.join(__dirname, 'dist-editor'),
-      },
-      compress: true,
-      port: 8001,
-      open: false,
     },
     plugins: [
       new HtmlWebPackPlugin({

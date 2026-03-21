@@ -53,3 +53,9 @@ test-screenshots/
 
 provisioning/datasources/dev.yml
 provisioning/datasources/dev.yaml
+
+
+docs/javascripts
+data/
+
+site/

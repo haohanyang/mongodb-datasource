@@ -1,0 +1,48 @@
+name: GitHub Pages
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build editor
+        run: npm run build:editor
+
+      - name: Setup Python environment
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+
+      - name: Install MkDocs Material
+        run: pip install mkdocs-material
+
+      - name: Build website
+        run: mkdocs build
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+        with:
+          path: site
