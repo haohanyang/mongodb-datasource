@@ -4,7 +4,7 @@
 
 #### 1. Clone the repository
 
-```
+```bash
 git clone https://github.com/haohanyang/mongodb-datasource.git
 
 cd mongodb-datasource
@@ -16,19 +16,19 @@ At the repository root directory, run the script [quick_start.sh](https://github
 
 - Linux/macOS
 
-```
+```bash
 bash scripts/quick_start.sh
 ```
 
 - Windows
 
-```
+```pwsh
 .\scripts\quick_start.ps1
 ```
 
 #### 3. Add the MongoDB Datasource
 
-Grafana can ba accessed on [http://localhost:3000](http://localhost:3000). You can add a new MongoDB data source from DataSources.
+Go to grafana dashboard on [http://localhost:3000](http://localhost:3000) and create a new MongoDB data source.
 
 ## Manual Setup
 
@@ -36,7 +36,7 @@ Grafana can ba accessed on [http://localhost:3000](http://localhost:3000). You c
 
 Download the latest plugin build from the [Release page](https://github.com/haohanyang/mongodb-datasource/releases) or [workflow artifacts](https://github.com/haohanyang/mongodb-datasource/actions?query=branch%3Amaster)
 
-Extract the downloaded zip file into your Grafana plugins directory (usually `/var/lib/grafana/plugins` in the Docker container). The plugin directory `mongodb-datasource` should have a structure similar to the following:
+Extract the downloaded zip file into your Grafana plugins directory (usually `/var/lib/grafana/plugins` if using Grafana Docker image). The plugin directory `mongodb-datasource` should have a structure similar to the following:
 
 ```
 /lib/grafana/plugins/mongodb-datasource
@@ -57,9 +57,9 @@ chmod +x mongodb-datasource/gpx_mongodb_datasource_*
 
 #### 3. Configure the datasource
 
-Configure the plugin as a data source on Grafana, providing your MongoDB connection information.
+Go to grafana dashboard on [http://localhost:3000](http://localhost:3000) and create a new MongoDB data source.
 
-Refer to the [example docker-compose.prod.yaml](https://github.com/haohanyang/mongodb-datasource/blob/master/docker-compose.prod.yaml) file for a production-ready setup.
+Refer to the [example docker-compose.prod.yaml](https://github.com/haohanyang/mongodb-datasource/blob/master/docker-compose.prod.yaml) for a production-ready setup.
 
 ## Install using the Grafana CLI
 

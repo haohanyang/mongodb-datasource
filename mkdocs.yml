@@ -5,6 +5,7 @@ theme:
   features:
     - content.code.copy
 repo_url: https://github.com/haohanyang/mongodb-datasource
+site_url: https://haohanyang.github.io/mongodb-datasource/
 site_author: Haohan Yang
 site_description: Documentation for MongoDB Data Source for Grafana
 markdown_extensions:

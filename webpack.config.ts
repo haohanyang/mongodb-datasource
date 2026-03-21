@@ -73,14 +73,6 @@ const editorConfig = (env: any): Configuration => {
         },
       ],
     },
-    devServer: {
-      static: {
-        directory: path.join(__dirname, 'dist-editor'),
-      },
-      compress: true,
-      port: 8001,
-      open: false,
-    },
     plugins: [
       new HtmlWebPackPlugin({
         template: './src/editor/index.html',

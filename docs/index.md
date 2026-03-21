@@ -2,10 +2,12 @@
 
 Integrate MongoDB and Grafana. This plugin enables you to query and visualize data from your MongoDB databases on Grafana. A free, open source, community-driven alternative to Grafana Lab's enterprise plugin and MongoDB Atlas Charts.
 
+Start with the guide [Get Started](get-started.md).
+
 ## Features
 
 - Write queries using MongoDB's aggregation in JSON or JavaScript. Enrich your dashboards with query variables, alerting, annotations, etc.
-- IntelliSense in the query editor, which provides smart auto-completion, hover documentation, syntax highlighting, and CodeLens to make writing queries effortless and error-free.
+- IntelliSense in the query editor, which provides smart auto-completion, hover documentation, syntax highlighting, and CodeLens to make writing queries more efficient.
 - Supports to MongoDB Atlas, Amazon DocumentDB and Azure Cosmos DB.
 - TLS/SSL support
 - Fully free and open source.
@@ -19,10 +21,6 @@ Integrate MongoDB and Grafana. This plugin enables you to query and visualize da
 
 - Username/Password
 - X.509
-
-## Getting Started
-
-Check the [Get Started](get-started.md) guide.
 
 ## License
 
