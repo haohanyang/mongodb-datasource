@@ -25,7 +25,9 @@ nav:
   - 'Get Started': get-started.md
   - Configuration: configs.md
   - Query: query.md
+  - 'Gloabal and Plugin Variables': global-and-plugin-variables.md
+  - 'Query Variable': query-variable.md
   - 'Code Editor': code-editor.md
-  - Query Variable: query-variable.md
+  - 'Supported BSON Types': 'supported-bson-types.md'
 extra_javascript:
   - javascripts/main.bundle.js
