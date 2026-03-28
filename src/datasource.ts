@@ -45,22 +45,22 @@ export class MongoDBDataSource extends DataSourceWithBackend<MongoDBQuery, Mongo
       from = query.localFrom.toDate().getTime();
 
       variables['__local_from'] = { value: from.toString() };
-      variables['__from_oid'] = { value: `"${unixTsToMongoID(from, '0')}"` };
+      variables['__from_oid'] = { value: `${unixTsToMongoID(from, '0')}` };
     }
 
     if (query.localTo) {
       to = query.localTo.toDate().getTime();
       variables['__local_to'] = { value: to.toString() };
-      variables['__to_oid'] = { value: `"${unixTsToMongoID(to, '0')}"` };
+      variables['__to_oid'] = { value: `${unixTsToMongoID(to, '0')}` };
     }
 
     let queryText = query.queryText!;
 
     const interval_ms: number | undefined = scopedVars['__interval_ms']?.value;
 
-    // $dateBucketCount
+    // $__dateBucketCount
     if (interval_ms && from && to) {
-      variables.dateBucketCount = { value: Math.ceil((to - from) / interval_ms) };
+      variables['__dateBucketCount'] = { value: Math.ceil((to - from) / interval_ms) };
     }
 
     let text = this.templateSrv.replace(queryText, variables);
