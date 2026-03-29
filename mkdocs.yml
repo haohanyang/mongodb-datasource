@@ -23,6 +23,7 @@ markdown_extensions:
 nav:
   - Home: index.md
   - 'Get Started': get-started.md
+  - 'Changelog': changelog.md
   - Configuration: configs.md
   - Query: query.md
   - 'Gloabal and Plugin Variables': global-and-plugin-variables.md
