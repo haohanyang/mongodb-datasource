@@ -30,6 +30,8 @@ declare const $__from_oid: string;
  */
 declare const $__to_oid: string;
 
+declare const $__dateBucketCount: number;
+
 // MongoDB constructors
 // Reference: https://www.mongodb.com/docs/manual/reference/method/js-constructor/
 
