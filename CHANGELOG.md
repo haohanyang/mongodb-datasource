@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.5.0 - 2026-03-29
+⚠️ **This version contains breaking changes**
+### Added
+- A new "JavaScript" query language with limited execution capability. Similar to JSON, user writes JavaScript objects as aggregation pipeline.
+    ```js
+    [
+        {
+            $match: {...}
+        },
+        {
+            $addFields: {
+                F: 1 + 1
+            }
+        }
+    ]
+    ```
+- Launched the new [documentation page](https://haohanyang.github.io/mongodb-datasource/get-started/) using [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/).
+- Added X.509 authentication.
+- Added Semantic highlights of aggregate operators on JS and JSON editors.
+- Added built-in variable autocomplete in JavaScript editor.
+### Changed
+- Refactored data source config page.
+- Removed "JavaScript Shadow" and legacy "JavaScript" query languages.
+- Removed data frame splitting based field `name` on backend, in favor of using Grafana's transformations. Check [Query](https://haohanyang.github.io/mongodb-datasource/query/#break-down-by-category) for details.
+- Removed variables `$from` and `$to` to avoid clashes. Changed `$dateBucketCount` to `$__dateBucketCount`.
+
+
 ## 0.4.1 - 2025-10-25
 
 ### Added
