@@ -31,6 +31,7 @@ nav:
   - 'Gloabal and Plugin Variables': global-and-plugin-variables.md
   - 'Query Variable': query-variable.md
   - 'Code Editor': code-editor.md
-  - 'Supported BSON Types': 'supported-bson-types.md'
+  - 'Supported BSON Types': supported-bson-types.md
+  - 'Sign the Plugin': sign-the-plugin.md
 extra_javascript:
   - javascripts/main.bundle.js
