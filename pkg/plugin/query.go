@@ -117,9 +117,15 @@ func queryVariable(ctx context.Context, cursor *mongo.Cursor) ([]variableQueryEn
 			})
 		} else if valueRaw.Type == bson.TypeInt64 {
 			intVav := valueRaw.Int64()
+		
 			if text == nil {
 				text = pointer(fmt.Sprintf("%d", intVav))
 			}
+		
+			results = append(results, variableQueryEntry{
+				Value: intVav,
+				Text:  *text,
+			})
 		} else if valueRaw.Type == bson.TypeDouble {
 			floatVal := valueRaw.Double()
 			if text == nil {
