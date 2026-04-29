@@ -1,12 +1,13 @@
 import {
   CustomVariableSupport,
+  DataFrame,
   DataQueryRequest,
   DataQueryResponse,
   FieldType,
-  MutableDataFrame,
 } from '@grafana/data';
-import { MongoDBDataSource } from 'datasource';
 import { getTemplateSrv } from '@grafana/runtime';
+import { from, Observable } from 'rxjs';
+import { MongoDBDataSource } from 'datasource';
 import { VariableQueryEditor } from './components/VariableQueryEditor';
 import { MongoDBVariableQuery } from 'types';
 
@@ -16,38 +17,44 @@ export class MongoDBVariableSupport extends CustomVariableSupport<MongoDBDataSou
     super();
   }
 
-  query(request: DataQueryRequest<MongoDBVariableQuery>): Promise<DataQueryResponse> {
+  query(request: DataQueryRequest<MongoDBVariableQuery>): Observable<DataQueryResponse> {
     const [target] = request.targets;
-
     const interpolated = getTemplateSrv().replace(target.queryText);
 
-    return this.datasource.metricFindQuery({
-      refId: target.refId,
-      queryText: interpolated,
-      collection: target.collection,
-    }).then((metricFindValues) => {
-      const frame = new MutableDataFrame({
-        name: 'variable_query_result',
-        fields: [
-          {
-            name: '__text',
-            type: FieldType.string,
-            values: metricFindValues.map((v) => v.text),
-          },
-          {
-            name: '__value',
-            type: FieldType.string,
-            values: metricFindValues.map((v) =>
-              v.value !== undefined ? String(v.value) : String(v.text)
-            ),
-          },
-        ],
-      });
+    return from(
+      this.datasource
+        .metricFindQuery({
+          refId: target.refId,
+          queryText: interpolated,
+          collection: target.collection,
+        })
+        .then((metricFindValues) => {
+          const frame: DataFrame = {
+            name: 'variable_query_result',
+            fields: [
+              {
+                name: 'text',
+                type: FieldType.string,
+                values: metricFindValues.map((v) => v.text),
+                config: {},
+              },
+              {
+                name: 'value',
+                type: FieldType.string,
+                values: metricFindValues.map((v) =>
+                  v.value !== undefined ? String(v.value) : String(v.text)
+                ),
+                config: {},
+              },
+            ],
+            length: metricFindValues.length,
+          };
 
-      return {
-        data: [frame],
-      };
-    });
+          return {
+            data: [frame],
+          };
+        })
+    );
   }
 
   editor = VariableQueryEditor;
