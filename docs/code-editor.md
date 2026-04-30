@@ -7,7 +7,7 @@ In addition to core editor, the plugin also supports code formatting, and editin
 ![](assets/screenshot-editor-modal.png)
 
 !!! info
-JavaScript query is parsed and converted to JSON by [mongodb-query-parser](https://www.npmjs.com/package/mongodb-query-parser), which supports a small subset of JavaScript evaluation. Click "Parse filter" to see the resulting JSON query.
+    JavaScript query is parsed and converted to JSON by [mongodb-query-parser](https://www.npmjs.com/package/mongodb-query-parser), which supports a small subset of JavaScript evaluation. Click "Parse filter" to see the resulting JSON query.
 
 === "JavaScript"
     <div id="editor-js"></div>

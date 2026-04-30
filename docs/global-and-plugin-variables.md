@@ -71,5 +71,20 @@ becomes
   }
 }
 ```
+
+Another useful example is to use `$__from_oid` and `$__to_oid` to filter field `_id`, which reflects the document creation time.
+
+```json
+[
+  {
+    "$match": {
+      "_id": {
+        "$gte": { "$oid": "$__from_oid" },
+        "$lte": { "$oid": "$__to_oid" }
+      }
+    }
+  }
+]
+```
 ### $__dateBucketCount
 `dateBucketCount = Ceil((to - from) / interval_ms))` 
