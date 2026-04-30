@@ -1,7 +1,13 @@
-import { CustomVariableSupport, DataQueryRequest, DataQueryResponse } from '@grafana/data';
-import { MongoDBDataSource } from 'datasource';
+import {
+  CustomVariableSupport,
+  DataFrame,
+  DataQueryRequest,
+  DataQueryResponse,
+  FieldType,
+} from '@grafana/data';
 import { getTemplateSrv } from '@grafana/runtime';
-import { from, map, Observable } from 'rxjs';
+import { from, Observable } from 'rxjs';
+import { MongoDBDataSource } from 'datasource';
 import { VariableQueryEditor } from './components/VariableQueryEditor';
 import { MongoDBVariableQuery } from 'types';
 
@@ -13,15 +19,42 @@ export class MongoDBVariableSupport extends CustomVariableSupport<MongoDBDataSou
 
   query(request: DataQueryRequest<MongoDBVariableQuery>): Observable<DataQueryResponse> {
     const [target] = request.targets;
-
     const interpolated = getTemplateSrv().replace(target.queryText);
 
-    const result = this.datasource.metricFindQuery({
-      refId: target.refId,
-      queryText: interpolated,
-      collection: target.collection,
-    });
-    return from(result).pipe(map((data) => ({ data })));
+    return from(
+      this.datasource
+        .metricFindQuery({
+          refId: target.refId,
+          queryText: interpolated,
+          collection: target.collection,
+        })
+        .then((metricFindValues) => {
+          const frame: DataFrame = {
+            name: 'variable_query_result',
+            fields: [
+              {
+                name: 'text',
+                type: FieldType.string,
+                values: metricFindValues.map((v) => v.text),
+                config: {},
+              },
+              {
+                name: 'value',
+                type: FieldType.string,
+                values: metricFindValues.map((v) =>
+                  v.value !== undefined ? String(v.value) : String(v.text)
+                ),
+                config: {},
+              },
+            ],
+            length: metricFindValues.length,
+          };
+
+          return {
+            data: [frame],
+          };
+        })
+    );
   }
 
   editor = VariableQueryEditor;
