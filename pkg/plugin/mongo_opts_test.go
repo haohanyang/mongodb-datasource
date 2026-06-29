@@ -197,6 +197,84 @@ func TestSetUri(t *testing.T) {
 			t.Errorf("expected connection string %s, got %s", expected, opts.GetURI())
 		}
 	})
+
+	t.Run("should include credentials in URI for PLAIN auth", func(t *testing.T) {
+		opts := options.Client()
+		config := &models.PluginSettings{
+			Host:              "localhost:27017",
+			Database:          "test",
+			AuthMethod:        mongoAuthUsernamePassword,
+			Username:          "ldapuser",
+			ConnectionOptions: "authMechanism=PLAIN&authSource=$external",
+			Secrets: &models.SecretPluginSettings{
+				Password: "ldappass",
+			},
+		}
+
+		err := setUri(config, opts)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		uri := opts.GetURI()
+		// Check that credentials are included in the URI
+		if !strings.Contains(uri, "ldapuser:ldappass@") {
+			t.Errorf("expected URI to contain credentials, got %s", uri)
+		}
+		// Check that authMechanism is preserved
+		if !strings.Contains(uri, "authMechanism=PLAIN") {
+			t.Errorf("expected URI to contain authMechanism=PLAIN, got %s", uri)
+		}
+	})
+
+	t.Run("should URL-encode special characters in credentials for PLAIN auth", func(t *testing.T) {
+		opts := options.Client()
+		config := &models.PluginSettings{
+			Host:              "localhost:27017",
+			Database:          "test",
+			AuthMethod:        mongoAuthUsernamePassword,
+			Username:          "user@domain.com",
+			ConnectionOptions: "authMechanism=PLAIN&authSource=$external",
+			Secrets: &models.SecretPluginSettings{
+				Password: "p@ss:word/test",
+			},
+		}
+
+		err := setUri(config, opts)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		uri := opts.GetURI()
+		// Check that special characters are URL-encoded
+		if !strings.Contains(uri, "user%40domain.com") {
+			t.Errorf("expected URI to contain URL-encoded username, got %s", uri)
+		}
+	})
+
+	t.Run("should not include credentials in URI for non-PLAIN auth", func(t *testing.T) {
+		opts := options.Client()
+		config := &models.PluginSettings{
+			Host:       "localhost:27017",
+			Database:   "test",
+			AuthMethod: mongoAuthUsernamePassword,
+			Username:   "testuser",
+			Secrets: &models.SecretPluginSettings{
+				Password: "testpass",
+			},
+		}
+
+		err := setUri(config, opts)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		uri := opts.GetURI()
+		// Check that credentials are NOT included in the URI for regular auth
+		if strings.Contains(uri, "testuser") || strings.Contains(uri, "testpass") {
+			t.Errorf("expected URI to NOT contain credentials for non-PLAIN auth, got %s", uri)
+		}
+	})
 }
 
 func TestSetAuth(t *testing.T) {
@@ -274,6 +352,103 @@ func TestSetAuth(t *testing.T) {
 
 		if auth.AuthSource != "$external" {
 			t.Errorf("expected auth source %s, got %s", "$external", auth.AuthSource)
+		}
+	})
+
+	t.Run("should set PLAIN auth with default $external source", func(t *testing.T) {
+		opts := options.Client()
+		config := &models.PluginSettings{
+			Host:              "localhost:27017",
+			AuthMethod:        mongoAuthUsernamePassword,
+			Database:          "test",
+			Username:          "ldapuser",
+			ConnectionOptions: "authMechanism=PLAIN&authSource=$external",
+			Secrets: &models.SecretPluginSettings{
+				Password: "ldappass",
+			},
+		}
+
+		err := setAuth(config, opts)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		auth := opts.Auth
+
+		if auth == nil {
+			t.Fatalf("expected auth to be set, got nil")
+		}
+		if auth.Username != "ldapuser" {
+			t.Errorf("expected username %s, got %s", "ldapuser", auth.Username)
+		}
+		if auth.Password != "ldappass" {
+			t.Errorf("expected password %s, got %s", "ldappass", auth.Password)
+		}
+		if auth.AuthMechanism != "PLAIN" {
+			t.Errorf("expected auth mechanism %s, got %s", "PLAIN", auth.AuthMechanism)
+		}
+		if auth.AuthSource != "$external" {
+			t.Errorf("expected auth source %s, got %s", "$external", auth.AuthSource)
+		}
+	})
+
+	t.Run("should set PLAIN auth with custom auth database", func(t *testing.T) {
+		opts := options.Client()
+		config := &models.PluginSettings{
+			Host:              "localhost:27017",
+			AuthMethod:        mongoAuthUsernamePassword,
+			Database:          "test",
+			Username:          "ldapuser",
+			AuthDatabase:      "customdb",
+			ConnectionOptions: "authMechanism=PLAIN",
+			Secrets: &models.SecretPluginSettings{
+				Password: "ldappass",
+			},
+		}
+
+		err := setAuth(config, opts)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		auth := opts.Auth
+
+		if auth == nil {
+			t.Fatalf("expected auth to be set, got nil")
+		}
+		if auth.AuthMechanism != "PLAIN" {
+			t.Errorf("expected auth mechanism %s, got %s", "PLAIN", auth.AuthMechanism)
+		}
+		if auth.AuthSource != "customdb" {
+			t.Errorf("expected auth source %s, got %s", "customdb", auth.AuthSource)
+		}
+	})
+
+	t.Run("should detect PLAIN auth case-insensitively", func(t *testing.T) {
+		opts := options.Client()
+		config := &models.PluginSettings{
+			Host:              "localhost:27017",
+			AuthMethod:        mongoAuthUsernamePassword,
+			Database:          "test",
+			Username:          "ldapuser",
+			ConnectionOptions: "AUTHMECHANISM=plain&authSource=$external",
+			Secrets: &models.SecretPluginSettings{
+				Password: "ldappass",
+			},
+		}
+
+		err := setAuth(config, opts)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		auth := opts.Auth
+
+		if auth == nil {
+			t.Fatalf("expected auth to be set, got nil")
+		}
+		if auth.AuthMechanism != "PLAIN" {
+			t.Errorf("expected auth mechanism %s, got %s", "PLAIN", auth.AuthMechanism)
 		}
 	})
 }

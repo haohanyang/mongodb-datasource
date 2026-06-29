@@ -3,6 +3,7 @@ package plugin
 import (
 	"errors"
 	"net/url"
+	"strings"
 
 	"github.com/haohanyang/mongodb-datasource/pkg/models"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -31,6 +32,12 @@ func buildMongoOpts(config *models.PluginSettings) (*options.ClientOptions, erro
 	return opts, nil
 }
 
+// isPlainAuth checks if PLAIN authentication mechanism is specified in connection options
+func isPlainAuth(connectionOptions string) bool {
+	lowerOpts := strings.ToLower(connectionOptions)
+	return strings.Contains(lowerOpts, "authmechanism=plain")
+}
+
 func setAuth(config *models.PluginSettings, opts *options.ClientOptions) error {
 	if config.AuthMethod == mongoAuthUsernamePassword {
 		if config.Username == "" || config.Secrets == nil || config.Secrets.Password == "" {
@@ -42,7 +49,16 @@ func setAuth(config *models.PluginSettings, opts *options.ClientOptions) error {
 			Password: config.Secrets.Password,
 		}
 
-		if config.AuthDatabase != "" {
+		// Check if PLAIN (LDAP) authentication is requested
+		if isPlainAuth(config.ConnectionOptions) {
+			cred.AuthMechanism = "PLAIN"
+			// For PLAIN/LDAP auth, default to $external if no auth database specified
+			if config.AuthDatabase != "" {
+				cred.AuthSource = config.AuthDatabase
+			} else {
+				cred.AuthSource = "$external"
+			}
+		} else if config.AuthDatabase != "" {
 			cred.AuthSource = config.AuthDatabase
 		}
 
@@ -79,6 +95,14 @@ func setUri(config *models.PluginSettings, opts *options.ClientOptions) error {
 
 	if config.ConnectionStringScheme == connstring.SchemeMongoDBSRV {
 		u.Scheme = connstring.SchemeMongoDBSRV
+	}
+
+	// For PLAIN (LDAP) authentication, credentials must be included in the URI
+	// because the MongoDB driver validates this when authMechanism=PLAIN is specified
+	if isPlainAuth(config.ConnectionOptions) && config.AuthMethod == mongoAuthUsernamePassword {
+		if config.Username != "" && config.Secrets != nil && config.Secrets.Password != "" {
+			u.User = url.UserPassword(config.Username, config.Secrets.Password)
+		}
 	}
 
 	// Remove starting ? in connection options
