@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- Grafana global time macros (`$__from`/`$__to`, incl. `:date`, `:date:iso`, `:date:seconds`) are now interpolated in the backend, so queries using them work in alert rules. Previously these were only substituted in the frontend, so alert evaluation (which runs server-side) failed with `Failed to unmarshal JsonExt`.
+
 ## 0.5.0 - 2026-03-29
 ⚠️ **This version contains breaking changes**
 ### Added
