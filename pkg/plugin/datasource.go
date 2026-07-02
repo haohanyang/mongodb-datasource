@@ -179,6 +179,12 @@ func (d *Datasource) query(ctx context.Context, query backend.DataQuery) backend
 		return backend.ErrDataResponse(backend.StatusBadRequest, "Collection field is required")
 	}
 
+	// Grafana interpolates global time macros ($__from/$__to) only in the
+	// frontend, which alert-rule evaluation bypasses. Interpolate them here so
+	// alerts work; this is a no-op for dashboard/Explore queries that were
+	// already substituted client-side.
+	qm.QueryText = interpolateTimeMacros(qm.QueryText, query.TimeRange)
+
 	var pipeline []bson.D
 
 	err = bson.UnmarshalExtJSON([]byte(qm.QueryText), false, &pipeline)
